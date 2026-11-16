@@ -1,0 +1,12 @@
+{
+  "no-auth-protected-mode-off": { "level": "high", "message": "protected-mode 关闭且没有密码或 ACL 用户，任何能连到端口的人都能读写数据" },
+  "open-bind": { "level": "medium", "message": "bind 监听所有网卡（{{value}}），请确认端口未暴露到公网" },
+  "no-persistence": { "level": "high", "message": "appendonly 关闭且 save 为空，实例重启后数据会全部丢失" },
+  "policy-without-limit": { "level": "medium", "message": "maxmemory 为 0 时 maxmemory-policy 不生效，进程可能一直涨到被 OOM 杀掉" },
+  "limit-without-eviction": { "level": "medium", "message": "设置了 maxmemory 但策略是 noeviction，内存写满后写入会直接报错" },
+  "appendfsync-always": { "level": "low", "message": "appendfsync always 每条命令都刷盘，写入性能会明显下降" },
+  "daemonize-no-log": { "level": "low", "message": "daemonize yes 且 logfile 为空，后台运行时日志会丢失" },
+  "replica-read-only-off": { "level": "medium", "message": "replica-read-only no 允许在从节点写入，主从数据会不一致" },
+  "cluster-without-config": { "level": "low", "message": "cluster-enabled yes 但未配置 cluster-config-file，需按集群方式部署" },
+  "weak-requirepass": { "level": "low", "message": "密码长度不足 12 位，建议使用更长的随机字符串" }
+}

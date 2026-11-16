@@ -1,0 +1,6 @@
+{
+  "hash-max-ziplist-entries": "hash-max-listpack-entries",
+  "hash-max-ziplist-value": "hash-max-listpack-value",
+  "zset-max-ziplist-entries": "zset-max-listpack-entries",
+  "zset-max-ziplist-value": "zset-max-listpack-value"
+}

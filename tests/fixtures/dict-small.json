@@ -1,0 +1,27 @@
+{
+  "line": "7.4",
+  "tag": "7.4.5",
+  "sections": [
+    { "id": "NETWORK", "title": "NETWORK", "startLine": 1 },
+    { "id": "SNAPSHOTTING", "title": "SNAPSHOTTING", "startLine": 60 },
+    { "id": "SECURITY", "title": "SECURITY", "startLine": 90 },
+    { "id": "MEMORY MANAGEMENT", "title": "MEMORY MANAGEMENT", "startLine": 120 },
+    { "id": "MISC", "title": "MISC", "startLine": 200 }
+  ],
+  "directives": [
+    { "name": "bind", "section": "NETWORK", "type": "special", "defaultValue": "127.0.0.1", "defaultSource": "conf-comment", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "protected-mode", "section": "NETWORK", "type": "bool", "defaultValue": "yes", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "maxclients", "section": "NETWORK", "type": "uint", "defaultValue": "10000", "defaultSource": "config.c", "range": "1..UINT_MAX", "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "save", "section": "SNAPSHOTTING", "type": "special", "defaultValue": "3600 1", "defaultSource": "conf-comment", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "appendonly", "section": "SNAPSHOTTING", "type": "bool", "defaultValue": "no", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "appendfsync", "section": "SNAPSHOTTING", "type": "enum", "defaultValue": "everysec", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "requirepass", "section": "SECURITY", "type": "sds", "defaultValue": "", "defaultSource": "config.c", "range": null, "sensitive": true, "modifiable": true, "comment": [] },
+    { "name": "maxmemory", "section": "MEMORY MANAGEMENT", "type": "ulonglong", "defaultValue": "0", "defaultSource": "config.c", "range": "0..ULLONG_MAX", "sensitive": false, "modifiable": true, "comment": ["Set a memory usage limit."] },
+    { "name": "maxmemory-policy", "section": "MEMORY MANAGEMENT", "type": "enum", "defaultValue": "noeviction", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "daemonize", "section": "MISC", "type": "bool", "defaultValue": "no", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "logfile", "section": "MISC", "type": "string", "defaultValue": "", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "replica-read-only", "section": "MISC", "type": "bool", "defaultValue": "yes", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "cluster-enabled", "section": "MISC", "type": "bool", "defaultValue": "no", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": true, "comment": [] },
+    { "name": "cluster-config-file", "section": "MISC", "type": "string", "defaultValue": "nodes.conf", "defaultSource": "config.c", "range": null, "sensitive": false, "modifiable": false, "comment": [] }
+  ]
+}

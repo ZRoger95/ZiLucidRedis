@@ -1,0 +1,38 @@
+import type { DictFile, MetaIndex } from '../types';
+
+const modules = import.meta.glob<DictFile>('../data/dict/*.json');
+const officialModules = import.meta.glob<string>('../data/official/*.conf', {
+  query: '?raw',
+  import: 'default',
+});
+
+export const VERSIONS = ['6.2', '7.0', '7.2', '7.4', '8.0', '8.2', '8.4', '8.6', '8.8', '8.10'];
+
+const DEFAULT_VERSION = '7.4';
+
+const cache = new Map<string, DictFile>();
+
+export async function loadDict(line: string): Promise<DictFile> {
+  const key = `../data/dict/${line}.json`;
+  const load = modules[key];
+  if (!load) throw new Error(`没有 ${line} 版本的字典`);
+  const cached = cache.get(line);
+  if (cached) return cached;
+  const dict = await load();
+  cache.set(line, dict);
+  return dict;
+}
+
+export async function loadMeta(): Promise<MetaIndex> {
+  const load = modules['../data/dict/meta.json'];
+  if (!load) throw new Error('缺少 meta.json');
+  return (await load()) as unknown as MetaIndex;
+}
+
+export async function loadOfficialConf(line: string): Promise<string> {
+  const load = officialModules[`../data/official/${line}.conf`];
+  if (!load) throw new Error(`没有 ${line} 的官方 conf`);
+  return await load();
+}
+
+export { DEFAULT_VERSION };
