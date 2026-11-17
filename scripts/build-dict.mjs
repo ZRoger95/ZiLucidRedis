@@ -10,7 +10,7 @@ export function compareLines(a, b) {
   return 0;
 }
 
-export function buildDictionary({ line, tag, configC, officialConf, overrides = {} }) {
+export function buildDictionary({ line, tag, publishedAt = '', configC, officialConf, overrides = {} }) {
   const directives = configC.entries.map((entry) => {
     const official = officialConf.byName.get(entry.name);
     const commented = official?.commentedValues ?? [];
@@ -38,7 +38,17 @@ export function buildDictionary({ line, tag, configC, officialConf, overrides = 
     };
   });
 
-  return { line, tag, sections: officialConf.sections, directives };
+  return { line, tag, publishedAt, sections: officialConf.sections, directives };
+}
+
+export function buildReleasesList(lock, versions) {
+  return versions
+    .map(({ line }) => {
+      const entry = lock[line];
+      if (!entry?.tag) return null;
+      return { line, tag: entry.tag, publishedAt: entry.publishedAt ?? '' };
+    })
+    .filter(Boolean);
 }
 
 export function buildMeta(dicts, renames = {}) {
@@ -84,13 +94,19 @@ async function main() {
   const dicts = [];
   const problems = [];
   for (const { line } of versions) {
-    const tag = lock[line];
+    const entry = lock[line];
+    const tag = entry?.tag ?? '';
+    if (!tag) {
+      problems.push(`${line}: lock.json 没有可用 tag`);
+      continue;
+    }
+    const publishedAt = entry.publishedAt ?? '';
     const [configSource, confSource] = await Promise.all([
       readFile(here(`../data/upstream/${line}/config.c`), 'utf8'),
       readFile(here(`../data/upstream/${line}/redis.conf`), 'utf8'),
     ]);
     const [configC, officialConf] = [parseConfigC(configSource), parseOfficialConf(confSource)];
-    const dict = buildDictionary({ line, tag, configC, officialConf, overrides });
+    const dict = buildDictionary({ line, tag, publishedAt, configC, officialConf, overrides });
     dicts.push(dict);
 
     if (dict.directives.length < 140 || dict.directives.length > 260) {
@@ -114,6 +130,9 @@ async function main() {
 
   const meta = buildMeta(dicts, renames);
   await writeFile(here('../src/data/dict/meta.json'), `${JSON.stringify(meta)}\n`);
+
+  const releases = buildReleasesList(lock, versions);
+  await writeFile(here('../src/data/releases.json'), `${JSON.stringify(releases, null, 2)}\n`);
 
   if (problems.length) {
     console.error(`\n${problems.length} 处需要人工确认：`);

@@ -33,8 +33,15 @@ export interface DictSection {
 export interface DictFile {
   line: string;
   tag: string;
+  publishedAt?: string;
   sections: DictSection[];
   directives: DirectiveDoc[];
+}
+
+export interface ReleaseMeta {
+  line: string;
+  tag: string;
+  publishedAt: string;
 }
 
 export interface MetaEntry {

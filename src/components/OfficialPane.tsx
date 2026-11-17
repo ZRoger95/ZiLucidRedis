@@ -5,13 +5,14 @@ import { officialAnnotations } from '../lib/official';
 interface OfficialPaneProps {
   text: string;
   tag: string;
+  publishedAt?: string;
   dict: DictFile | null;
   annotationMode: AnnotationMode;
   highlightLines: Set<number>;
   focus: { lineNo: number; nonce: number } | null;
 }
 
-export function OfficialPane({ text, tag, dict, annotationMode, highlightLines, focus }: OfficialPaneProps) {
+export function OfficialPane({ text, tag, publishedAt, dict, annotationMode, highlightLines, focus }: OfficialPaneProps) {
   const host = useRef<HTMLDivElement>(null);
   const rows = useMemo(() => text.replace(/\r\n?/g, '\n').split('\n'), [text]);
 
@@ -40,7 +41,10 @@ export function OfficialPane({ text, tag, dict, annotationMode, highlightLines, 
 
   return (
     <div className="official" ref={host}>
-      <div className="official-head">官方完整配置 · {tag} · 只读</div>
+      <div className="official-head">
+        官方完整配置 · {tag}
+        {publishedAt ? ` · ${publishedAt.slice(0, 10)}` : ''} · 只读
+      </div>
       <div className="official-body">
         {rows.map((row, index) => {
           const lineNo = index + 1;

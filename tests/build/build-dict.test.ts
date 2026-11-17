@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { buildDictionary, buildMeta } from '../../scripts/build-dict.mjs';
+import { buildDictionary, buildMeta, buildReleasesList } from '../../scripts/build-dict.mjs';
 import { parseConfigC } from '../../scripts/lib/parse-config-c.mjs';
 import { parseOfficialConf } from '../../scripts/lib/parse-official-conf.mjs';
 
@@ -36,4 +36,26 @@ test('meta records introduction and removal across lines', () => {
   ]) as any;
   expect(meta['tcp-backlog'].removedIn).toBe('8.0');
   expect(meta['maxclients'].removedIn).toBeNull();
+});
+
+test('dictionary carries publishedAt', () => {
+  const withDate = buildDictionary({
+    line: '7.4',
+    tag: '7.4.12',
+    publishedAt: '2026-10-26T11:51:13Z',
+    configC: parseConfigC(fixture('tests/fixtures/config-sample.c')),
+    officialConf: parseOfficialConf(fixture('tests/fixtures/official-sample.conf')),
+  }) as any;
+  expect(withDate.publishedAt).toBe('2026-10-26T11:51:13Z');
+});
+
+test('releases list follows the version allowlist order', () => {
+  const lock = {
+    '8.10': { tag: '8.10.3', publishedAt: '2026-10-26T11:56:24Z' },
+    '7.4': { tag: '7.4.12', publishedAt: '2026-10-26T11:51:13Z' },
+  };
+  expect(buildReleasesList(lock, [{ line: '7.4' }, { line: '8.10' }])).toEqual([
+    { line: '7.4', tag: '7.4.12', publishedAt: '2026-10-26T11:51:13Z' },
+    { line: '8.10', tag: '8.10.3', publishedAt: '2026-10-26T11:56:24Z' },
+  ]);
 });

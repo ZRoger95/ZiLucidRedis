@@ -1,4 +1,5 @@
-import type { DictFile, MetaIndex } from '../types';
+import type { DictFile, MetaIndex, ReleaseMeta } from '../types';
+import releasesJson from '../data/releases.json';
 
 const modules = import.meta.glob<DictFile>('../data/dict/*.json');
 const officialModules = import.meta.glob<string>('../data/official/*.conf', {
@@ -6,7 +7,14 @@ const officialModules = import.meta.glob<string>('../data/official/*.conf', {
   import: 'default',
 });
 
-export const VERSIONS = ['6.2', '7.0', '7.2', '7.4', '8.0', '8.2', '8.4', '8.6', '8.8', '8.10'];
+export const RELEASES = releasesJson as ReleaseMeta[];
+
+export const VERSIONS = RELEASES.map((release) => release.line);
+
+export function formatVersionLabel(release: ReleaseMeta): string {
+  const date = release.publishedAt ? release.publishedAt.slice(0, 10) : '';
+  return [release.line, release.tag, date].filter(Boolean).join(' · ');
+}
 
 const DEFAULT_VERSION = '7.4';
 

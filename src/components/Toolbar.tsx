@@ -2,7 +2,7 @@ import type { AnnotationMode } from '../types';
 import { Button } from '@ui-sdk/react/button';
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@ui-sdk/react/select';
 import { Switch, SwitchThumb } from '@ui-sdk/react/switch';
-import { VERSIONS } from '../lib/dict';
+import { RELEASES, formatVersionLabel } from '../lib/dict';
 import { ExportMenu, type ExportKind } from './ExportMenu';
 
 interface ToolbarProps {
@@ -29,7 +29,7 @@ const ANNOTATION_OPTIONS = [
 ];
 
 export function Toolbar(props: ToolbarProps) {
-  const items = VERSIONS.map((line) => ({ value: line, label: line }));
+  const items = RELEASES.map((release) => ({ value: release.line, label: formatVersionLabel(release) }));
 
   return (
     <header className="topbar">

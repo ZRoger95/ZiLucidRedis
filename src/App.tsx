@@ -40,7 +40,7 @@ export default function App() {
 
   const [dict, setDict] = useState<DictFile | null>(null);
   const [meta, setMeta] = useState<MetaIndex>({});
-  const [official, setOfficial] = useState<{ text: string; tag: string } | null>(null);
+  const [official, setOfficial] = useState<{ text: string; tag: string; publishedAt?: string } | null>(null);
   const [dictError, setDictError] = useState<string | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
   const [jump, setJump] = useState<{ lineNo: number; nonce: number } | null>(null);
@@ -59,7 +59,7 @@ export default function App() {
         if (cancelled) return;
         setDict(nextDict);
         setMeta(nextMeta);
-        setOfficial({ text: nextOfficial, tag: nextDict.tag });
+        setOfficial({ text: nextOfficial, tag: nextDict.tag, publishedAt: nextDict.publishedAt });
         setDictError(null);
       })
       .catch((error: Error) => {
@@ -297,6 +297,7 @@ export default function App() {
               <OfficialPane
                 text={official.text}
                 tag={official.tag}
+                publishedAt={official.publishedAt}
                 dict={dict}
                 annotationMode={annotationMode}
                 highlightLines={officialHighlights}
