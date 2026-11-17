@@ -1,4 +1,5 @@
 import { Button } from '@ui-sdk/react/button';
+
 import type { DetailView } from '../lib/describe';
 
 interface DetailPanelProps {
@@ -6,6 +7,16 @@ interface DetailPanelProps {
   lineNo: number | null;
   onInsertDefault: () => void;
   onCopy: () => void;
+}
+
+function noteText(isDiff: boolean, status: string | null): string {
+  if (isDiff) {
+    return '与默认值不同';
+  }
+  if (status === 'no-default') {
+    return '官方未给出默认值';
+  }
+  return '与默认值一致';
 }
 
 export function DetailPanel({ view, lineNo, onInsertDefault, onCopy }: DetailPanelProps) {
@@ -50,9 +61,7 @@ export function DetailPanel({ view, lineNo, onInsertDefault, onCopy }: DetailPan
                 <code>{view.rangeText}</code>
               </div>
             ) : null}
-            <div className="compare-note">
-              {view.isDiff ? '与默认值不同' : view.status === 'no-default' ? '官方未给出默认值' : '与默认值一致'}
-            </div>
+            <div className="compare-note">{noteText(view.isDiff, view.status)}</div>
           </section>
 
           <div className="actions">

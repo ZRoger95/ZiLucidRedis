@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { describeDirective } from '../src/lib/describe';
 
 const doc = {

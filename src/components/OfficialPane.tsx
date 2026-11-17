@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
+
 import type { AnnotationMode, DictFile } from '../types';
+
 import { officialAnnotations } from '../lib/official';
 
 interface OfficialPaneProps {
@@ -12,19 +14,31 @@ interface OfficialPaneProps {
   focus: { lineNo: number; nonce: number } | null;
 }
 
-export function OfficialPane({ text, tag, publishedAt, dict, annotationMode, highlightLines, focus }: OfficialPaneProps) {
+export function OfficialPane({
+  text,
+  tag,
+  publishedAt,
+  dict,
+  annotationMode,
+  highlightLines,
+  focus,
+}: OfficialPaneProps) {
   const host = useRef<HTMLDivElement>(null);
   const rows = useMemo(() => text.replace(/\r\n?/g, '\n').split('\n'), [text]);
 
   const annotations = useMemo(() => {
-    if (!dict) return new Map<number, string[]>();
+    if (!dict) {
+      return new Map<number, string[]>();
+    }
     const docs = new Map(dict.directives.map((directive) => [directive.name, directive]));
     return officialAnnotations(rows, docs, annotationMode);
   }, [rows, dict, annotationMode]);
 
   const focusBlock = useMemo(() => {
     const block = new Set<number>();
-    if (!focus) return block;
+    if (!focus) {
+      return block;
+    }
     let index = focus.lineNo - 2;
     while (index >= 0 && rows[index].trim().startsWith('#')) {
       block.add(index + 1);
@@ -33,8 +47,11 @@ export function OfficialPane({ text, tag, publishedAt, dict, annotationMode, hig
     return block;
   }, [focus, rows]);
 
+  // 滚动位置属于 DOM 外部状态，只能在渲染提交后同步
   useEffect(() => {
-    if (!focus) return;
+    if (!focus) {
+      return;
+    }
     const target = host.current?.querySelector<HTMLElement>(`[data-official-line="${focus.lineNo}"]`);
     target?.scrollIntoView({ block: 'center' });
   }, [focus]);
@@ -49,9 +66,15 @@ export function OfficialPane({ text, tag, publishedAt, dict, annotationMode, hig
         {rows.map((row, index) => {
           const lineNo = index + 1;
           const classes = ['official-line'];
-          if (highlightLines.has(lineNo)) classes.push('is-highlight');
-          if (focusBlock.has(lineNo)) classes.push('is-context');
-          if (focus?.lineNo === lineNo) classes.push('is-focus');
+          if (highlightLines.has(lineNo)) {
+            classes.push('is-highlight');
+          }
+          if (focusBlock.has(lineNo)) {
+            classes.push('is-context');
+          }
+          if (focus?.lineNo === lineNo) {
+            classes.push('is-focus');
+          }
           const annotation = annotations.get(lineNo);
 
           return (

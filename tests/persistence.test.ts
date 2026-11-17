@@ -1,4 +1,5 @@
 import { beforeEach, expect, test } from 'vitest';
+
 import { loadState, saveState } from '../src/lib/persistence';
 
 beforeEach(() => localStorage.clear());

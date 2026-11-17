@@ -1,9 +1,11 @@
-import type { AnnotationMode } from '../types';
 import { Button } from '@ui-sdk/react/button';
 import { Select, SelectContent, SelectTrigger, SelectValue } from '@ui-sdk/react/select';
 import { Switch, SwitchThumb } from '@ui-sdk/react/switch';
-import { RELEASES, formatVersionLabel } from '../lib/dict';
-import { ExportMenu, type ExportKind } from './ExportMenu';
+
+import type { AnnotationMode } from '../types';
+
+import { formatVersionLabel, RELEASES } from '../lib/dict';
+import { type ExportKind, ExportMenu } from './ExportMenu';
 
 interface ToolbarProps {
   line: string;
@@ -29,7 +31,10 @@ const ANNOTATION_OPTIONS = [
 ];
 
 export function Toolbar(props: ToolbarProps) {
-  const items = RELEASES.map((release) => ({ value: release.line, label: formatVersionLabel(release) }));
+  const items = [...RELEASES].reverse().map((release) => ({
+    value: release.line,
+    label: formatVersionLabel(release),
+  }));
 
   return (
     <header className="topbar">
@@ -37,11 +42,7 @@ export function Toolbar(props: ToolbarProps) {
 
       <span className="control">
         <span>版本</span>
-        <Select
-          items={items}
-          value={props.line}
-          onValueChange={(value) => value && props.onLineChange(String(value))}
-        >
+        <Select items={items} value={props.line} onValueChange={(value) => value && props.onLineChange(String(value))}>
           <SelectTrigger aria-label="Redis 版本">
             <SelectValue />
           </SelectTrigger>
@@ -100,7 +101,9 @@ export function Toolbar(props: ToolbarProps) {
           style={{ display: 'none' }}
           onChange={(event) => {
             const file = event.target.files?.[0];
-            if (file) props.onUpload(file);
+            if (file) {
+              props.onUpload(file);
+            }
             event.target.value = '';
           }}
         />

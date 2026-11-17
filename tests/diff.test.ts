@@ -1,14 +1,22 @@
 import { expect, test } from 'vitest';
-import { diffSegments, buildDiff, applyDefaultLine } from '../src/lib/diff';
-import { analyze } from '../src/lib/analyze';
-import { parseConf } from '../src/lib/parseConf';
-import { aliases } from '../src/data/aliases';
+
 import type { DictFile, DirectiveDoc, MetaIndex, RiskWarning } from '../src/types';
+
+import { aliases } from '../src/data/aliases';
+import { analyze } from '../src/lib/analyze';
+import { applyDefaultLine, buildDiff, diffSegments } from '../src/lib/diff';
+import { parseConf } from '../src/lib/parseConf';
 
 test('marks changed value tokens and keeps shared prefix unmarked', () => {
   expect(diffSegments('maxmemory 0', 'maxmemory 8gb')).toEqual({
-    left: [{ text: 'maxmemory ', changed: false }, { text: '0', changed: true }],
-    right: [{ text: 'maxmemory ', changed: false }, { text: '8gb', changed: true }],
+    left: [
+      { text: 'maxmemory ', changed: false },
+      { text: '0', changed: true },
+    ],
+    right: [
+      { text: 'maxmemory ', changed: false },
+      { text: '8gb', changed: true },
+    ],
   });
 });
 

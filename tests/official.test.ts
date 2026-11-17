@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest';
-import { indexOfficialLines, officialAnnotations } from '../src/lib/official';
+
 import type { DirectiveDoc } from '../src/types';
+
+import { indexOfficialLines, officialAnnotations } from '../src/lib/official';
 
 const conf = `# TCP listen() backlog.
 tcp-backlog 511

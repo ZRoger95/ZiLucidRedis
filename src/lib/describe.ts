@@ -1,4 +1,5 @@
 import type { DirectiveDoc, LineAnalysis } from '../types';
+
 import { STATUS_LABELS } from './annotations';
 
 export interface DetailView {
@@ -16,6 +17,16 @@ export interface DetailView {
 }
 
 const DOC_URL = 'https://redis.io/docs/latest/operate/oss_and_stack/management/config/';
+
+function formatDefault(value: string | null): string {
+  if (value === null) {
+    return '官方未给出';
+  }
+  if (value === '') {
+    return '""';
+  }
+  return value;
+}
 
 const STATUS_HINTS: Record<string, string> = {
   unknown: '字典里没有这个指令：可能是拼写错误、模块指令，或者不是你选的 Redis 版本支持的项。',
@@ -49,8 +60,7 @@ export function describeDirective(
     };
   }
 
-  const defaultText =
-    doc.defaultValue === null ? '官方未给出' : doc.defaultValue === '' ? '""' : doc.defaultValue;
+  const defaultText = formatDefault(doc.defaultValue);
   const currentText = currentArgs.length ? currentArgs.join(' ') : '（未写）';
   const status = current?.status ?? null;
 

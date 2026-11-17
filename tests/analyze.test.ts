@@ -1,9 +1,20 @@
 import { expect, test } from 'vitest';
-import { parseConf } from '../src/lib/parseConf';
+
 import { analyze } from '../src/lib/analyze';
+import { parseConf } from '../src/lib/parseConf';
 
 const doc = (name: string, defaultValue: string | null, type = 'string') =>
-  ({ name, section: 'NETWORK', type, defaultValue, defaultSource: 'config.c', range: null, sensitive: false, modifiable: true, comment: [] }) as any;
+  ({
+    name,
+    section: 'NETWORK',
+    type,
+    defaultValue,
+    defaultSource: 'config.c',
+    range: null,
+    sensitive: false,
+    modifiable: true,
+    comment: [],
+  }) as any;
 
 const dict = {
   line: '7.4',

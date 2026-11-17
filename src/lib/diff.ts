@@ -1,4 +1,5 @@
 import type { AnalysisResult, DictFile, DirectiveDoc, LineAnalysis, ParsedLine, RiskWarning, Status } from '../types';
+
 import { MULTI_VALUE_NAMES, SPECIAL_NAMES } from './analyze';
 import { normalizeValue } from './normalize';
 import { tokenizeArgs } from './parseConf';
@@ -14,7 +15,9 @@ const MAX_TOKENS = 400;
 const tokenize = (text: string): string[] => text.match(TOKEN_RE) ?? [];
 
 const pushSegment = (target: DiffSegment[], text: string, changed: boolean) => {
-  if (!text) return;
+  if (!text) {
+    return;
+  }
   const last = target[target.length - 1];
   if (last && last.changed === changed) {
     last.text += text;
@@ -23,10 +26,7 @@ const pushSegment = (target: DiffSegment[], text: string, changed: boolean) => {
   target.push({ text, changed });
 };
 
-export function diffSegments(
-  leftText: string,
-  rightText: string,
-): { left: DiffSegment[]; right: DiffSegment[] } {
+export function diffSegments(leftText: string, rightText: string): { left: DiffSegment[]; right: DiffSegment[] } {
   const leftTokens = tokenize(leftText);
   const rightTokens = tokenize(rightText);
 
@@ -43,10 +43,7 @@ export function diffSegments(
 
   for (let i = rows - 1; i >= 0; i -= 1) {
     for (let j = cols - 1; j >= 0; j -= 1) {
-      dp[i][j] =
-        leftTokens[i] === rightTokens[j]
-          ? dp[i + 1][j + 1] + 1
-          : Math.max(dp[i + 1][j], dp[i][j + 1]);
+      dp[i][j] = leftTokens[i] === rightTokens[j] ? dp[i + 1][j + 1] + 1 : Math.max(dp[i + 1][j], dp[i][j + 1]);
     }
   }
 
@@ -83,15 +80,7 @@ export function diffSegments(
 }
 
 export type DiffKind =
-  | 'changed'
-  | 'default'
-  | 'added'
-  | 'removed'
-  | 'newer'
-  | 'unknown'
-  | 'duplicate'
-  | 'special'
-  | 'no-default';
+  'changed' | 'default' | 'added' | 'removed' | 'newer' | 'unknown' | 'duplicate' | 'special' | 'no-default';
 
 export interface DiffLine {
   lineNo: number;
@@ -130,14 +119,18 @@ interface LineGroup {
 
 const ONLY_DIFF_KINDS = new Set<DiffKind>(['changed', 'added', 'removed', 'newer', 'unknown', 'duplicate']);
 
-const defaultLiteral = (doc: DirectiveDoc) => (doc.defaultValue === '' ? '""' : doc.defaultValue ?? '');
+const defaultLiteral = (doc: DirectiveDoc) => (doc.defaultValue === '' ? '""' : (doc.defaultValue ?? ''));
 
 const splitSegments = (segments: DiffSegment[]): DiffSegment[][] => {
   const lines: DiffSegment[][] = [[]];
   for (const segment of segments) {
     segment.text.split('\n').forEach((part, index) => {
-      if (index > 0) lines.push([]);
-      if (part) lines[lines.length - 1].push({ text: part, changed: segment.changed });
+      if (index > 0) {
+        lines.push([]);
+      }
+      if (part) {
+        lines[lines.length - 1].push({ text: part, changed: segment.changed });
+      }
     });
   }
   return lines;
@@ -154,10 +147,15 @@ function buildGroupRow(canonical: string, group: LineGroup, doc: DirectiveDoc | 
   let applyValue: string | null = null;
 
   if (!doc) {
-    if (SPECIAL_NAMES.has(group.name)) kind = 'special';
-    else if (status === 'removed') kind = 'removed';
-    else if (status === 'newer') kind = 'newer';
-    else kind = 'unknown';
+    if (SPECIAL_NAMES.has(group.name)) {
+      kind = 'special';
+    } else if (status === 'removed') {
+      kind = 'removed';
+    } else if (status === 'newer') {
+      kind = 'newer';
+    } else {
+      kind = 'unknown';
+    }
   } else {
     const multi = MULTI_VALUE_NAMES.has(doc.name);
     if (group.lines.length > 1 && !multi) {
@@ -167,8 +165,7 @@ function buildGroupRow(canonical: string, group: LineGroup, doc: DirectiveDoc | 
       kind = 'no-default';
     } else {
       const leftArgs = group.lines.flatMap((line) => line.args ?? []);
-      const equal =
-        normalizeValue(doc, leftArgs) === normalizeValue(doc, tokenizeArgs(doc.defaultValue).args);
+      const equal = normalizeValue(doc, leftArgs) === normalizeValue(doc, tokenizeArgs(doc.defaultValue).args);
       kind = equal ? 'default' : 'changed';
     }
 
@@ -248,12 +245,16 @@ export function buildDiff(
   const groups = new Map<string, LineGroup>();
 
   for (const line of analysis.lines) {
-    if (line.kind !== 'directive' || !line.name) continue;
+    if (line.kind !== 'directive' || !line.name) {
+      continue;
+    }
     const entry = analysis.byLine.get(line.lineNo);
     const canonical = entry?.doc?.name ?? line.name;
     const group = groups.get(canonical) ?? { name: line.name, lines: [], entries: [] };
     group.lines.push(line);
-    if (entry) group.entries.push(entry);
+    if (entry) {
+      group.entries.push(entry);
+    }
     groups.set(canonical, group);
   }
 
@@ -268,7 +269,9 @@ export function buildDiff(
     special: 0,
     'no-default': 0,
   };
-  if (groups.size === 0) return { rows: [], counts, total: 0 };
+  if (groups.size === 0) {
+    return { rows: [], counts, total: 0 };
+  }
 
   const rows: DiffRow[] = [];
   for (const [canonical, group] of groups) {
@@ -276,7 +279,9 @@ export function buildDiff(
   }
   for (const name of analysis.missing) {
     const doc = docs.get(name);
-    if (!doc || groups.has(name)) continue;
+    if (!doc || groups.has(name)) {
+      continue;
+    }
     rows.push(buildAddedRow(doc));
   }
 
@@ -287,18 +292,20 @@ export function buildDiff(
 
   let rightNo = 0;
   for (const row of rows) {
-    if (!row.right) continue;
+    if (!row.right) {
+      continue;
+    }
     for (const line of row.right.lines) {
       rightNo += 1;
       line.lineNo = rightNo;
     }
   }
 
-  for (const row of rows) counts[row.kind] += 1;
+  for (const row of rows) {
+    counts[row.kind] += 1;
+  }
 
-  const visible = options.onlyDiff
-    ? rows.filter((row) => ONLY_DIFF_KINDS.has(row.kind) || row.risks.length > 0)
-    : rows;
+  const visible = options.onlyDiff ? rows.filter((row) => ONLY_DIFF_KINDS.has(row.kind) || row.risks.length > 0) : rows;
 
   return { rows: visible, counts, total: rows.length };
 }
@@ -306,12 +313,16 @@ export function buildDiff(
 export function applyDefaultLine(text: string, lineNo: number, defaultValue: string): string {
   const rows = text.split('\n');
   const index = lineNo - 1;
-  if (index < 0 || index >= rows.length) return text;
+  if (index < 0 || index >= rows.length) {
+    return text;
+  }
 
   const current = rows[index];
   const indent = /^\s*/.exec(current)?.[0] ?? '';
   const name = current.trim().split(/\s+/)[0] ?? '';
-  if (!name) return text;
+  if (!name) {
+    return text;
+  }
 
   const value = defaultValue === '' ? '""' : defaultValue;
   rows[index] = `${indent}${name} ${value}`;

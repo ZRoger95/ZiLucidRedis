@@ -1,13 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@ui-sdk/react/command';
 import { Dialog, DialogBackdrop, DialogContent, DialogTitle } from '@ui-sdk/react/dialog';
-import {
-  Command,
-  CommandEmpty,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@ui-sdk/react/command';
+import { useMemo, useState } from 'react';
+
 import type { DictFile } from '../types';
+
 import { searchDirectives } from '../lib/search';
 
 interface SearchPaletteProps {
@@ -21,17 +17,17 @@ interface SearchPaletteProps {
 export function SearchPalette({ open, onOpenChange, dict, configured, onPick }: SearchPaletteProps) {
   const [query, setQuery] = useState('');
 
-  useEffect(() => {
-    if (!open) setQuery('');
-  }, [open]);
+  const handleOpenChange = (next: boolean) => {
+    if (!next) {
+      setQuery('');
+    }
+    onOpenChange(next);
+  };
 
-  const hits = useMemo(
-    () => (dict ? searchDirectives(dict, query, configured) : []),
-    [dict, query, configured],
-  );
+  const hits = useMemo(() => (dict ? searchDirectives(dict, query, configured) : []), [dict, query, configured]);
 
   return (
-    <Dialog open={open} onOpenChange={(next) => onOpenChange(next)}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogBackdrop />
       <DialogContent className="palette-dialog">
         <DialogTitle>搜索配置项</DialogTitle>
@@ -41,9 +37,11 @@ export function SearchPalette({ open, onOpenChange, dict, configured, onPick }: 
           onQueryChange={setQuery}
           onAction={(value) => {
             const hit = hits.find((item) => item.name === value);
-            if (!hit) return;
+            if (!hit) {
+              return;
+            }
             onPick(hit.name, hit.configured);
-            onOpenChange(false);
+            handleOpenChange(false);
           }}
         >
           <CommandInput aria-label="搜索配置项" placeholder="输入指令名、分组或中文说明，例如 maxmemory" />
@@ -56,9 +54,7 @@ export function SearchPalette({ open, onOpenChange, dict, configured, onPick }: 
                     {hit.name}
                     {hit.configured ? ' · 已配置' : ''}
                   </span>
-                  <span className="value">
-                    默认 {hit.defaultValue === null ? '未给出' : hit.defaultValue || '空'}
-                  </span>
+                  <span className="value">默认 {hit.defaultValue === null ? '未给出' : hit.defaultValue || '空'}</span>
                   <span className="hint">{hit.summary ?? hit.section}</span>
                 </span>
               </CommandItem>

@@ -13,10 +13,14 @@ export function saveState(state: PersistedState): void {
 
 export function loadState(): PersistedState | null {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   try {
     const parsed = JSON.parse(raw) as PersistedState;
-    if (parsed.v !== 1 || typeof parsed.text !== 'string' || typeof parsed.line !== 'string') return null;
+    if (parsed.v !== 1 || typeof parsed.text !== 'string' || typeof parsed.line !== 'string') {
+      return null;
+    }
     return parsed;
   } catch {
     return null;

@@ -1,8 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
-import { DiffView } from '../src/components/DiffView';
+
 import type { DiffModel, DiffRow } from '../src/lib/diff';
+
+import { DiffView } from '../src/components/DiffView';
 
 const row = (overrides: Partial<DiffRow> = {}): DiffRow => ({
   key: 'k',
@@ -35,13 +37,7 @@ const model = (rows: DiffRow[]): DiffModel => ({ rows, counts, total: rows.lengt
 test('renders both line numbers and applies default from the arrow', async () => {
   const onApplyDefault = vi.fn();
   render(
-    <DiffView
-      model={model([row()])}
-      warnings={[]}
-      onlyDiff={false}
-      onJump={vi.fn()}
-      onApplyDefault={onApplyDefault}
-    />,
+    <DiffView model={model([row()])} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={onApplyDefault} />,
   );
 
   expect(screen.getByText('154')).toBeInTheDocument();
@@ -53,9 +49,7 @@ test('renders both line numbers and applies default from the arrow', async () =>
 
 test('jumps to the clicked left line number', async () => {
   const onJump = vi.fn();
-  render(
-    <DiffView model={model([row()])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />,
-  );
+  render(<DiffView model={model([row()])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />);
 
   await userEvent.click(screen.getByText('maxmemory 0'));
   expect(onJump).toHaveBeenCalledWith(154);
@@ -67,13 +61,7 @@ test('collapses long unchanged runs and expands on click', async () => {
   );
 
   render(
-    <DiffView
-      model={model(unchanged)}
-      warnings={[]}
-      onlyDiff={false}
-      onJump={vi.fn()}
-      onApplyDefault={vi.fn()}
-    />,
+    <DiffView model={model(unchanged)} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={vi.fn()} />,
   );
 
   expect(screen.getByText('@@ 展开 3 行未修改 @@')).toBeInTheDocument();
@@ -137,9 +125,7 @@ test('jumps to the clicked line inside a multi line block', async () => {
     applyValue: null,
   });
 
-  render(
-    <DiffView model={model([multi])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />,
-  );
+  render(<DiffView model={model([multi])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />);
 
   await userEvent.click(screen.getByText('save 300 10'));
   expect(onJump).toHaveBeenCalledWith(169);
@@ -151,13 +137,7 @@ test('expands the unchanged run after clicking the collapse row', async () => {
   );
 
   render(
-    <DiffView
-      model={model(unchanged)}
-      warnings={[]}
-      onlyDiff={false}
-      onJump={vi.fn()}
-      onApplyDefault={vi.fn()}
-    />,
+    <DiffView model={model(unchanged)} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={vi.fn()} />,
   );
 
   await userEvent.click(screen.getByText('@@ 展开 3 行未修改 @@'));

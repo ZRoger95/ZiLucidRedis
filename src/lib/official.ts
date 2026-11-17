@@ -1,4 +1,5 @@
 import type { AnnotationMode, DirectiveDoc } from '../types';
+
 import { parseConf } from './parseConf';
 
 const NAME_RE = /^([A-Za-z][A-Za-z0-9-]*)(?:\s|$)/;
@@ -19,16 +20,24 @@ export function officialAnnotations(
   mode: AnnotationMode,
 ): Map<number, string[]> {
   const annotations = new Map<number, string[]>();
-  if (mode === 'off') return annotations;
+  if (mode === 'off') {
+    return annotations;
+  }
 
   for (let index = 0; index < rows.length; index += 1) {
     const match = NAME_RE.exec(rows[index].trim());
-    if (!match) continue;
+    if (!match) {
+      continue;
+    }
     const doc = docs.get(match[1]);
-    if (!doc || doc.comment.length === 0) continue;
+    if (!doc || doc.comment.length === 0) {
+      continue;
+    }
 
     const hasComment = index > 0 && rows[index - 1].trim().startsWith('#');
-    if (mode === 'missing' && hasComment) continue;
+    if (mode === 'missing' && hasComment) {
+      continue;
+    }
 
     const defaultText = doc.defaultValue === null ? '官方未给出' : doc.defaultValue;
     annotations.set(index + 1, [...doc.comment, `默认值: ${defaultText}`]);

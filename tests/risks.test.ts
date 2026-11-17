@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { parseConf } from '../src/lib/parseConf';
+
 import { analyze } from '../src/lib/analyze';
+import { parseConf } from '../src/lib/parseConf';
 import { evaluateRisks } from '../src/lib/risks';
 
 const dict = JSON.parse(readFileSync('tests/fixtures/dict-small.json', 'utf8'));

@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { formatVersionLabel } from '../src/lib/dict';
 
 test('version label shows line, patch and date when available', () => {

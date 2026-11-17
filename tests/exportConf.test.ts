@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
+
 import { exportOriginal, exportWithComments, suggestFileName } from '../src/lib/exportConf';
 import { parseConf } from '../src/lib/parseConf';
 

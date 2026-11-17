@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { parseConfigC } from '../../scripts/lib/parse-config-c.mjs';
+
+import { parseConfigC } from '../../scripts/lib/parse-config-c.ts';
 
 const source = readFileSync('tests/fixtures/config-sample.c', 'utf8');
 const result = parseConfigC(source);

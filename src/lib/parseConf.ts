@@ -8,8 +8,12 @@ export function tokenizeArgs(input: string): { args: string[]; quoteStyles: Quot
   let i = 0;
 
   while (i < input.length) {
-    while (i < input.length && /\s/.test(input[i])) i += 1;
-    if (i >= input.length) break;
+    while (i < input.length && /\s/.test(input[i])) {
+      i += 1;
+    }
+    if (i >= input.length) {
+      break;
+    }
 
     const quote = input[i];
     if (quote === '"' || quote === "'") {
@@ -52,31 +56,35 @@ export function decodeConfBytes(bytes: ArrayBuffer): { text: string; warning: st
   const text = withoutBom.replace(/\r\n?/g, '\n');
   const replacement = (text.match(/\uFFFD/g) ?? []).length;
   const warning =
-    text.length > 0 && replacement / text.length > 0.005
-      ? '文件可能不是 UTF-8 编码，请确认内容是否乱码'
-      : null;
+    text.length > 0 && replacement / text.length > 0.005 ? '文件可能不是 UTF-8 编码，请确认内容是否乱码' : null;
   return { text, warning };
 }
 
 export function parseConf(text: string): ParsedLine[] {
   const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n');
   const rows = normalized.split('\n');
-  if (rows.length && rows[rows.length - 1] === '') rows.pop();
+  if (rows.length && rows[rows.length - 1] === '') {
+    rows.pop();
+  }
 
   return rows.map((raw, index) => {
     const lineNo = index + 1;
     const trimmed = raw.trim();
 
     let kind: LineKind;
-    if (!trimmed) kind = 'blank';
-    else if (trimmed.startsWith('#')) kind = 'comment';
-    else {
+    if (!trimmed) {
+      kind = 'blank';
+    } else if (trimmed.startsWith('#')) {
+      kind = 'comment';
+    } else {
       const name = trimmed.split(/\s+/)[0];
       const templated = /[<>|]/.test(trimmed);
       kind = NAME_RE.test(name) && !templated ? 'directive' : 'unknown';
     }
 
-    if (kind !== 'directive') return { lineNo, raw, kind };
+    if (kind !== 'directive') {
+      return { lineNo, raw, kind };
+    }
 
     const rest = trimmed.slice(trimmed.indexOf(trimmed.split(/\s+/)[0]) + trimmed.split(/\s+/)[0].length);
     const { args, quoteStyles } = tokenizeArgs(rest);

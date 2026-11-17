@@ -1,7 +1,9 @@
 import type { DictFile, MetaIndex, ReleaseMeta } from '../types';
+
 import releasesJson from '../data/releases.json';
 
 const modules = import.meta.glob<DictFile>('../data/dict/*.json');
+const metaModules = import.meta.glob<MetaIndex>('../data/dict/meta.json');
 const officialModules = import.meta.glob<string>('../data/official/*.conf', {
   query: '?raw',
   import: 'default',
@@ -23,23 +25,31 @@ const cache = new Map<string, DictFile>();
 export async function loadDict(line: string): Promise<DictFile> {
   const key = `../data/dict/${line}.json`;
   const load = modules[key];
-  if (!load) throw new Error(`没有 ${line} 版本的字典`);
+  if (!load) {
+    throw new Error(`没有 ${line} 版本的字典`);
+  }
   const cached = cache.get(line);
-  if (cached) return cached;
+  if (cached) {
+    return cached;
+  }
   const dict = await load();
   cache.set(line, dict);
   return dict;
 }
 
 export async function loadMeta(): Promise<MetaIndex> {
-  const load = modules['../data/dict/meta.json'];
-  if (!load) throw new Error('缺少 meta.json');
-  return (await load()) as unknown as MetaIndex;
+  const load = metaModules['../data/dict/meta.json'];
+  if (!load) {
+    throw new Error('缺少 meta.json');
+  }
+  return await load();
 }
 
 export async function loadOfficialConf(line: string): Promise<string> {
   const load = officialModules[`../data/official/${line}.conf`];
-  if (!load) throw new Error(`没有 ${line} 的官方 conf`);
+  if (!load) {
+    throw new Error(`没有 ${line} 的官方 conf`);
+  }
   return await load();
 }
 

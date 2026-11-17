@@ -1,0 +1,91 @@
+# AGENTS.md
+
+ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `redis.conf`，逐项对照官方默认值，标出被改过、不认识、已废弃和危险的配置，可编辑并导出新 conf。产品行为与用法见 [README.md](README.md)；本文件是每次会话都需要的工程规则，不重复 README。
+
+本文件是唯一的 agent 规则入口。不要把规则复制到子目录，也不要新增子目录级 `AGENTS.md`。
+
+## 底线约束
+
+- **纯前端，运行时零外部请求。** 不引入后端；构建产物必须能由静态服务器托管并离线使用（`base: './'`）。新增数据一律在构建期生成并提交。
+- **明文密码不落盘。** 敏感指令在导入时即替换为 `${env_<指令名>}`；原值只存在于内存；`localStorage`、默认导出和任何默认值都不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换逻辑在 [secrets.ts](src/lib/secrets.ts)。
+- **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`。
+- **TypeScript strict。** 不新增 `any`；共享类型放 [types.ts](src/types.ts)。未使用变量由 `tsc` 的 `noUnusedLocals` / `noUnusedParameters` 把关。
+- **Lint 与格式门禁。** ESLint 管正确性和团队习惯，Prettier 管格式；`npm run lint` 必须零告警，`eslint-disable` 必须写原因。规则与取舍见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
+- **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器和渲染期派生；只有与 React 之外系统同步的文件才能进入 [eslint.config.ts](eslint.config.ts) 的允许清单。清单与替代方案见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
+- **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
+- **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。
+
+## UI 与 ui-sdk
+
+- **先读 skill。** 任何 UI 新增或改动前先读 [.agents/skills/ui-sdk/SKILL.md](.agents/skills/ui-sdk/SKILL.md)；已安装版本的文档索引在 `node_modules/@ui-sdk/react/docs/llms.txt`，按需读具体组件页，不读 `dist/*.js`。
+- **只从子路径导入。** 使用 `@ui-sdk/react` 的 `/button`、`/select`、`/switch`、`/menu`、`/dialog`、`/command`、`/tabs`、`/shortcuts` 等入口，不从包根导入，不直接引 `@ui-sdk/core/internal/*`。
+- **不自造控件。** 键盘、焦点、ARIA 和弹出层行为交给 ui-sdk；优先用现有组件组合，不手写 `role=` 控件。
+- **样式入口。** [index.css](src/index.css) 首行保持 `@layer ui-sdk;`，并 `@import '@ui-sdk/core/web.css';`；不引入 Tailwind。
+
+## 目录
+
+```
+src/lib/         解析、归一化、分析、风险、密码占位、搜索、导出、diff（纯函数）
+src/components/  工具栏、编辑器、摘要、详情、diff、搜索等 React 组件
+src/data/        人工登记表，以及按版本生成的字典与官方 conf
+data/            版本白名单与上游抓取结果（versions.json、upstream/）
+scripts/         构建期抓取与字典生成（Node 原生 TypeScript，ESM）
+tests/           单测与构建脚本测试；fixtures/ 放样例
+docs/            工程规范、设计文档与实施计划
+```
+
+## 命令
+
+```bash
+npm install
+npm run dev         # http://localhost:5173
+npm run lint        # ESLint，零告警
+npm run lint:fix
+npm run format      # Prettier 写入
+npm run format:check
+npm run check       # lint + format:check + typecheck + test
+npm test            # Vitest（jsdom）
+npm run typecheck
+npm run build       # lint + tsc --noEmit + vite build，产物在 dist/
+npm run preview
+
+node scripts/fetch-upstream.ts   # 拉取各 minor 线最新正式 release
+node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、meta.json
+```
+
+数据脚本由 Node 原生 TypeScript 直接运行（Node 22.18+），会访问 GitHub；应用运行时不访问网络。解析异常会列出需要人工确认的指令，按提示登记到对应的 JSON 文件，不要绕过断言。
+
+## 改动流程
+
+- **新增能力：** 先在 `docs/superpowers/specs/` 写设计（现状、目标、非目标、已选方案和被放弃的方案），再在 `docs/superpowers/plans/` 写任务计划，然后实现；实现完成后把 spec 的状态改为「已实现」。
+- **修改现有行为：** 同步更新所属 spec 的现状描述，以及 README 中受影响的用法说明。
+- **修 bug：** 能直接定位就直接修，补一个能复现的测试；不新建设计文档。
+- **提交信息：** 沿用现有前缀 `feat:` / `fix:` / `docs:` / `test:` / `refactor:`。
+- **完成前：** 至少运行 `npm run check` 和 `npm run build`；只报告实际运行的命令和结果。
+
+## 文档治理
+
+每个事实只有一个归属层级；其他位置链接过去，不复制。
+
+| 层级 | 职责 | 不放 |
+|---|---|---|
+| 根 `AGENTS.md`（本文件） | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则 | 产品用法、设计细节、任务清单 |
+| [README.md](README.md) | 面向用户的产品行为、使用方式、数据来源 | 实现细节、评审记录、未做的计划 |
+| `docs/engineering/` | 工程规范与门禁的现状：规则分组、取舍、例外清单 | 产品用法、任务清单 |
+| `docs/superpowers/specs/` | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案 | 逐步实现步骤 |
+| `docs/superpowers/plans/` | 一份可执行计划：Goal、Architecture、Global Constraints、任务与 checkbox | 设计取舍的长篇论证 |
+| [types.ts](src/types.ts)、代码注释、测试 | 当前契约与行为可执行的事实 | 历史、计划、评审叙述 |
+
+写作规则：
+
+- **描述当前状态。** 历史留在 git；未做的内容留在 spec 的「非目标」或 plan 里，不写进 README。
+- **一个事实只写一次。** 发现重复规则时保留一处，其余改为链接。
+- **不手抄生成内容。** 配置项清单、版本表、测试清单以生成物或测试为准。
+- **不写实现流水账和评审对话。** 只保留结论、约束、失败模式和验证方式。
+- **设计必须带取舍。** spec 的「已选方案」要列出被放弃的方案和原因。
+- **状态只用三种：** `待评审` / `已实现` / `已废弃`。实现完成时改状态，不补写实现过程；废弃时保留原因。
+- **文档与代码同一次改动更新。** 行为变更要么更新所属 spec，要么明确属于无需设计记录的 bug 修复。
+
+## 维护本文件
+
+本文件只保留每次会话都需要的规则；能放到具体文档的细节，放到那里并链接。新增规则时优先改现有条目，不追加同义规则。规则应与代码或脚本可核对；发现规则与现状不符时，先修正事实，再改规则。

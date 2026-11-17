@@ -1,4 +1,5 @@
 import type { DictFile, DirectiveDoc, ParsedLine } from '../types';
+
 import zhNotes from '../data/zh-notes.json';
 
 export interface SearchHit {
@@ -11,11 +12,7 @@ export interface SearchHit {
 
 const notes = zhNotes as Record<string, string>;
 
-export function searchDirectives(
-  dict: DictFile,
-  query: string,
-  configured: Set<string>,
-): SearchHit[] {
+export function searchDirectives(dict: DictFile, query: string, configured: Set<string>): SearchHit[] {
   const needle = query.trim().toLowerCase();
   const hits: { hit: SearchHit; score: number }[] = [];
 
@@ -24,12 +21,19 @@ export function searchDirectives(
     const comment = directive.comment.join(' ');
     let score = 0;
 
-    if (!needle) score = 1;
-    else if (directive.name.toLowerCase().includes(needle)) score = 3;
-    else if (summary?.toLowerCase().includes(needle)) score = 2;
-    else if (comment.toLowerCase().includes(needle)) score = 1;
+    if (!needle) {
+      score = 1;
+    } else if (directive.name.toLowerCase().includes(needle)) {
+      score = 3;
+    } else if (summary?.toLowerCase().includes(needle)) {
+      score = 2;
+    } else if (comment.toLowerCase().includes(needle)) {
+      score = 1;
+    }
 
-    if (!score) continue;
+    if (!score) {
+      continue;
+    }
     hits.push({
       score,
       hit: {
@@ -58,14 +62,15 @@ export function insertDirective(
   const sectionOrder = new Map(dict.sections.map((section, index) => [section.id, index]));
   const docs = new Map(dict.directives.map((directive) => [directive.name, directive]));
   const targetIndex = sectionOrder.get(doc.section) ?? -1;
-  const content =
-    doc.defaultValue === null ? `# ${doc.name} <${doc.type}>` : `${doc.name} ${doc.defaultValue}`;
+  const content = doc.defaultValue === null ? `# ${doc.name} <${doc.type}>` : `${doc.name} ${doc.defaultValue}`;
 
   let insertAt = -1;
 
   for (let i = 0; i < rows.length; i += 1) {
     const banner = /^#{5,}\s*(.+?)\s*#{5,}\s*$/.exec(rows[i].trim());
-    if (!banner) continue;
+    if (!banner) {
+      continue;
+    }
     const index = sectionOrder.get(banner[1]);
     if (index !== undefined && index > targetIndex) {
       insertAt = i;
@@ -75,9 +80,11 @@ export function insertDirective(
 
   if (insertAt < 0) {
     for (const line of lines) {
-      if (line.kind !== 'directive' || !line.name) continue;
+      if (line.kind !== 'directive' || !line.name) {
+        continue;
+      }
       const directive = docs.get(line.name);
-      const index = directive ? sectionOrder.get(directive.section) ?? -1 : -1;
+      const index = directive ? (sectionOrder.get(directive.section) ?? -1) : -1;
       if (index > targetIndex) {
         insertAt = line.lineNo - 1;
         break;

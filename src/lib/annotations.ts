@@ -12,20 +12,31 @@ export function buildAnnotationBlocks(
   mode: AnnotationMode,
   onlyDiff = false,
 ): AnnotationBlock[] {
-  if (mode === 'off') return [];
+  if (mode === 'off') {
+    return [];
+  }
   const blocks: AnnotationBlock[] = [];
 
   for (const line of lines) {
-    if (line.kind !== 'directive') continue;
+    if (line.kind !== 'directive') {
+      continue;
+    }
     const analysis = byLine.get(line.lineNo);
     const doc = analysis?.doc;
-    if (!analysis || !doc || doc.comment.length === 0) continue;
-    if (onlyDiff && (analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special')) {
+    if (!analysis || !doc || doc.comment.length === 0) {
+      continue;
+    }
+    if (
+      onlyDiff &&
+      (analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special')
+    ) {
       continue;
     }
 
     const previous = lines.find((item) => item.lineNo === line.lineNo - 1);
-    if (mode === 'missing' && previous?.kind === 'comment') continue;
+    if (mode === 'missing' && previous?.kind === 'comment') {
+      continue;
+    }
 
     const defaultText = doc.defaultValue === null ? '官方未给出' : doc.defaultValue;
     blocks.push({

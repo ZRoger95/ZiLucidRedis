@@ -1,12 +1,33 @@
 const NAME_RE = /^[A-Za-z][A-Za-z0-9-]*$/;
 const SECTION_RE = /^#{5,}\s*(.+?)\s*#{5,}\s*$/;
 
-function tokenize(input) {
-  const args = [];
+export interface OfficialSection {
+  id: string;
+  title: string;
+  startLine: number;
+}
+
+export interface OfficialDirective {
+  comment: string[];
+  commentedValues: string[][];
+  section: string;
+}
+
+export interface OfficialConf {
+  sections: OfficialSection[];
+  byName: Map<string, OfficialDirective>;
+}
+
+function tokenize(input: string): string[] {
+  const args: string[] = [];
   let i = 0;
   while (i < input.length) {
-    while (i < input.length && /\s/.test(input[i])) i += 1;
-    if (i >= input.length) break;
+    while (i < input.length && /\s/.test(input[i])) {
+      i += 1;
+    }
+    if (i >= input.length) {
+      break;
+    }
     const quote = input[i];
     if (quote === '"' || quote === "'") {
       let value = '';
@@ -37,32 +58,42 @@ function tokenize(input) {
   return args;
 }
 
-const isDirectiveLine = (line) => {
+const isDirectiveLine = (line: string): boolean => {
   const trimmed = line.trim();
-  if (!trimmed || trimmed.startsWith('#')) return false;
+  if (!trimmed || trimmed.startsWith('#')) {
+    return false;
+  }
   return NAME_RE.test(trimmed.split(/\s+/)[0]);
 };
 
-export function parseOfficialConf(source) {
+export function parseOfficialConf(source: string): OfficialConf {
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
-  const sections = [];
-  const byName = new Map();
+  const sections: OfficialSection[] = [];
+  const byName = new Map<string, OfficialDirective>();
   let section = 'MISC';
 
-  const ensure = (name) => {
-    if (!byName.has(name)) byName.set(name, { comment: [], commentedValues: [], section });
-    return byName.get(name);
+  const ensure = (name: string): OfficialDirective => {
+    let entry = byName.get(name);
+    if (!entry) {
+      entry = { comment: [], commentedValues: [], section };
+      byName.set(name, entry);
+    }
+    return entry;
   };
 
-  const blockAbove = (index) => {
-    const block = [];
+  const blockAbove = (index: number): string[] => {
+    const block: string[] = [];
     let j = index - 1;
     while (j >= 0 && lines[j].trim().startsWith('#')) {
       block.unshift(lines[j].trim().replace(/^#+\s?/, ''));
       j -= 1;
     }
-    while (block.length && block[0] === '') block.shift();
-    while (block.length && block[block.length - 1] === '') block.pop();
+    while (block.length && block[0] === '') {
+      block.shift();
+    }
+    while (block.length && block[block.length - 1] === '') {
+      block.pop();
+    }
     return block;
   };
 
@@ -79,22 +110,36 @@ export function parseOfficialConf(source) {
       const name = line.trim().split(/\s+/)[0];
       const first = !byName.has(name);
       const entry = ensure(name);
-      if (first) entry.comment = blockAbove(i);
+      if (first) {
+        entry.comment = blockAbove(i);
+      }
       continue;
     }
 
     const commented = /^\s*#+\s*([A-Za-z][A-Za-z0-9-]*)(?:\s+(.*))?$/.exec(line);
-    if (!commented) continue;
+    if (!commented) {
+      continue;
+    }
     const [, name, rest = ''] = commented;
     // 散文里的首词多是大写开头，配置指令一律小写
-    if (name !== name.toLowerCase()) continue;
+    if (name !== name.toLowerCase()) {
+      continue;
+    }
     const first = !byName.has(name);
     const entry = ensure(name);
-    if (first) entry.comment = blockAbove(i);
-    if (rest.trim() === '') continue;
-    if (rest.includes('#')) continue;
+    if (first) {
+      entry.comment = blockAbove(i);
+    }
+    if (rest.trim() === '') {
+      continue;
+    }
+    if (rest.includes('#')) {
+      continue;
+    }
     const args = tokenize(rest);
-    if (args.some((arg) => arg.includes('<') || arg.includes('>'))) continue;
+    if (args.some((arg) => arg.includes('<') || arg.includes('>'))) {
+      continue;
+    }
     entry.commentedValues.push(args.length === 1 && args[0] === '' ? [] : args);
   }
 

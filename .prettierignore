@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+data/upstream
+.screenshots
+.trae-html-share-packages
+src/data/dict
+src/data/official
+package-lock.json

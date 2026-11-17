@@ -11,7 +11,9 @@ const NUMERIC_TYPES = new Set(['ulonglong', 'longlong', 'ulong', 'long', 'uint',
 
 export function parseMemory(token: string): number | null {
   const match = /^\s*(\d+(?:\.\d+)?)\s*(tb|gb|mb|kb|b|t|g|m|k)?\s*$/i.exec(token);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const value = Number(match[1]);
   const unit = (match[2] ?? 'b').toLowerCase();
   const size = UNITS.find(([name]) => name === `${unit}b` || name[0] === unit[0])?.[1] ?? 1;
@@ -20,7 +22,9 @@ export function parseMemory(token: string): number | null {
 
 export function formatBytes(bytes: number): string {
   for (const [unit, size] of UNITS) {
-    if (bytes >= size && bytes % size === 0) return `${bytes / size}${unit}`;
+    if (bytes >= size && bytes % size === 0) {
+      return `${bytes / size}${unit}`;
+    }
   }
   return `${bytes}b`;
 }
@@ -35,7 +39,9 @@ const unquoteToken = (token: string) => {
 
 export function normalizeValue(doc: DirectiveDoc | undefined, args: string[]): string {
   const tokens = args.map(unquoteToken).filter((arg) => arg.length > 0);
-  if (tokens.length === 0) return '';
+  if (tokens.length === 0) {
+    return '';
+  }
 
   const type = doc?.type ?? '';
   if (NUMERIC_TYPES.has(type)) {

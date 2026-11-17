@@ -559,9 +559,6 @@ button {
   margin: 12px 0;
 }
 
-
-
-
 .empty {
   display: flex;
   flex: 1;
@@ -836,4 +833,3 @@ button {
 .diff-row.is-special .diff-cell.left {
   background: #f9fafb;
 }
-

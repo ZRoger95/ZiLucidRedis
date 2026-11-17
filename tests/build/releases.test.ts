@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
-import { needsRedownload, pickStableReleases } from '../../scripts/lib/releases.mjs';
+
+import { needsRedownload, pickStableReleases } from '../../scripts/lib/releases.ts';
 
 const stable = (tag: string, date: string) => ({
   tag_name: tag,

@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { buildAnnotationBlocks } from '../src/lib/annotations';
 import { parseConf } from '../src/lib/parseConf';
 

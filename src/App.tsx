@@ -1,34 +1,42 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Button } from '@ui-sdk/react/button';
 import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
-import { Button } from '@ui-sdk/react/button';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+
+import type { ExportKind } from './components/ExportMenu';
 import type { AnnotationMode, DictFile, MetaIndex, PersistedState } from './types';
-import { buildAnnotationBlocks } from './lib/annotations';
-import { DEFAULT_VERSION, loadDict, loadMeta, loadOfficialConf } from './lib/dict';
-import { parseConf, decodeConfBytes } from './lib/parseConf';
-import { analyze } from './lib/analyze';
-import { evaluateRisks } from './lib/risks';
-import { describeDirective } from './lib/describe';
-import { replaceSecrets } from './lib/secrets';
-import { insertDirective } from './lib/search';
-import { indexOfficialLines } from './lib/official';
-import { normalizeConfig } from './lib/normalizeConf';
-import { buildDiff, applyDefaultLine } from './lib/diff';
-import { exportOriginal, exportWithComments, exportWithSecrets, suggestFileName } from './lib/exportConf';
-import { loadState, saveState } from './lib/persistence';
-import { aliases } from './data/aliases';
-import zhNotes from './data/zh-notes.json';
-import { Toolbar } from './components/Toolbar';
-import { SummaryBar } from './components/SummaryBar';
+
+import { DetailPanel } from './components/DetailPanel';
 import { DiffView } from './components/DiffView';
 import { Editor } from './components/Editor';
-import { OfficialPane } from './components/OfficialPane';
-import { DetailPanel } from './components/DetailPanel';
-import { SearchPalette } from './components/SearchPalette';
 import { EmptyState } from './components/EmptyState';
-import type { ExportKind } from './components/ExportMenu';
+import { OfficialPane } from './components/OfficialPane';
+import { SearchPalette } from './components/SearchPalette';
+import { SummaryBar } from './components/SummaryBar';
+import { Toolbar } from './components/Toolbar';
+import { aliases } from './data/aliases';
+import zhNotes from './data/zh-notes.json';
+import { analyze } from './lib/analyze';
+import { buildAnnotationBlocks } from './lib/annotations';
+import { describeDirective } from './lib/describe';
+import { DEFAULT_VERSION, loadDict, loadMeta, loadOfficialConf } from './lib/dict';
+import { applyDefaultLine, buildDiff } from './lib/diff';
+import { exportOriginal, exportWithComments, exportWithSecrets, suggestFileName } from './lib/exportConf';
+import { normalizeConfig } from './lib/normalizeConf';
+import { indexOfficialLines } from './lib/official';
+import { decodeConfBytes, parseConf } from './lib/parseConf';
+import { loadState, saveState } from './lib/persistence';
+import { evaluateRisks } from './lib/risks';
+import { insertDirective } from './lib/search';
+import { replaceSecrets } from './lib/secrets';
 
 const notes = zhNotes as Record<string, string>;
+
+interface VersionData {
+  line: string;
+  dict: DictFile;
+  official: { text: string; tag: string; publishedAt?: string };
+}
 
 export default function App() {
   const [initial] = useState<PersistedState | null>(() => loadState());
@@ -39,10 +47,9 @@ export default function App() {
   const [annotationMode, setAnnotationMode] = useState<AnnotationMode>(initial?.annotationMode ?? 'missing');
   const [bottomCollapsed, setBottomCollapsed] = useState(initial?.bottomCollapsed ?? false);
 
-  const [dict, setDict] = useState<DictFile | null>(null);
+  const [versionData, setVersionData] = useState<VersionData | null>(null);
   const [meta, setMeta] = useState<MetaIndex>({});
-  const [official, setOfficial] = useState<{ text: string; tag: string; publishedAt?: string } | null>(null);
-  const [dictError, setDictError] = useState<string | null>(null);
+  const [dictError, setDictError] = useState<{ line: string; message: string } | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
   const [jump, setJump] = useState<{ lineNo: number; nonce: number } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -51,20 +58,30 @@ export default function App() {
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // 版本数据在加载完成前保持“未就绪”，用版本号比对代替 effect 里的同步 setState(null)
+  const dict = versionData?.line === line ? versionData.dict : null;
+  const official = versionData?.line === line ? versionData.official : null;
+  const activeDictError = dictError?.line === line ? dictError.message : null;
+
   useEffect(() => {
     let cancelled = false;
-    setDict(null);
-    setOfficial(null);
     Promise.all([loadDict(line), loadMeta(), loadOfficialConf(line)])
       .then(([nextDict, nextMeta, nextOfficial]) => {
-        if (cancelled) return;
-        setDict(nextDict);
+        if (cancelled) {
+          return;
+        }
+        setVersionData({
+          line,
+          dict: nextDict,
+          official: { text: nextOfficial, tag: nextDict.tag, publishedAt: nextDict.publishedAt },
+        });
         setMeta(nextMeta);
-        setOfficial({ text: nextOfficial, tag: nextDict.tag, publishedAt: nextDict.publishedAt });
         setDictError(null);
       })
       .catch((error: Error) => {
-        if (!cancelled) setDictError(error.message);
+        if (!cancelled) {
+          setDictError({ line, message: error.message });
+        }
       });
     return () => {
       cancelled = true;
@@ -81,14 +98,9 @@ export default function App() {
     () => (dict && analysis ? buildDiff(analysis, dict, warnings, { onlyDiff }) : null),
     [dict, analysis, warnings, onlyDiff],
   );
-  const riskLines = useMemo(
-    () => new Set(warnings.flatMap((warning) => warning.lineNos)),
-    [warnings],
-  );
+  const riskLines = useMemo(() => new Set(warnings.flatMap((warning) => warning.lineNos)), [warnings]);
   const hasContent = useMemo(() => parsed.some((item) => item.kind === 'directive'), [parsed]);
-  const baseline = official
-    ? [official.tag, official.publishedAt?.slice(0, 10)].filter(Boolean).join(' · ')
-    : '';
+  const baseline = official ? [official.tag, official.publishedAt?.slice(0, 10)].filter(Boolean).join(' · ') : '';
   const blocks = useMemo(
     () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff) : []),
     [analysis, annotationMode, onlyDiff],
@@ -97,33 +109,46 @@ export default function App() {
 
   const officialHighlights = useMemo(() => {
     const lines = new Set<number>();
-    if (!analysis) return lines;
+    if (!analysis) {
+      return lines;
+    }
     for (const [lineNo, entry] of analysis.byLine) {
-      if (entry.status !== 'changed' && entry.status !== 'unknown' && entry.status !== 'newer' && entry.status !== 'duplicate') {
+      if (
+        entry.status !== 'changed' &&
+        entry.status !== 'unknown' &&
+        entry.status !== 'newer' &&
+        entry.status !== 'duplicate'
+      ) {
         continue;
       }
       const name = analysis.lines[lineNo - 1]?.name;
       const target = name ? officialIndex.get(name) : undefined;
-      if (target) lines.add(target);
+      if (target) {
+        lines.add(target);
+      }
     }
     return lines;
   }, [analysis, officialIndex]);
 
   const cursorAnalysis = analysis?.byLine.get(cursorLine);
-  const cursorArgs = parsed.find((item) => item.lineNo === cursorLine)?.args ?? [];
-  const view = useMemo(
-    () => describeDirective(cursorAnalysis?.doc, cursorAnalysis, notes, showZh, cursorArgs),
-    [cursorAnalysis, showZh, cursorArgs],
-  );
+  const view = useMemo(() => {
+    const cursorArgs = parsed.find((item) => item.lineNo === cursorLine)?.args ?? [];
+    return describeDirective(cursorAnalysis?.doc, cursorAnalysis, notes, showZh, cursorArgs);
+  }, [cursorAnalysis, cursorLine, parsed, showZh]);
 
   const officialFocus = useMemo(() => {
-    if (!cursorAnalysis?.doc) return null;
+    if (!cursorAnalysis?.doc) {
+      return null;
+    }
     const lineNo = officialIndex.get(cursorAnalysis.doc.name);
     return lineNo ? { lineNo, nonce: cursorLine } : null;
   }, [cursorAnalysis, officialIndex, cursorLine]);
 
+  // 写入 localStorage 属于外部系统副作用，只能放在 effect 里
   useEffect(() => {
-    if (!dict) return;
+    if (!dict) {
+      return;
+    }
     try {
       saveState({ v: 1, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed });
     } catch {
@@ -141,7 +166,9 @@ export default function App() {
       const normalized = normalizeConfig(replaced, officialIndex);
       next = normalized.text;
       sortNote = `已移除 ${normalized.droppedComments} 行注释，并按官方顺序重排 ${normalized.kept} 行配置`;
-      if (normalized.unknown.length) sortNote += `；${normalized.unknown.length} 行无法识别的指令排在末尾`;
+      if (normalized.unknown.length) {
+        sortNote += `；${normalized.unknown.length} 行无法识别的指令排在末尾`;
+      }
       sortNote += '。';
     }
     setText(next);
@@ -152,13 +179,17 @@ export default function App() {
   };
 
   const loadOfficialIntoEditor = () => {
-    if (!official) return;
+    if (!official) {
+      return;
+    }
     importText(official.text, `redis-${line}.conf`, false);
   };
 
   const readFile = async (file: File) => {
     const { text: decoded, warning } = decodeConfBytes(await file.arrayBuffer());
-    if (warning) setNotice(warning);
+    if (warning) {
+      setNotice(warning);
+    }
     importText(decoded, file.name);
   };
 
@@ -172,7 +203,9 @@ export default function App() {
       setSearchOpen(true);
       return;
     }
-    if (!analysis) return;
+    if (!analysis) {
+      return;
+    }
     for (const [lineNo, entry] of analysis.byLine) {
       if (entry.status === kind) {
         jumpToLine(lineNo);
@@ -183,7 +216,9 @@ export default function App() {
 
   const handleInsertDefault = () => {
     const doc = cursorAnalysis?.doc;
-    if (!doc || doc.defaultValue === null) return;
+    if (!doc || doc.defaultValue === null) {
+      return;
+    }
     const rows = text.split('\n');
     const current = rows[cursorLine - 1] ?? '';
     const indent = /^\s*/.exec(current)?.[0] ?? '';
@@ -199,14 +234,20 @@ export default function App() {
   };
 
   const handlePick = (name: string, exists: boolean) => {
-    if (!dict || !analysis) return;
+    if (!dict || !analysis) {
+      return;
+    }
     if (exists) {
       const lineNo = analysis.firstLineOf.get(name);
-      if (lineNo) jumpToLine(lineNo);
+      if (lineNo) {
+        jumpToLine(lineNo);
+      }
       return;
     }
     const doc = dict.directives.find((directive) => directive.name === name);
-    if (!doc) return;
+    if (!doc) {
+      return;
+    }
     const result = insertDirective(text, parsed, doc, dict);
     setText(result.text);
     jumpToLine(result.lineNo);
@@ -223,15 +264,44 @@ export default function App() {
   };
 
   const handleExport = (kind: ExportKind) => {
-    if (!dict) return;
-    if (kind === 'original') download(exportOriginal(text));
-    else if (kind === 'comments') download(exportWithComments(parsed, dict));
-    else {
-      if (!vault.size) return;
+    if (!dict) {
+      return;
+    }
+    if (kind === 'original') {
+      download(exportOriginal(text));
+    } else if (kind === 'comments') {
+      download(exportWithComments(parsed, dict));
+    } else {
+      if (!vault.size) {
+        return;
+      }
       const ok = window.confirm('导出的文件将包含明文密码，确认继续？');
-      if (ok) download(exportWithSecrets(text, vault));
+      if (ok) {
+        download(exportWithSecrets(text, vault));
+      }
     }
   };
+
+  let editorBody: ReactNode;
+  if (text.trim() === '') {
+    editorBody = <EmptyState onOfficial={loadOfficialIntoEditor} onUpload={() => fileInput.current?.click()} />;
+  } else if (analysis) {
+    editorBody = (
+      <Editor
+        value={text}
+        result={analysis}
+        blocks={blocks}
+        onlyDiff={onlyDiff}
+        forceVisibleLines={riskLines}
+        jumpTo={jump}
+        onChange={setText}
+        onCursorLine={setCursorLine}
+        onCommitComment={handleCommitComment}
+      />
+    );
+  } else {
+    editorBody = <div className="empty">正在加载 {line} 的配置项字典…</div>;
+  }
 
   return (
     <main
@@ -240,7 +310,9 @@ export default function App() {
       onDrop={(event) => {
         event.preventDefault();
         const file = event.dataTransfer.files?.[0];
-        if (file) void readFile(file);
+        if (file) {
+          void readFile(file);
+        }
       }}
     >
       <Toolbar
@@ -276,34 +348,22 @@ export default function App() {
       ) : null}
 
       {notice ? <div className="banner">{notice}</div> : null}
-      {dictError ? <div className="banner">字典加载失败：{dictError}</div> : null}
+      {activeDictError ? <div className="banner">字典加载失败：{activeDictError}</div> : null}
 
       <div className="app-body">
         <div className="workspace">
           <section className="pane" aria-label="你的配置">
             <div className="pane-head">
               <strong>你的配置</strong>
-              {analysis ? <span>{parsed.length} 行 · 已改 {analysis.counts.changed}</span> : null}
+              {analysis ? (
+                <span>
+                  {parsed.length} 行 · 已改 {analysis.counts.changed}
+                </span>
+              ) : null}
               <span className="spacer" />
               <span className="pane-hint">可直接编辑；导入文件时会去注释、按官方顺序重排</span>
             </div>
-            {text.trim() === '' ? (
-              <EmptyState onOfficial={loadOfficialIntoEditor} onUpload={() => fileInput.current?.click()} />
-            ) : analysis ? (
-              <Editor
-                value={text}
-                result={analysis}
-                blocks={blocks}
-                onlyDiff={onlyDiff}
-                forceVisibleLines={riskLines}
-                jumpTo={jump}
-                onChange={setText}
-                onCursorLine={setCursorLine}
-                onCommitComment={handleCommitComment}
-              />
-            ) : (
-              <div className="empty">正在加载 {line} 的配置项字典…</div>
-            )}
+            {editorBody}
           </section>
 
           <section className="pane pane-official" aria-label="官方完整配置">
@@ -359,7 +419,9 @@ export default function App() {
                 lineNo={cursorAnalysis ? cursorLine : null}
                 onInsertDefault={handleInsertDefault}
                 onCopy={() => {
-                  if (view.defaultText) void navigator.clipboard?.writeText(view.defaultText);
+                  if (view.defaultText) {
+                    void navigator.clipboard?.writeText(view.defaultText);
+                  }
                 }}
               />
             </TabsPanel>
@@ -368,7 +430,8 @@ export default function App() {
       </div>
 
       <div className="footnote">
-        左边是你的配置（导入时自动去注释、按官方顺序重排），右边是当前版本官方完整 redis.conf；所有解析都在浏览器内完成，配置内容不会上传。
+        左边是你的配置（导入时自动去注释、按官方顺序重排），右边是当前版本官方完整
+        redis.conf；所有解析都在浏览器内完成，配置内容不会上传。
       </div>
 
       <input
@@ -378,7 +441,9 @@ export default function App() {
         style={{ display: 'none' }}
         onChange={(event) => {
           const file = event.target.files?.[0];
-          if (file) void readFile(file);
+          if (file) {
+            void readFile(file);
+          }
           event.target.value = '';
         }}
       />

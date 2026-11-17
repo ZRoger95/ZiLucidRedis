@@ -1,24 +1,26 @@
-import type {
-  AnalysisResult,
-  DictFile,
-  LineAnalysis,
-  MetaIndex,
-  ParsedLine,
-  Status,
-} from '../types';
+import type { AnalysisResult, DictFile, LineAnalysis, MetaIndex, ParsedLine, Status } from '../types';
+
 import { normalizeValue } from './normalize';
 import { tokenizeArgs } from './parseConf';
 
 const IMPORTANT = ['maxmemory', 'maxmemory-policy', 'appendonly', 'save', 'protected-mode', 'bind'];
 export const SPECIAL_NAMES = new Set(['include', 'loadmodule', 'rename-command', 'aclfile', 'user']);
-export const MULTI_VALUE_NAMES = new Set(['save', 'client-output-buffer-limit', 'rename-command', 'user', 'loadmodule']);
+export const MULTI_VALUE_NAMES = new Set([
+  'save',
+  'client-output-buffer-limit',
+  'rename-command',
+  'user',
+  'loadmodule',
+]);
 
 export function compareLines(a: string, b: string): number {
   const left = a.split('.').map(Number);
   const right = b.split('.').map(Number);
   for (let i = 0; i < Math.max(left.length, right.length); i += 1) {
     const diff = (left[i] ?? 0) - (right[i] ?? 0);
-    if (diff !== 0) return diff;
+    if (diff !== 0) {
+      return diff;
+    }
   }
   return 0;
 }
@@ -39,21 +41,29 @@ export function analyze(
 
   const resolve = (name: string) => {
     const direct = docs.get(name);
-    if (direct) return { doc: direct, canonical: name };
+    if (direct) {
+      return { doc: direct, canonical: name };
+    }
     const alias = aliases[name];
     const aliased = alias ? docs.get(alias) : undefined;
-    if (aliased) return { doc: aliased, canonical: alias };
+    if (aliased) {
+      return { doc: aliased, canonical: alias };
+    }
     return { doc: undefined, canonical: alias ?? name };
   };
 
   for (const entry of lines) {
-    if (entry.kind !== 'directive' || !entry.name) continue;
+    if (entry.kind !== 'directive' || !entry.name) {
+      continue;
+    }
     const args = entry.args ?? [];
     const { doc, canonical } = resolve(entry.name);
     const list = occurrences.get(canonical) ?? [];
     list.push(entry.lineNo);
     occurrences.set(canonical, list);
-    if (!firstLineOf.has(canonical)) firstLineOf.set(canonical, entry.lineNo);
+    if (!firstLineOf.has(canonical)) {
+      firstLineOf.set(canonical, entry.lineNo);
+    }
 
     let status: Status;
     let note: string | undefined;
@@ -61,8 +71,9 @@ export function analyze(
     if (SPECIAL_NAMES.has(entry.name)) {
       status = 'special';
     } else if (doc) {
-      if (doc.defaultValue === null) status = 'no-default';
-      else {
+      if (doc.defaultValue === null) {
+        status = 'no-default';
+      } else {
         const defaults = tokenizeArgs(doc.defaultValue).args;
         status = normalizeValue(doc, args) === normalizeValue(doc, defaults) ? 'default' : 'changed';
       }
@@ -70,7 +81,9 @@ export function analyze(
       const entryMeta = meta[canonical];
       if (entryMeta.removedIn && compareLines(entryMeta.removedIn, line) <= 0) {
         status = 'removed';
-        note = entryMeta.renamedTo ? `已在 ${entryMeta.removedIn} 移除，改用 ${entryMeta.renamedTo}` : `已在 ${entryMeta.removedIn} 移除`;
+        note = entryMeta.renamedTo
+          ? `已在 ${entryMeta.removedIn} 移除，改用 ${entryMeta.renamedTo}`
+          : `已在 ${entryMeta.removedIn} 移除`;
       } else if (compareLines(entryMeta.introducedIn, line) > 0) {
         status = 'newer';
         note = `该指令从 ${entryMeta.introducedIn} 才开始支持`;
@@ -91,18 +104,32 @@ export function analyze(
       }
     }
 
-    if (status === 'changed') counts.changed += 1;
-    if (status === 'unknown') counts.unknown += 1;
-    if (status === 'removed') counts.removed += 1;
-    if (status === 'newer') counts.newer += 1;
-    if (status === 'duplicate') counts.duplicate += 1;
+    if (status === 'changed') {
+      counts.changed += 1;
+    }
+    if (status === 'unknown') {
+      counts.unknown += 1;
+    }
+    if (status === 'removed') {
+      counts.removed += 1;
+    }
+    if (status === 'newer') {
+      counts.newer += 1;
+    }
+    if (status === 'duplicate') {
+      counts.duplicate += 1;
+    }
 
     byLine.set(entry.lineNo, { lineNo: entry.lineNo, status, doc, note });
   }
 
   for (const [name, doc] of docs) {
-    if (effective.has(name)) continue;
-    if (doc.defaultValue === null) continue;
+    if (effective.has(name)) {
+      continue;
+    }
+    if (doc.defaultValue === null) {
+      continue;
+    }
     effective.set(name, tokenizeArgs(doc.defaultValue).args);
   }
 

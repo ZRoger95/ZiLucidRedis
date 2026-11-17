@@ -51,9 +51,11 @@ npm run preview    # 预览构建产物
 更新字典：
 
 ```bash
-node scripts/fetch-upstream.mjs   # 解析各 minor 线最新正式 release，写入 lock.json 并下载
-node scripts/build-dict.mjs       # 生成 src/data/dict/<line>.json、releases.json 与 meta.json
+node scripts/fetch-upstream.ts   # 解析各 minor 线最新正式 release，写入 lock.json 并下载
+node scripts/build-dict.ts       # 生成 src/data/dict/<line>.json、releases.json 与 meta.json
 ```
+
+脚本由 Node 原生 TypeScript 直接运行，需要 Node 22.18+（本项目使用 Node 24）。
 
 构建断言失败时会列出需要人工确认的指令：确实没有默认值的写进 `src/data/no-default.json`，
 解析不到的写进 `src/data/defaults-override.json`。跨版本改名写在 `src/data/renames.json`。

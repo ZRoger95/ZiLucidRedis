@@ -1,4 +1,5 @@
 import type { AnalysisResult, DictFile, RiskWarning } from '../types';
+
 import rules from '../data/risk-rules.json';
 
 type Rule = (value: (name: string) => string, has: (name: string) => boolean) => boolean | string;
@@ -64,7 +65,9 @@ export function evaluateRisks(result: AnalysisResult, dict: DictFile): RiskWarni
 
   for (const [id, config] of Object.entries(rules)) {
     const predicate = predicates[id];
-    if (!predicate || !known.has(predicate.drive) || !predicate.test(value, has)) continue;
+    if (!predicate || !known.has(predicate.drive) || !predicate.test(value, has)) {
+      continue;
+    }
     const lineNo = result.firstLineOf.get(predicate.drive);
     warnings.push({
       id,

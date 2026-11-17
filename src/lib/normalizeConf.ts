@@ -23,7 +23,9 @@ export function normalizeConfig(text: string, officialIndex: Map<string, number>
     if (line.kind === 'directive' && line.name) {
       const order = officialIndex.get(line.name) ?? Number.MAX_SAFE_INTEGER;
       entries.push({ raw: line.raw.trim(), order, index: line.lineNo, name: line.name });
-      if (order === Number.MAX_SAFE_INTEGER) unknown.push(line.raw.trim());
+      if (order === Number.MAX_SAFE_INTEGER) {
+        unknown.push(line.raw.trim());
+      }
       continue;
     }
     if (line.kind === 'unknown') {
@@ -31,7 +33,9 @@ export function normalizeConfig(text: string, officialIndex: Map<string, number>
       unknown.push(line.raw.trim());
       continue;
     }
-    if (line.kind === 'comment') droppedComments += 1;
+    if (line.kind === 'comment') {
+      droppedComments += 1;
+    }
   }
 
   entries.sort((a, b) => a.order - b.order || a.index - b.index);

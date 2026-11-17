@@ -52,15 +52,7 @@ export interface MetaEntry {
 
 export type MetaIndex = Record<string, MetaEntry>;
 
-export type Status =
-  | 'default'
-  | 'changed'
-  | 'no-default'
-  | 'unknown'
-  | 'removed'
-  | 'newer'
-  | 'duplicate'
-  | 'special';
+export type Status = 'default' | 'changed' | 'no-default' | 'unknown' | 'removed' | 'newer' | 'duplicate' | 'special';
 
 export interface LineAnalysis {
   lineNo: number;

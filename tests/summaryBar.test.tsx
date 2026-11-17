@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+
 import { SummaryBar } from '../src/components/SummaryBar';
 
 test('shows each count and the missing list', () => {

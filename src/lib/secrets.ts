@@ -1,9 +1,4 @@
-const SENSITIVE_NAMES = new Set([
-  'requirepass',
-  'masterauth',
-  'tls-key-file-pass',
-  'tls-client-key-file-pass',
-]);
+const SENSITIVE_NAMES = new Set(['requirepass', 'masterauth', 'tls-key-file-pass', 'tls-client-key-file-pass']);
 
 const PLACEHOLDER_RE = /\$\{env_[^}]+\}/;
 
@@ -15,13 +10,17 @@ interface LineShape {
 
 function shapeLine(raw: string): LineShape | null {
   const match = /^(\s*)([A-Za-z][A-Za-z0-9-]*)(\s+)(.*)$/.exec(raw);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   return { prefix: match[1], name: match[2], rest: match[4] };
 }
 
 function firstToken(rest: string): { token: string; start: number; end: number } | null {
   const match = /\S+/.exec(rest);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   return {
     token: match[0],
     start: match.index,
@@ -36,21 +35,29 @@ export function replaceSecrets(text: string): { text: string; vault: Map<string,
 
   const lines = text.split('\n').map((raw) => {
     const shape = shapeLine(raw);
-    if (!shape) return raw;
+    if (!shape) {
+      return raw;
+    }
 
     const isUser = shape.name === 'user';
-    if (!SENSITIVE_NAMES.has(shape.name) && !isUser) return raw;
+    if (!SENSITIVE_NAMES.has(shape.name) && !isUser) {
+      return raw;
+    }
 
-    let target: { token: string; start: number; end: number } | null = null;
+    let target: { token: string; start: number; end: number } | null;
     if (isUser) {
       const match = /(^|\s)(>[^\s]+)/.exec(shape.rest);
-      if (!match) return raw;
+      if (!match) {
+        return raw;
+      }
       const start = match.index + match[1].length;
       target = { token: match[2], start, end: start + match[2].length };
     } else {
       target = firstToken(shape.rest);
     }
-    if (!target || !target.token || PLACEHOLDER_RE.test(target.token)) return raw;
+    if (!target || !target.token || PLACEHOLDER_RE.test(target.token)) {
+      return raw;
+    }
 
     const key = isUser ? 'user-pass' : shape.name;
     const index = (counters.get(key) ?? 0) + 1;
@@ -67,13 +74,17 @@ export function replaceSecrets(text: string): { text: string; vault: Map<string,
 }
 
 export function restoreSecrets(text: string, vault: Map<string, string>): string {
-  if (vault.size === 0) return text;
+  if (vault.size === 0) {
+    return text;
+  }
   const counters = new Map<string, number>();
 
   return text
     .split('\n')
     .map((raw) => {
-      if (!PLACEHOLDER_RE.test(raw)) return raw;
+      if (!PLACEHOLDER_RE.test(raw)) {
+        return raw;
+      }
       return raw.replace(/\$\{env_([^}]+)\}/g, (whole, key: string) => {
         const index = (counters.get(key) ?? 0) + 1;
         counters.set(key, index);

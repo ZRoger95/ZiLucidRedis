@@ -1,7 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
-import { insertDirective, searchDirectives } from '../src/lib/search';
+
 import { parseConf } from '../src/lib/parseConf';
+import { insertDirective, searchDirectives } from '../src/lib/search';
 
 const dict = JSON.parse(readFileSync('tests/fixtures/dict-small.json', 'utf8'));
 

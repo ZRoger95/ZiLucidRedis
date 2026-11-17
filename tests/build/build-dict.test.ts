@@ -1,8 +1,9 @@
-import { expect, test } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { buildDictionary, buildMeta, buildReleasesList } from '../../scripts/build-dict.mjs';
-import { parseConfigC } from '../../scripts/lib/parse-config-c.mjs';
-import { parseOfficialConf } from '../../scripts/lib/parse-official-conf.mjs';
+import { expect, test } from 'vitest';
+
+import { buildDictionary, buildMeta, buildReleasesList } from '../../scripts/build-dict.ts';
+import { parseConfigC } from '../../scripts/lib/parse-config-c.ts';
+import { parseOfficialConf } from '../../scripts/lib/parse-official-conf.ts';
 
 const fixture = (path: string) => readFileSync(path, 'utf8');
 const dict = buildDictionary({

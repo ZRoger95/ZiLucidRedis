@@ -1,19 +1,36 @@
 const NAME_RE = /^[A-Za-z][A-Za-z0-9-]*$/;
-const MEMORY_UNITS = [
+const MEMORY_UNITS: Array<[string, number]> = [
   ['tb', 1099511627776],
   ['gb', 1073741824],
   ['mb', 1048576],
   ['kb', 1024],
 ];
 
-export function formatMemory(bytes) {
+export interface ConfigEntry {
+  name: string;
+  type: string;
+  defaultValue: string | null;
+  range: string | null;
+  sensitive: boolean;
+  modifiable: boolean;
+  multiArg: boolean;
+}
+
+export interface ConfigCResult {
+  entries: ConfigEntry[];
+  unresolved: string[];
+}
+
+export function formatMemory(bytes: number): string {
   for (const [unit, size] of MEMORY_UNITS) {
-    if (bytes >= size && bytes % size === 0) return `${bytes / size}${unit}`;
+    if (bytes >= size && bytes % size === 0) {
+      return `${bytes / size}${unit}`;
+    }
   }
   return String(bytes);
 }
 
-function skipString(source, index) {
+function skipString(source: string, index: number): number {
   const quote = source[index];
   let i = index + 1;
   while (i < source.length) {
@@ -21,14 +38,16 @@ function skipString(source, index) {
       i += 2;
       continue;
     }
-    if (source[i] === quote) return i + 1;
+    if (source[i] === quote) {
+      return i + 1;
+    }
     i += 1;
   }
   return i;
 }
 
-export function splitTopLevel(input) {
-  const args = [];
+export function splitTopLevel(input: string): string[] {
+  const args: string[] = [];
   let depth = 0;
   let current = '';
   let i = 0;
@@ -40,8 +59,12 @@ export function splitTopLevel(input) {
       i = end;
       continue;
     }
-    if (ch === '(' || ch === '{' || ch === '[') depth += 1;
-    if (ch === ')' || ch === '}' || ch === ']') depth -= 1;
+    if (ch === '(' || ch === '{' || ch === '[') {
+      depth += 1;
+    }
+    if (ch === ')' || ch === '}' || ch === ']') {
+      depth -= 1;
+    }
     if (ch === ',' && depth === 0) {
       args.push(current.trim());
       current = '';
@@ -51,14 +74,16 @@ export function splitTopLevel(input) {
     current += ch;
     i += 1;
   }
-  if (current.trim()) args.push(current.trim());
+  if (current.trim()) {
+    args.push(current.trim());
+  }
   return args;
 }
 
-function extractCalls(source) {
-  const calls = [];
+function extractCalls(source: string): Array<{ type: string; args: string[] }> {
+  const calls: Array<{ type: string; args: string[] }> = [];
   const pattern = /create([A-Za-z0-9_]+)Config\s*\(/g;
-  let match;
+  let match: RegExpExecArray | null;
   while ((match = pattern.exec(source)) !== null) {
     let depth = 1;
     let i = pattern.lastIndex;
@@ -68,10 +93,13 @@ function extractCalls(source) {
         i = skipString(source, i);
         continue;
       }
-      if (ch === '(') depth += 1;
-      else if (ch === ')') {
+      if (ch === '(') {
+        depth += 1;
+      } else if (ch === ')') {
         depth -= 1;
-        if (depth === 0) break;
+        if (depth === 0) {
+          break;
+        }
       }
       i += 1;
     }
@@ -81,18 +109,20 @@ function extractCalls(source) {
   return calls;
 }
 
-function buildEnumMap(source) {
-  const map = new Map();
-  const ambiguous = new Set();
+function buildEnumMap(source: string): { map: Map<string, string>; ambiguous: Set<string> } {
+  const map = new Map<string, string>();
+  const ambiguous = new Set<string>();
   for (const match of source.matchAll(/\{\s*"([^"]+)"\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*\}/g)) {
     const [, literal, constant] = match;
-    if (map.has(constant) && map.get(constant) !== literal) ambiguous.add(constant);
+    if (map.has(constant) && map.get(constant) !== literal) {
+      ambiguous.add(constant);
+    }
     map.set(constant, literal);
   }
   return { map, ambiguous };
 }
 
-function unquote(value) {
+function unquote(value: string): string {
   if (value.startsWith('"') && value.endsWith('"')) {
     return value.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\');
   }
@@ -101,17 +131,30 @@ function unquote(value) {
 
 const ARITHMETIC = /^[\d\s+\-*/().]+$/;
 
-function evalNumeric(raw) {
-  if (!ARITHMETIC.test(raw)) return null;
+function evalNumeric(raw: string): number | null {
+  if (!ARITHMETIC.test(raw)) {
+    return null;
+  }
   try {
-    const value = Function(`"use strict";return (${raw})`)();
+    const value: unknown = Function(`"use strict";return (${raw})`)();
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
   } catch {
     return null;
   }
 }
 
-const NUMERIC_TYPES = new Set(['uint', 'int', 'ulong', 'long', 'ulonglong', 'longlong', 'sizet', 'timet', 'offt', 'duration']);
+const NUMERIC_TYPES = new Set([
+  'uint',
+  'int',
+  'ulong',
+  'long',
+  'ulonglong',
+  'longlong',
+  'sizet',
+  'timet',
+  'offt',
+  'duration',
+]);
 
 const KNOWN_TYPES = new Set([
   'bool',
@@ -131,24 +174,30 @@ const KNOWN_TYPES = new Set([
   'special',
 ]);
 
-export function parseConfigC(source) {
+export function parseConfigC(source: string): ConfigCResult {
   const { map: enumMap, ambiguous } = buildEnumMap(source);
-  const entries = [];
-  const unresolved = [];
+  const entries: ConfigEntry[] = [];
+  const unresolved: string[] = [];
 
   for (const { type, args } of extractCalls(source)) {
-    if (!/^".*"$/.test(args[0] ?? '')) continue;
+    if (!/^".*"$/.test(args[0] ?? '')) {
+      continue;
+    }
     const name = unquote(args[0]);
-    if (!name || !NAME_RE.test(name) || name === 'NULL') continue;
-    if (entries.some((entry) => entry.name === name)) continue;
+    if (!name || !NAME_RE.test(name) || name === 'NULL') {
+      continue;
+    }
+    if (entries.some((entry) => entry.name === name)) {
+      continue;
+    }
 
-    const has = (flag) => args.some((arg) => arg.includes(flag));
+    const has = (flag: string): boolean => args.some((arg) => arg.includes(flag));
     const varIndex = args.findIndex((arg) => /^server\./.test(arg));
-    const rawDefault = varIndex >= 0 ? args[varIndex + 1] ?? 'NULL' : 'NULL';
+    const rawDefault = varIndex >= 0 ? (args[varIndex + 1] ?? 'NULL') : 'NULL';
     const memory = has('MEMORY_CONFIG');
     const special = type === 'special' || has('MULTI_ARG_CONFIG');
 
-    let defaultValue = null;
+    let defaultValue: string | null = null;
     if (!KNOWN_TYPES.has(type)) {
       defaultValue = null;
     } else if (!special) {
@@ -157,7 +206,8 @@ export function parseConfigC(source) {
       } else if (type === 'bool') {
         defaultValue = rawDefault === '1' ? 'yes' : 'no';
       } else if (type === 'enum') {
-        defaultValue = enumMap.has(rawDefault) && !ambiguous.has(rawDefault) ? enumMap.get(rawDefault) : null;
+        const literal = enumMap.get(rawDefault);
+        defaultValue = literal !== undefined && !ambiguous.has(rawDefault) ? literal : null;
       } else if (memory) {
         const bytes = evalNumeric(rawDefault);
         defaultValue = bytes === null ? unquote(rawDefault) : formatMemory(bytes);
@@ -169,7 +219,9 @@ export function parseConfigC(source) {
       }
     }
 
-    if (defaultValue === null && !special) unresolved.push(name);
+    if (defaultValue === null && !special) {
+      unresolved.push(name);
+    }
 
     entries.push({
       name,

@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { normalizeConfig } from '../src/lib/normalizeConf';
 
 const index = new Map([

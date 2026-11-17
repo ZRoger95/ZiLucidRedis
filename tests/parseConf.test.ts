@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { decodeConfBytes, parseConf, tokenizeArgs } from '../src/lib/parseConf';
 
 test('separates comments, blanks and directives', () => {

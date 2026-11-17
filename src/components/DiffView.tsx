@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+
 import type { DiffModel, DiffRow, DiffSegment } from '../lib/diff';
 import type { RiskWarning } from '../types';
 
@@ -12,9 +13,7 @@ interface DiffViewProps {
   onApplyDefault: (lineNo: number, value: string) => void;
 }
 
-type DisplayItem =
-  | { type: 'row'; row: DiffRow }
-  | { type: 'collapse'; key: string; rows: DiffRow[] };
+type DisplayItem = { type: 'row'; row: DiffRow } | { type: 'collapse'; key: string; rows: DiffRow[] };
 
 const LEVEL_SHORT: Record<RiskWarning['level'], string> = { high: '高危', medium: '中危', low: '提示' };
 
@@ -72,11 +71,7 @@ function DiffRowView({
         {Array.from({ length: height }, (_, index) => {
           const line = left[index];
           return (
-            <div
-              key={index}
-              className="diff-line"
-              onClick={() => line && onJump(line.lineNo)}
-            >
+            <div key={index} className="diff-line" onClick={() => line && onJump(line.lineNo)}>
               {line ? <Segments segments={line.segments} /> : null}
               {line && index === height - 1 && row.risks.length > 0 ? (
                 <span className="diff-risk" title={riskTitle}>
@@ -139,7 +134,9 @@ export function DiffView({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const items = useMemo<DisplayItem[]>(() => {
-    if (onlyDiff) return model.rows.map((row) => ({ type: 'row', row }));
+    if (onlyDiff) {
+      return model.rows.map((row) => ({ type: 'row', row }));
+    }
 
     const result: DisplayItem[] = [];
     for (let index = 0; index < model.rows.length; index += 1) {
@@ -150,12 +147,17 @@ export function DiffView({
       }
 
       let end = index;
-      while (end < model.rows.length && model.rows[end].kind === 'default') end += 1;
+      while (end < model.rows.length && model.rows[end].kind === 'default') {
+        end += 1;
+      }
       const run = model.rows.slice(index, end);
       const key = `run-${run[0].key}`;
 
-      if (run.length > 2 && !expanded.has(key)) result.push({ type: 'collapse', key, rows: run });
-      else run.forEach((item) => result.push({ type: 'row', row: item }));
+      if (run.length > 2 && !expanded.has(key)) {
+        result.push({ type: 'collapse', key, rows: run });
+      } else {
+        run.forEach((item) => result.push({ type: 'row', row: item }));
+      }
 
       index = end - 1;
     }

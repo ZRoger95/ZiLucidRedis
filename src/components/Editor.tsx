@@ -1,9 +1,10 @@
-import { useEffect, useRef } from 'react';
-import { EditorState, Compartment } from '@codemirror/state';
-import { Decoration, EditorView, WidgetType, keymap, lineNumbers, type DecorationSet } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
-import type { AnalysisResult } from '../types';
+import { Compartment, EditorState } from '@codemirror/state';
+import { Decoration, type DecorationSet, EditorView, keymap, lineNumbers, WidgetType } from '@codemirror/view';
+import { useEffect, useRef } from 'react';
+
 import type { AnnotationBlock } from '../lib/annotations';
+import type { AnalysisResult } from '../types';
 
 interface EditorProps {
   value: string;
@@ -84,23 +85,35 @@ function buildDecorations(
   const ranges: { from: number; deco: Decoration }[] = [];
 
   for (const line of result.lines) {
-    if (line.lineNo > doc.lines) continue;
+    if (line.lineNo > doc.lines) {
+      continue;
+    }
     const position = doc.line(line.lineNo).from;
     const analysis = result.byLine.get(line.lineNo);
     const quiet =
-      (!analysis || analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special') &&
+      (!analysis ||
+        analysis.status === 'default' ||
+        analysis.status === 'no-default' ||
+        analysis.status === 'special') &&
       !forceVisibleLines?.has(line.lineNo);
 
     if (onlyDiff) {
-      if (quiet) ranges.push({ from: position, deco: Decoration.line({ class: 'cm-hide-line' }) });
-      else ranges.push({ from: position, deco: Decoration.line({ class: `cm-status-${analysis!.status}` }) });
+      if (quiet) {
+        ranges.push({ from: position, deco: Decoration.line({ class: 'cm-hide-line' }) });
+      } else {
+        ranges.push({ from: position, deco: Decoration.line({ class: `cm-status-${analysis!.status}` }) });
+      }
       continue;
     }
-    if (!quiet) ranges.push({ from: position, deco: Decoration.line({ class: `cm-status-${analysis!.status}` }) });
+    if (!quiet) {
+      ranges.push({ from: position, deco: Decoration.line({ class: `cm-status-${analysis!.status}` }) });
+    }
   }
 
   for (const block of blocks) {
-    if (block.atLineNo > doc.lines) continue;
+    if (block.atLineNo > doc.lines) {
+      continue;
+    }
     ranges.push({
       from: doc.line(block.atLineNo).from,
       deco: Decoration.widget({ widget: new AnnotationWidget(block, onCommit), block: true, side: -1 }),
@@ -118,10 +131,17 @@ export function Editor(props: EditorProps) {
   const view = useRef<EditorView | null>(null);
   const decorationCompartment = useRef(new Compartment());
   const latest = useRef(props);
-  latest.current = props;
 
+  // 把最新 props 同步给 CodeMirror 的回调，避免在渲染期写 ref
   useEffect(() => {
-    if (!host.current) return;
+    latest.current = props;
+  });
+
+  // CodeMirror 是 React 之外的编辑器实例，必须手动挂载和销毁
+  useEffect(() => {
+    if (!host.current) {
+      return;
+    }
     const state = EditorState.create({
       doc: latest.current.value,
       extensions: [
@@ -131,7 +151,9 @@ export function Editor(props: EditorProps) {
         baseTheme,
         decorationCompartment.current.of([]),
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) latest.current.onChange(update.state.doc.toString());
+          if (update.docChanged) {
+            latest.current.onChange(update.state.doc.toString());
+          }
           if (update.selectionSet || update.docChanged) {
             const head = update.state.selection.main.head;
             latest.current.onCursorLine(update.state.doc.lineAt(head).number);
@@ -149,7 +171,9 @@ export function Editor(props: EditorProps) {
 
   useEffect(() => {
     const instance = view.current;
-    if (!instance) return;
+    if (!instance) {
+      return;
+    }
     if (instance.state.doc.toString() !== props.value) {
       instance.dispatch({ changes: { from: 0, to: instance.state.doc.length, insert: props.value } });
     }
@@ -157,11 +181,20 @@ export function Editor(props: EditorProps) {
 
   useEffect(() => {
     const instance = view.current;
-    if (!instance) return;
+    if (!instance) {
+      return;
+    }
     instance.dispatch({
       effects: decorationCompartment.current.reconfigure(
         EditorView.decorations.of(
-          buildDecorations(instance.state, props.result, props.blocks, props.onlyDiff, props.forceVisibleLines, props.onCommitComment),
+          buildDecorations(
+            instance.state,
+            props.result,
+            props.blocks,
+            props.onlyDiff,
+            props.forceVisibleLines,
+            props.onCommitComment,
+          ),
         ),
       ),
     });
@@ -169,7 +202,9 @@ export function Editor(props: EditorProps) {
 
   useEffect(() => {
     const instance = view.current;
-    if (!instance || !props.jumpTo) return;
+    if (!instance || !props.jumpTo) {
+      return;
+    }
     const lineNo = Math.min(Math.max(props.jumpTo.lineNo, 1), instance.state.doc.lines);
     const target = instance.state.doc.line(lineNo);
     instance.dispatch({

@@ -1,4 +1,5 @@
 import { expect, test } from 'vitest';
+
 import { hasPlaceholder, replaceSecrets, restoreSecrets } from '../src/lib/secrets';
 
 test('requirepass value is replaced by an env placeholder and remembered in memory', () => {
