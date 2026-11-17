@@ -10,6 +10,7 @@ interface EditorProps {
   result: AnalysisResult;
   blocks: AnnotationBlock[];
   onlyDiff: boolean;
+  forceVisibleLines?: Set<number>;
   jumpTo: { lineNo: number; nonce: number } | null;
   onChange: (text: string) => void;
   onCursorLine: (lineNo: number) => void;
@@ -76,6 +77,7 @@ function buildDecorations(
   result: AnalysisResult,
   blocks: AnnotationBlock[],
   onlyDiff: boolean,
+  forceVisibleLines: Set<number> | undefined,
   onCommit: (lineNo: number, text: string[]) => void,
 ): DecorationSet {
   const doc = state.doc;
@@ -86,7 +88,8 @@ function buildDecorations(
     const position = doc.line(line.lineNo).from;
     const analysis = result.byLine.get(line.lineNo);
     const quiet =
-      !analysis || analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special';
+      (!analysis || analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special') &&
+      !forceVisibleLines?.has(line.lineNo);
 
     if (onlyDiff) {
       if (quiet) ranges.push({ from: position, deco: Decoration.line({ class: 'cm-hide-line' }) });
@@ -158,11 +161,11 @@ export function Editor(props: EditorProps) {
     instance.dispatch({
       effects: decorationCompartment.current.reconfigure(
         EditorView.decorations.of(
-          buildDecorations(instance.state, props.result, props.blocks, props.onlyDiff, props.onCommitComment),
+          buildDecorations(instance.state, props.result, props.blocks, props.onlyDiff, props.forceVisibleLines, props.onCommitComment),
         ),
       ),
     });
-  }, [props.result, props.blocks, props.onlyDiff, props.onCommitComment]);
+  }, [props.result, props.blocks, props.onlyDiff, props.forceVisibleLines, props.onCommitComment]);
 
   useEffect(() => {
     const instance = view.current;

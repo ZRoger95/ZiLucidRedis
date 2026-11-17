@@ -78,3 +78,18 @@ test('collapses long unchanged runs and expands on click', async () => {
 
   expect(screen.getByText('@@ 展开 3 行未修改 @@')).toBeInTheDocument();
 });
+
+test('asks for input when the left side is empty', () => {
+  render(
+    <DiffView
+      model={model([])}
+      warnings={[]}
+      onlyDiff={false}
+      hasContent={false}
+      onJump={vi.fn()}
+      onApplyDefault={vi.fn()}
+    />,
+  );
+
+  expect(screen.getByText('先在左侧载入或粘贴配置')).toBeInTheDocument();
+});

@@ -161,6 +161,12 @@ test('comments, blanks and templates do not create diff rows', () => {
   expect(model.rows.find((item) => item.name === 'maxmemory')!.left?.lines[0].lineNo).toBe(3);
 });
 
+test('empty config produces no diff rows', () => {
+  const { model } = run('');
+  expect(model.rows).toHaveLength(0);
+  expect(model.total).toBe(0);
+});
+
 test('replaces args and keeps indentation and directive name', () => {
   expect(applyDefaultLine('  maxmemory 0\nappendonly yes', 1, '8gb')).toBe('  maxmemory 8gb\nappendonly yes');
 });

@@ -7,9 +7,11 @@
 ## 使用
 
 - 粘贴文本、上传 `.conf` 文件，或把文件直接拖进编辑区。
-- 顶部选 Redis 版本（6.2 到 8.10 共 10 条 minor 线）。
+- 顶部选 Redis 版本（6.2 到 8.10 共 10 条 minor 线，每条线取最新正式 patch，显示发布日期）。
 - 「内联注释」三档：只补缺失（默认）/ 全部显示 / 关闭。
 - `Ctrl+K`（Mac 上 `⌘K`）搜索配置项；文件里没有的项可以直接插到对应分节。
+- 底部「配置对比」是 IDEA 风格的并排 diff：左行号 / 你的配置 / 箭头 / 官方默认 / 右行号，
+  修改行左红右绿并做词级高亮，未改行折叠；点箭头可把单行改回官方默认值。
 - 导出三种：原样导出、补全官方注释后导出、还原密码后导出。
 
 ## 密码怎么处理
@@ -38,18 +40,19 @@ npm run preview    # 预览构建产物
 
 ## 数据从哪来
 
-两个官方来源，构建期下载、解析、提交进仓库，运行时不请求任何外部网络：
+三个官方来源，构建期下载、解析、提交进仓库，运行时不请求任何外部网络：
 
 | 来源 | 用途 |
 |---|---|
+| GitHub Releases（正式版，带发布日期） | 每条 minor 线的最新 patch tag 与发布日期 |
 | `<tag>/src/config.c` 的 `create*Config(...)` 定义 | 指令名、类型、默认值、是否敏感 |
 | `<tag>/redis.conf` | 分节、官方注释原文、示例值 |
 
 更新字典：
 
 ```bash
-node scripts/fetch-upstream.mjs   # 解析各 minor 线最新 tag，写入 data/upstream/lock.json 并下载
-node scripts/build-dict.mjs       # 生成 src/data/dict/<line>.json 与 meta.json，并做完整性断言
+node scripts/fetch-upstream.mjs   # 解析各 minor 线最新正式 release，写入 lock.json 并下载
+node scripts/build-dict.mjs       # 生成 src/data/dict/<line>.json、releases.json 与 meta.json
 ```
 
 构建断言失败时会列出需要人工确认的指令：确实没有默认值的写进 `src/data/no-default.json`，

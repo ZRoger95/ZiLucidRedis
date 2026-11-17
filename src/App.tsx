@@ -13,13 +13,14 @@ import { replaceSecrets } from './lib/secrets';
 import { insertDirective } from './lib/search';
 import { indexOfficialLines } from './lib/official';
 import { normalizeConfig } from './lib/normalizeConf';
+import { buildDiff, applyDefaultLine } from './lib/diff';
 import { exportOriginal, exportWithComments, exportWithSecrets, suggestFileName } from './lib/exportConf';
 import { loadState, saveState } from './lib/persistence';
 import { aliases } from './data/aliases';
 import zhNotes from './data/zh-notes.json';
 import { Toolbar } from './components/Toolbar';
 import { SummaryBar } from './components/SummaryBar';
-import { ComparisonList } from './components/ComparisonList';
+import { DiffView } from './components/DiffView';
 import { Editor } from './components/Editor';
 import { OfficialPane } from './components/OfficialPane';
 import { DetailPanel } from './components/DetailPanel';
@@ -76,6 +77,15 @@ export default function App() {
     [parsed, dict, meta, line],
   );
   const warnings = useMemo(() => (dict && analysis ? evaluateRisks(analysis, dict) : []), [dict, analysis]);
+  const diff = useMemo(
+    () => (dict && analysis ? buildDiff(analysis, dict, warnings, { onlyDiff }) : null),
+    [dict, analysis, warnings, onlyDiff],
+  );
+  const riskLines = useMemo(
+    () => new Set(warnings.flatMap((warning) => warning.lineNos)),
+    [warnings],
+  );
+  const hasContent = useMemo(() => parsed.some((item) => item.kind === 'directive'), [parsed]);
   const blocks = useMemo(
     () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff) : []),
     [analysis, annotationMode, onlyDiff],
@@ -282,6 +292,7 @@ export default function App() {
                 result={analysis}
                 blocks={blocks}
                 onlyDiff={onlyDiff}
+                forceVisibleLines={riskLines}
                 jumpTo={jump}
                 onChange={setText}
                 onCursorLine={setCursorLine}
@@ -325,16 +336,17 @@ export default function App() {
               </Button>
             </div>
             <TabsPanel value="compare" className="tab-panel">
-              {analysis && dict ? (
-                <ComparisonList
-                  result={analysis}
-                  dict={dict}
+              {diff ? (
+                <DiffView
+                  model={diff}
                   warnings={warnings}
                   onlyDiff={onlyDiff}
+                  hasContent={hasContent}
                   onJump={jumpToLine}
+                  onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
                 />
               ) : (
-                <p className="compare-empty">正在加载…</p>
+                <p className="diff-empty">正在加载…</p>
               )}
             </TabsPanel>
             <TabsPanel value="detail" className="tab-panel">

@@ -6,6 +6,7 @@ interface DiffViewProps {
   model: DiffModel;
   warnings: RiskWarning[];
   onlyDiff: boolean;
+  hasContent?: boolean;
   onJump: (lineNo: number) => void;
   onApplyDefault: (lineNo: number, value: string) => void;
 }
@@ -123,7 +124,7 @@ function DiffRowView({
   );
 }
 
-export function DiffView({ model, warnings, onlyDiff, onJump, onApplyDefault }: DiffViewProps) {
+export function DiffView({ model, warnings, onlyDiff, hasContent = true, onJump, onApplyDefault }: DiffViewProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const items = useMemo<DisplayItem[]>(() => {
@@ -180,7 +181,7 @@ export function DiffView({ model, warnings, onlyDiff, onJump, onApplyDefault }: 
       ) : null}
 
       {model.rows.length === 0 ? (
-        <p className="diff-empty">当前配置与官方默认值一致</p>
+        <p className="diff-empty">{hasContent ? '当前配置与官方默认值一致' : '先在左侧载入或粘贴配置'}</p>
       ) : (
         <div className="diff-scroll">
           {items.map((item) =>
