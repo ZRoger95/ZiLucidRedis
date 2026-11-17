@@ -10,8 +10,8 @@ import { normalizeValue } from './normalize';
 import { tokenizeArgs } from './parseConf';
 
 const IMPORTANT = ['maxmemory', 'maxmemory-policy', 'appendonly', 'save', 'protected-mode', 'bind'];
-const SPECIAL_NAMES = new Set(['include', 'loadmodule', 'rename-command', 'aclfile', 'user']);
-const MULTI_VALUE_NAMES = new Set(['save', 'client-output-buffer-limit', 'rename-command', 'user', 'loadmodule']);
+export const SPECIAL_NAMES = new Set(['include', 'loadmodule', 'rename-command', 'aclfile', 'user']);
+export const MULTI_VALUE_NAMES = new Set(['save', 'client-output-buffer-limit', 'rename-command', 'user', 'loadmodule']);
 
 export function compareLines(a: string, b: string): number {
   const left = a.split('.').map(Number);
