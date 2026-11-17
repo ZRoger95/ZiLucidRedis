@@ -257,6 +257,19 @@ export function buildDiff(
     groups.set(canonical, group);
   }
 
+  const counts: Record<DiffKind, number> = {
+    changed: 0,
+    default: 0,
+    added: 0,
+    removed: 0,
+    newer: 0,
+    unknown: 0,
+    duplicate: 0,
+    special: 0,
+    'no-default': 0,
+  };
+  if (groups.size === 0) return { rows: [], counts, total: 0 };
+
   const rows: DiffRow[] = [];
   for (const [canonical, group] of groups) {
     rows.push(buildGroupRow(canonical, group, docs.get(canonical)));
@@ -281,17 +294,6 @@ export function buildDiff(
     }
   }
 
-  const counts: Record<DiffKind, number> = {
-    changed: 0,
-    default: 0,
-    added: 0,
-    removed: 0,
-    newer: 0,
-    unknown: 0,
-    duplicate: 0,
-    special: 0,
-    'no-default': 0,
-  };
   for (const row of rows) counts[row.kind] += 1;
 
   const visible = options.onlyDiff
