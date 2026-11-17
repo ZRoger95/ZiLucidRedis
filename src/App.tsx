@@ -300,12 +300,14 @@ export default function App() {
       />
     );
   } else {
-    editorBody = <div className="empty">正在加载 {line} 的配置项字典…</div>;
+    editorBody = (
+      <div className="flex flex-1 items-center justify-center text-muted-foreground">正在加载 {line} 的配置项字典…</div>
+    );
   }
 
   return (
     <main
-      className="app"
+      className="flex h-full min-w-[1024px] flex-col"
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
         event.preventDefault();
@@ -350,23 +352,23 @@ export default function App() {
       {notice ? <div className="banner">{notice}</div> : null}
       {activeDictError ? <div className="banner">字典加载失败：{activeDictError}</div> : null}
 
-      <div className="app-body">
-        <div className="workspace">
-          <section className="pane" aria-label="你的配置">
-            <div className="pane-head">
-              <strong>你的配置</strong>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="grid min-h-[240px] flex-1 grid-cols-2">
+          <section className="flex min-h-0 min-w-0 flex-col border-r border-line" aria-label="你的配置">
+            <div className="flex items-baseline gap-2.5 border-b border-line bg-panel px-3 py-1.5 text-xs text-muted-foreground">
+              <strong className="text-[13px] text-ink">你的配置</strong>
               {analysis ? (
                 <span>
                   {parsed.length} 行 · 已改 {analysis.counts.changed}
                 </span>
               ) : null}
-              <span className="spacer" />
-              <span className="pane-hint">可直接编辑；导入文件时会去注释、按官方顺序重排</span>
+              <span className="flex-1" />
+              <span className="text-[#9aa1ad]">可直接编辑；导入文件时会去注释、按官方顺序重排</span>
             </div>
             {editorBody}
           </section>
 
-          <section className="pane pane-official" aria-label="官方完整配置">
+          <section className="flex min-h-0 min-w-0 flex-col border-r-0 bg-[#fbfbfc]" aria-label="官方完整配置">
             {official ? (
               <OfficialPane
                 text={official.text}
@@ -378,7 +380,9 @@ export default function App() {
                 focus={officialFocus}
               />
             ) : (
-              <div className="empty">正在加载 {line} 的官方 conf…</div>
+              <div className="flex flex-1 items-center justify-center text-muted-foreground">
+                正在加载 {line} 的官方 conf…
+              </div>
             )}
           </section>
         </div>
@@ -429,7 +433,7 @@ export default function App() {
         </div>
       </div>
 
-      <div className="footnote">
+      <div className="border-t border-line bg-panel px-3.5 py-2 text-xs text-muted-foreground">
         左边是你的配置（导入时自动去注释、按官方顺序重排），右边是当前版本官方完整
         redis.conf；所有解析都在浏览器内完成，配置内容不会上传。
       </div>

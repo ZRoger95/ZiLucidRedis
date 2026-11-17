@@ -112,45 +112,6 @@ body {
   background: var(--ui-background);
 }
 
-button {
-  font: inherit;
-}
-
-.app {
-  display: flex;
-  min-width: 1024px;
-  height: 100%;
-  flex-direction: column;
-}
-
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
-}
-
-.topbar h1 {
-  margin: 0 12px 0 0;
-  font-size: 15px;
-  letter-spacing: 0.02em;
-}
-
-.topbar .spacer {
-  flex: 1;
-}
-
-.control {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted-text);
-  font-size: 13px;
-}
-
 .summary {
   display: flex;
   align-items: center;
@@ -191,57 +152,6 @@ button {
   background: #fff7ed;
   color: #9a3412;
   border-bottom: 1px solid #fed7aa;
-}
-
-.app-body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.workspace {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  flex: 1;
-  min-height: 240px;
-}
-
-.pane {
-  display: flex;
-  min-width: 0;
-  min-height: 0;
-  flex-direction: column;
-  border-right: 1px solid var(--line);
-}
-
-.pane-official {
-  border-right: none;
-  background: #fbfbfc;
-}
-
-.pane-head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  padding: 6px 12px;
-  font-size: 12px;
-  color: var(--muted-text);
-  background: var(--panel);
-  border-bottom: 1px solid var(--line);
-}
-
-.pane-head strong {
-  color: var(--ink);
-  font-size: 13px;
-}
-
-.pane-head .spacer {
-  flex: 1;
-}
-
-.pane-hint {
-  color: #9aa1ad;
 }
 
 .bottom {

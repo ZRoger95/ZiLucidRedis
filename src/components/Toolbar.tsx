@@ -1,6 +1,6 @@
-import { Button } from '@ui-sdk/react/button';
-import { Select, SelectContent, SelectTrigger, SelectValue } from '@ui-sdk/react/select';
-import { Switch, SwitchThumb } from '@ui-sdk/react/switch';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 
 import type { AnnotationMode } from '../types';
 
@@ -37,80 +37,92 @@ export function Toolbar(props: ToolbarProps) {
   }));
 
   return (
-    <header className="topbar">
-      <h1>Redis 配置体检</h1>
+    <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
+      <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">Redis 配置体检</h1>
 
-      <span className="control">
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>版本</span>
-        <Select items={items} value={props.line} onValueChange={(value) => value && props.onLineChange(String(value))}>
-          <SelectTrigger aria-label="Redis 版本">
+        <Select value={props.line} onValueChange={(value) => props.onLineChange(value)}>
+          <SelectTrigger aria-label="Redis 版本" className="w-44">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent />
+          <SelectContent>
+            {items.map((item) => (
+              <SelectItem key={item.value} value={item.value}>
+                {item.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </span>
 
-      <span className="control">
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>内联注释</span>
         <Select
-          items={ANNOTATION_OPTIONS}
           value={props.annotationMode}
-          onValueChange={(value) => value && props.onAnnotationModeChange(value as AnnotationMode)}
+          onValueChange={(value) => props.onAnnotationModeChange(value as AnnotationMode)}
         >
           <SelectTrigger aria-label="内联注释显示方式">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent />
+          <SelectContent>
+            {ANNOTATION_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </span>
 
-      <label className="control">
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Switch
           aria-label="只看差异"
           checked={props.onlyDiff}
           onCheckedChange={(checked) => props.onOnlyDiffChange(checked === true)}
-        >
-          <SwitchThumb />
-        </Switch>
+        />
         只看差异
-      </label>
+      </span>
 
-      <label className="control">
+      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Switch
           aria-label="中文摘要"
           checked={props.showZh}
           onCheckedChange={(checked) => props.onShowZhChange(checked === true)}
-        >
-          <SwitchThumb />
-        </Switch>
-        中文摘要
-      </label>
-
-      <Button onClick={props.onOpenSearch}>搜索配置项</Button>
-
-      <Button onClick={props.onClear}>清空</Button>
-
-      <span className="spacer" />
-
-      <Button onClick={props.onLoadOfficial}>载入官方配置</Button>
-
-      <label className="control">
-        <input
-          type="file"
-          accept=".conf,.config,.txt"
-          style={{ display: 'none' }}
-          onChange={(event) => {
-            const file = event.target.files?.[0];
-            if (file) {
-              props.onUpload(file);
-            }
-            event.target.value = '';
-          }}
         />
-        <Button onClick={(event) => event.currentTarget.parentElement?.querySelector('input')?.click()}>
-          上传 conf
-        </Button>
-      </label>
+        中文摘要
+      </span>
+
+      <Button variant="outline" onClick={props.onOpenSearch}>
+        搜索配置项
+      </Button>
+
+      <Button variant="outline" onClick={props.onClear}>
+        清空
+      </Button>
+
+      <span className="flex-1" />
+
+      <Button variant="outline" onClick={props.onLoadOfficial}>
+        载入官方配置
+      </Button>
+
+      <Button asChild variant="outline">
+        <label htmlFor="toolbar-upload">上传 conf</label>
+      </Button>
+      <input
+        id="toolbar-upload"
+        type="file"
+        accept=".conf,.config,.txt"
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          if (file) {
+            props.onUpload(file);
+          }
+          event.target.value = '';
+        }}
+      />
 
       <ExportMenu onExport={props.onExport} canRestoreSecrets={props.canRestoreSecrets} />
     </header>
