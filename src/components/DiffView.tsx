@@ -7,6 +7,7 @@ interface DiffViewProps {
   warnings: RiskWarning[];
   onlyDiff: boolean;
   hasContent?: boolean;
+  baseline?: string;
   onJump: (lineNo: number) => void;
   onApplyDefault: (lineNo: number, value: string) => void;
 }
@@ -120,11 +121,21 @@ function DiffRowView({
           </div>
         ))}
       </div>
+
+      {row.note ? <div className="diff-note">{row.note}</div> : null}
     </div>
   );
 }
 
-export function DiffView({ model, warnings, onlyDiff, hasContent = true, onJump, onApplyDefault }: DiffViewProps) {
+export function DiffView({
+  model,
+  warnings,
+  onlyDiff,
+  hasContent = true,
+  baseline,
+  onJump,
+  onApplyDefault,
+}: DiffViewProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const items = useMemo<DisplayItem[]>(() => {
@@ -167,6 +178,7 @@ export function DiffView({ model, warnings, onlyDiff, hasContent = true, onJump,
         <span className="diff-count">
           差异 {diffCount} 项 / 共 {model.total} 项
         </span>
+        <span className="diff-baseline">官方默认{baseline ? ` · ${baseline}` : ''}</span>
         <span className="diff-hint">点击左侧行在编辑器中定位</span>
       </div>
 

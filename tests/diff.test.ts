@@ -174,3 +174,9 @@ test('replaces args and keeps indentation and directive name', () => {
 test('writes quoted empty string for empty defaults', () => {
   expect(applyDefaultLine('logfile /var/log/redis.log', 1, '')).toBe('logfile ""');
 });
+
+test('exposes quoted empty default as applyValue', () => {
+  const row = run('logfile /var/log/redis.log').model.rows.find((item) => item.name === 'logfile')!;
+  expect(row.kind).toBe('changed');
+  expect(row.applyValue).toBe('""');
+});

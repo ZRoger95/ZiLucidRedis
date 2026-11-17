@@ -649,6 +649,11 @@ button {
   font-size: 12px;
 }
 
+.diff-baseline {
+  color: #6b7280;
+  font-size: 12px;
+}
+
 .diff-hint {
   margin-left: auto;
   color: #9aa1ad;
@@ -762,6 +767,14 @@ button {
 .diff-risk {
   margin-left: 6px;
   color: var(--warning);
+  font-family: var(--ui-font-sans);
+  font-size: 11px;
+}
+
+.diff-note {
+  grid-column: 2 / 5;
+  padding: 0 8px 4px;
+  color: var(--muted);
   font-family: var(--ui-font-sans);
   font-size: 11px;
 }

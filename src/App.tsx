@@ -86,6 +86,9 @@ export default function App() {
     [warnings],
   );
   const hasContent = useMemo(() => parsed.some((item) => item.kind === 'directive'), [parsed]);
+  const baseline = official
+    ? [official.tag, official.publishedAt?.slice(0, 10)].filter(Boolean).join(' · ')
+    : '';
   const blocks = useMemo(
     () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff) : []),
     [analysis, annotationMode, onlyDiff],
@@ -342,6 +345,7 @@ export default function App() {
                   warnings={warnings}
                   onlyDiff={onlyDiff}
                   hasContent={hasContent}
+                  baseline={baseline}
                   onJump={jumpToLine}
                   onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
                 />
