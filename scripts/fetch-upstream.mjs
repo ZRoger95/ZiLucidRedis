@@ -1,7 +1,7 @@
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { resolveLatestTag } from './lib/tags.mjs';
+import { needsRedownload, pickStableReleases } from './lib/releases.mjs';
 
-const API = 'https://api.github.com/repos/redis/redis/tags?per_page=100&page=';
+const API = 'https://api.github.com/repos/redis/redis/releases?per_page=100&page=';
 const RAW = 'https://raw.githubusercontent.com/redis/redis/';
 const root = new URL('../data/upstream/', import.meta.url);
 
@@ -27,16 +27,17 @@ async function readJson(path, fallback) {
   }
 }
 
-async function collectTags() {
-  const names = new Set();
-  for (let page = 1; page <= 4; page += 1) {
-    const body = await fetchText(`${API}${page}`);
-    for (const match of body.matchAll(/"name":\s*"([^"]+)"/g)) names.add(match[1]);
+async function collectReleases() {
+  const all = [];
+  for (let page = 1; page <= 3; page += 1) {
+    const parsed = JSON.parse(await fetchText(`${API}${page}`));
+    if (!Array.isArray(parsed) || parsed.length === 0) break;
+    all.push(...parsed);
   }
-  return [...names];
+  return all;
 }
 
-async function saveLine(line, tag) {
+async function saveLine(line, tag, force) {
   const dir = new URL(`${line}/`, root);
   await mkdir(dir, { recursive: true });
   for (const [remote, local] of [
@@ -45,7 +46,7 @@ async function saveLine(line, tag) {
   ]) {
     const target = new URL(local, dir);
     const exists = await stat(target).then((info) => info.size > 0).catch(() => false);
-    if (exists) continue;
+    if (exists && !force) continue;
     const body = await fetchText(`${RAW}${tag}/${remote}`);
     await writeFile(target, body);
   }
@@ -55,24 +56,35 @@ const versions = JSON.parse(await readFile(new URL('../data/versions.json', impo
 const lockPath = new URL('lock.json', root);
 const previous = await readJson(lockPath, {});
 
-let tags = [];
+let releases = [];
 try {
-  tags = await collectTags();
+  releases = await collectReleases();
 } catch (error) {
-  console.warn(`tag 列表获取失败，沿用 lock.json：${error.message}`);
+  console.warn(`release 列表获取失败，沿用 lock.json：${error.message}`);
 }
+
+const picked = releases.length
+  ? pickStableReleases(releases, versions.map(({ line }) => line))
+  : [];
+const byLine = new Map(picked.map((entry) => [entry.line, entry]));
 
 const lock = { ...previous };
 for (const { line } of versions) {
-  const resolved = tags.length ? resolveLatestTag(tags, line) : null;
-  const tag = resolved ?? previous[line];
+  const next = byLine.get(line);
+  const previousEntry = previous[line];
+  const previousTag = typeof previousEntry === 'string' ? previousEntry : previousEntry?.tag;
+  const tag = next?.tag ?? previousTag;
   if (!tag) {
-    console.warn(`跳过 ${line}：没有可用 tag`);
+    console.warn(`跳过 ${line}：没有可用 release`);
     continue;
   }
-  lock[line] = tag;
-  await saveLine(line, tag);
-  console.log(`ok ${line} ${tag}`);
+
+  const publishedAt =
+    next?.publishedAt ?? (typeof previousEntry === 'object' ? previousEntry.publishedAt : '') ?? '';
+  const force = needsRedownload(previousEntry, tag);
+  lock[line] = { tag, publishedAt };
+  await saveLine(line, tag, force);
+  console.log(`ok ${line} ${tag}${force ? ' (refetch)' : ''}`);
 }
 
 await mkdir(root, { recursive: true });
