@@ -15,18 +15,21 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 - **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
 - **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。
 
-## UI 与 ui-sdk
+## UI 与 shadcn
 
-- **先读 skill。** 任何 UI 新增或改动前先读 [.agents/skills/ui-sdk/SKILL.md](.agents/skills/ui-sdk/SKILL.md)；已安装版本的文档索引在 `node_modules/@ui-sdk/react/docs/llms.txt`，按需读具体组件页，不读 `dist/*.js`。
-- **只从子路径导入。** 使用 `@ui-sdk/react` 的 `/button`、`/select`、`/switch`、`/menu`、`/dialog`、`/command`、`/tabs`、`/shortcuts` 等入口，不从包根导入，不直接引 `@ui-sdk/core/internal/*`。
-- **不自造控件。** 键盘、焦点、ARIA 和弹出层行为交给 ui-sdk；优先用现有组件组合，不手写 `role=` 控件。
-- **样式入口。** [index.css](src/index.css) 首行保持 `@layer ui-sdk;`，并 `@import '@ui-sdk/core/web.css';`；不引入 Tailwind。
+- **先看现有组件。** 任何 UI 新增或改动前先读 [components.json](components.json) 和 [src/components/ui/](src/components/ui/)；需要新组件时用 `npx shadcn@latest add <name>` 生成并提交，不手写同类控件。
+- **只从子路径导入。** 使用 `@/components/ui/button`、`/select`、`/switch`、`/dropdown-menu`、`/dialog`、`/command`、`/tabs` 等入口，不从 `src/components/ui` 的桶文件导入，不直接引 `radix-ui` 内部路径。
+- **不自造控件。** 键盘、焦点、ARIA 和弹出层行为交给 shadcn（Radix）；优先用现有组件组合，不手写 `role=` 控件。
+- **样式用 Tailwind。** 布局与控件样式写原子类；只有 CodeMirror 生成 DOM 的装饰与注释块允许写在 [editor.css](src/components/editor.css)。[index.css](src/index.css) 只保留 `@import 'tailwindcss'`、设计令牌与 `@layer base`。
+- **阶段二例外。** [.agents/skills/ui-sdk/](.agents/skills/ui-sdk/) 只为 `DiffView` 的行为层重做保留，标准控件不得再引入 ui-sdk。
 
 ## 目录
 
 ```
 src/lib/         解析、归一化、分析、风险、密码占位、搜索、导出、diff（纯函数）
 src/components/  工具栏、编辑器、摘要、详情、diff、搜索等 React 组件
+src/components/ui/  shadcn 生成的控件，按项目观感直接维护
+src/hooks/       React hook（快捷键等）
 src/data/        人工登记表，以及按版本生成的字典与官方 conf
 data/            版本白名单与上游抓取结果（versions.json、upstream/）
 scripts/         构建期抓取与字典生成（Node 原生 TypeScript，ESM）

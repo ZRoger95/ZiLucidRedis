@@ -6,7 +6,7 @@
 
 **Architecture:** 构建期脚本先从 Releases API 解析每条 minor 线的最新正式 patch，再生成带 `publishedAt` 的字典与 `releases.json`；运行期新增纯函数 `src/lib/diff.ts` 把现有 `analyze` 结果转成左右对齐的 diff 模型，由新的 `DiffView` 组件渲染，`App` 负责接线与「改回默认值」回调。
 
-**Tech Stack:** Vite 8、React 19、TypeScript strict、Vitest 5、@testing-library/react、现有 @ui-sdk 组件、Node ESM 构建脚本。
+**Tech Stack:** Vite 8、React 19、TypeScript strict、Vitest 5、@testing-library/react、shadcn/ui + Tailwind CSS v4、Node ESM 构建脚本。
 
 **Spec:** `docs/superpowers/specs/2026-11-17-diff-experience-design.md`
 

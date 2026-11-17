@@ -115,7 +115,7 @@ npm run build         # lint + typecheck + vite build
 - 类型检查、未使用变量、类型收窄由 `tsc` 的 `strict` + `noUnusedLocals` + `noUnusedParameters` 负责。
 - 等 TypeScript 7.1 恢复编译器 API 后，再评估迁移回 `typescript-eslint` 的类型感知规则。
 
-`eslint-plugin-react` 与 `eslint-plugin-jsx-a11y` 当前稳定版只声明支持到 ESLint 9，本项目使用 ESLint 10，暂不引入；可访问性交给 ui-sdk 组件。
+`eslint-plugin-react` 与 `eslint-plugin-jsx-a11y` 当前稳定版只声明支持到 ESLint 9，本项目使用 ESLint 10，暂不引入；可访问性交给 shadcn（Radix）组件。
 
 ## 维护
 
