@@ -1,5 +1,4 @@
 import { Button } from '@ui-sdk/react/button';
-import { useShortcut } from '@ui-sdk/react/shortcuts';
 import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
@@ -16,6 +15,7 @@ import { SummaryBar } from './components/SummaryBar';
 import { Toolbar } from './components/Toolbar';
 import { aliases } from './data/aliases';
 import zhNotes from './data/zh-notes.json';
+import { useShortcut } from './hooks/useShortcut';
 import { analyze } from './lib/analyze';
 import { buildAnnotationBlocks } from './lib/annotations';
 import { describeDirective } from './lib/describe';
@@ -156,7 +156,7 @@ export default function App() {
     }
   }, [dict, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed]);
 
-  useShortcut('mod+k', () => setSearchOpen(true), { description: '搜索配置项' });
+  useShortcut('mod+k', () => setSearchOpen(true));
 
   const importText = (raw: string, source: string | null, normalize = true) => {
     const { text: replaced, vault: nextVault, found } = replaceSecrets(raw);
