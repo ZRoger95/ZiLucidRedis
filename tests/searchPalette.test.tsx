@@ -33,6 +33,14 @@ test('输入后回车插入匹配项', async () => {
   expect(onPick).toHaveBeenCalledWith('maxmemory', false);
 });
 
+test('用中文摘要搜索仍能命中，回车插入', async () => {
+  const onPick = vi.fn();
+  render(<SearchPalette open onOpenChange={vi.fn()} dict={dict} configured={new Set()} onPick={onPick} />);
+  await userEvent.type(screen.getByRole('combobox'), '内存');
+  await userEvent.keyboard('{Enter}');
+  expect(onPick).toHaveBeenCalledWith('maxmemory', false);
+});
+
 test('没有匹配项时回车不插入', async () => {
   const onPick = vi.fn();
   render(<SearchPalette open onOpenChange={vi.fn()} dict={dict} configured={new Set()} onPick={onPick} />);

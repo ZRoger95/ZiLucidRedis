@@ -6,7 +6,7 @@
 
 **Architecture:** 构建期用两个 Node 脚本从官方仓库抓取 10 条 minor 线的 `config.c` 与 `redis.conf`，解析成每版本一份的配置项字典（名称/类型/默认值/敏感标记）与跨版本索引；运行期纯浏览器内解析、分析、渲染与导出，无后端、无外部请求。
 
-**Tech Stack:** Vite + React 19 + TypeScript、**ui-sdk（@ui-sdk/react + @ui-sdk/core）**、CodeMirror 6、Vitest、jsdom、@testing-library/react。样式用 `@ui-sdk/core/web.css` + 自有 CSS，不引入 Tailwind。
+**Tech Stack:** Vite + React 19 + TypeScript、shadcn/ui、Tailwind CSS v4、CodeMirror 6、Vitest、jsdom、@testing-library/react。
 
 **Spec:** `docs/superpowers/specs/2026-11-16-redis-conf-doctor-design.md`
 
@@ -18,8 +18,8 @@
 - 密码指令（`sensitive: true`，含 `requirepass`、`masterauth`、`tls-key-file-pass`、`tls-client-key-file-pass`、`user ... >pass`）在导入时即替换为 `${env_<指令名>}` 占位符；原值只存内存，任何持久化/导出内容都不得含明文。
 - 导出统一使用 LF 换行，文件末尾保留一个换行。
 - 每版本字典的指令数必须落在 140–260，分节数 ≥ 8；默认值为 `null` 的指令必须登记在 `src/data/no-default.json`。
-- 所有交互组件用 `@ui-sdk/react` 的对应条目（`/button`、`/select`、`/menu`、`/dialog`、`/command`、`/switch`、`/shortcuts`），不从包根导入，不自造 `role=` 控件。
-- 全局样式表首行必须是 `@layer ui-sdk;`，并 `@import '@ui-sdk/core/web.css';`。
+- 所有交互组件从 `@/components/ui/*` 组合（button、select、switch、dropdown-menu、dialog、command、tabs）；不从 `src/components/ui` 的桶文件导入，不自造 `role=` 控件。
+- 全局样式表只保留 `@import 'tailwindcss';`、设计令牌与 `@layer base`；CodeMirror 装饰与注释块放 `src/components/editor.css`。
 
 ## Review Focus
 

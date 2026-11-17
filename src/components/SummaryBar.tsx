@@ -7,7 +7,7 @@ interface SummaryBarProps {
   onJump: (kind: 'changed' | 'unknown' | 'removed' | 'newer' | 'duplicate' | 'missing') => void;
 }
 
-const ITEM_CLASS = 'rounded-full border border-transparent px-2 py-0.5 hover:border-line hover:bg-panel';
+const ITEM_CLASS = 'cursor-pointer rounded-full border border-transparent px-2 py-0.5 hover:border-line hover:bg-panel';
 
 export function SummaryBar({ counts, missing, warningCount, onJump }: SummaryBarProps) {
   return (

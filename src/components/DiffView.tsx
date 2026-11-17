@@ -101,7 +101,7 @@ function DiffRowView({
         }
       }}
     >
-      <div className="diff-nos select-none px-1.5 py-0.5 text-right text-muted-foreground">
+      <div className="select-none px-1.5 py-0.5 text-right text-muted-foreground">
         {Array.from({ length: height }, (_, index) => (
           <div key={index} className="whitespace-nowrap">
             {left[index]?.lineNo ?? ''}

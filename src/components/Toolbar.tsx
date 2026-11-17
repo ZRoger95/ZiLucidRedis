@@ -1,3 +1,5 @@
+import { useRef } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
@@ -31,6 +33,7 @@ const ANNOTATION_OPTIONS = [
 ];
 
 export function Toolbar(props: ToolbarProps) {
+  const fileInput = useRef<HTMLInputElement>(null);
   const items = [...RELEASES].reverse().map((release) => ({
     value: release.line,
     label: formatVersionLabel(release),
@@ -43,7 +46,7 @@ export function Toolbar(props: ToolbarProps) {
       <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>版本</span>
         <Select value={props.line} onValueChange={(value) => props.onLineChange(value)}>
-          <SelectTrigger aria-label="Redis 版本" className="w-44">
+          <SelectTrigger aria-label="Redis 版本" className="w-56">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -75,23 +78,25 @@ export function Toolbar(props: ToolbarProps) {
         </Select>
       </span>
 
-      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
+      <label htmlFor="toggle-only-diff" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Switch
+          id="toggle-only-diff"
           aria-label="只看差异"
           checked={props.onlyDiff}
           onCheckedChange={(checked) => props.onOnlyDiffChange(checked === true)}
         />
         只看差异
-      </span>
+      </label>
 
-      <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
+      <label htmlFor="toggle-zh" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Switch
+          id="toggle-zh"
           aria-label="中文摘要"
           checked={props.showZh}
           onCheckedChange={(checked) => props.onShowZhChange(checked === true)}
         />
         中文摘要
-      </span>
+      </label>
 
       <Button variant="outline" onClick={props.onOpenSearch}>
         搜索配置项
@@ -107,11 +112,11 @@ export function Toolbar(props: ToolbarProps) {
         载入官方配置
       </Button>
 
-      <Button asChild variant="outline">
-        <label htmlFor="toolbar-upload">上传 conf</label>
+      <Button variant="outline" onClick={() => fileInput.current?.click()}>
+        上传 conf
       </Button>
       <input
-        id="toolbar-upload"
+        ref={fileInput}
         type="file"
         accept=".conf,.config,.txt"
         className="hidden"

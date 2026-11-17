@@ -446,7 +446,7 @@ export default function App() {
                   onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
                 />
               ) : (
-                <p className="diff-empty">正在加载…</p>
+                <p className="m-0 px-3.5 pt-2.5 pb-3.5 text-[13px] text-muted-foreground">正在加载…</p>
               )}
             </TabsContent>
             <TabsContent

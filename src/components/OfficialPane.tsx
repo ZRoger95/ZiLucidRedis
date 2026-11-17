@@ -67,14 +67,12 @@ export function OfficialPane({
         {rows.map((row, index) => {
           const lineNo = index + 1;
           const classes = ['flex gap-2.5 whitespace-pre px-2.5'];
-          if (highlightLines.has(lineNo)) {
-            classes.push('bg-[#fffbeb]');
-          }
-          if (focusBlock.has(lineNo)) {
-            classes.push('bg-[#f4f6ff] text-[#4b5563]');
-          }
           if (focus?.lineNo === lineNo) {
             classes.push('bg-[#e0e7ff] text-[#1f2937] shadow-[inset_3px_0_0_#6366f1]');
+          } else if (focusBlock.has(lineNo)) {
+            classes.push('bg-[#f4f6ff] text-[#4b5563]');
+          } else if (highlightLines.has(lineNo)) {
+            classes.push('bg-[#fffbeb]');
           }
           const annotation = annotations.get(lineNo);
 
