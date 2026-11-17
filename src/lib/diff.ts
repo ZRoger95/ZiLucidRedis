@@ -300,3 +300,18 @@ export function buildDiff(
 
   return { rows: visible, counts, total: rows.length };
 }
+
+export function applyDefaultLine(text: string, lineNo: number, defaultValue: string): string {
+  const rows = text.split('\n');
+  const index = lineNo - 1;
+  if (index < 0 || index >= rows.length) return text;
+
+  const current = rows[index];
+  const indent = /^\s*/.exec(current)?.[0] ?? '';
+  const name = current.trim().split(/\s+/)[0] ?? '';
+  if (!name) return text;
+
+  const value = defaultValue === '' ? '""' : defaultValue;
+  rows[index] = `${indent}${name} ${value}`;
+  return rows.join('\n');
+}

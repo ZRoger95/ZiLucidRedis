@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { diffSegments, buildDiff } from '../src/lib/diff';
+import { diffSegments, buildDiff, applyDefaultLine } from '../src/lib/diff';
 import { analyze } from '../src/lib/analyze';
 import { parseConf } from '../src/lib/parseConf';
 import { aliases } from '../src/data/aliases';
@@ -159,4 +159,12 @@ test('comments, blanks and templates do not create diff rows', () => {
   const { model } = run('# c\n\nmaxmemory 0\n<template>');
   expect(model.rows.some((item) => item.kind === 'unknown')).toBe(false);
   expect(model.rows.find((item) => item.name === 'maxmemory')!.left?.lines[0].lineNo).toBe(3);
+});
+
+test('replaces args and keeps indentation and directive name', () => {
+  expect(applyDefaultLine('  maxmemory 0\nappendonly yes', 1, '8gb')).toBe('  maxmemory 8gb\nappendonly yes');
+});
+
+test('writes quoted empty string for empty defaults', () => {
+  expect(applyDefaultLine('logfile /var/log/redis.log', 1, '')).toBe('logfile ""');
 });
