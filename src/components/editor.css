@@ -1,0 +1,86 @@
+.editor-host {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.editor-host .cm-editor {
+  height: 100%;
+  font-size: 13px;
+}
+
+.editor-host .cm-scroller {
+  font-family: var(--font-mono);
+  line-height: 1.6;
+}
+
+.cm-status-changed {
+  background: #fffbeb;
+  box-shadow: inset 3px 0 0 var(--changed);
+}
+
+.cm-status-unknown {
+  background: #fef2f2;
+  box-shadow: inset 3px 0 0 var(--unknown);
+}
+
+.cm-status-removed {
+  background: #f9fafb;
+  box-shadow: inset 3px 0 0 var(--removed);
+}
+
+.cm-status-newer {
+  background: #f5f3ff;
+  box-shadow: inset 3px 0 0 var(--newer);
+}
+
+.cm-status-duplicate {
+  background: #fef2f2;
+  box-shadow: inset 3px 0 0 var(--unknown);
+}
+
+.cm-hide-line {
+  display: none !important;
+}
+
+.annotation {
+  margin: 2px 0;
+  background: #f5f7ff;
+  border-left: 2px solid #c7d2fe;
+  color: #3f4653;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.annotation summary {
+  padding: 3px 10px;
+  color: #4f46e5;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.annotation summary::-webkit-details-marker {
+  display: none;
+}
+
+.annotation-body {
+  padding: 2px 10px 6px;
+  white-space: pre-wrap;
+}
+
+.annotation-commit {
+  margin-top: 6px;
+  border: 1px solid #c7d2fe;
+  background: #fff;
+  color: #4f46e5;
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.official-annotation {
+  margin-left: 40px;
+}

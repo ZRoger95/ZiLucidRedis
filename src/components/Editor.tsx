@@ -6,6 +6,8 @@ import { useEffect, useRef } from 'react';
 import type { AnnotationBlock } from '../lib/annotations';
 import type { AnalysisResult } from '../types';
 
+import './editor.css';
+
 interface EditorProps {
   value: string;
   result: AnalysisResult;

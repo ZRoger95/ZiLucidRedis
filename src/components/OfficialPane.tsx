@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import type { AnnotationMode, DictFile } from '../types';
 
 import { officialAnnotations } from '../lib/official';
+import './editor.css';
 
 interface OfficialPaneProps {
   text: string;
@@ -57,23 +58,23 @@ export function OfficialPane({
   }, [focus]);
 
   return (
-    <div className="official" ref={host}>
-      <div className="official-head">
+    <div className="flex min-h-0 flex-1 flex-col" ref={host}>
+      <div className="border-b border-line bg-[#f3f4f7] px-3 py-1.5 text-xs text-muted-foreground">
         官方完整配置 · {tag}
         {publishedAt ? ` · ${publishedAt.slice(0, 10)}` : ''} · 只读
       </div>
-      <div className="official-body">
+      <div className="flex-1 overflow-auto font-mono text-xs leading-[1.55]">
         {rows.map((row, index) => {
           const lineNo = index + 1;
-          const classes = ['official-line'];
+          const classes = ['flex gap-2.5 whitespace-pre px-2.5'];
           if (highlightLines.has(lineNo)) {
-            classes.push('is-highlight');
+            classes.push('bg-[#fffbeb]');
           }
           if (focusBlock.has(lineNo)) {
-            classes.push('is-context');
+            classes.push('bg-[#f4f6ff] text-[#4b5563]');
           }
           if (focus?.lineNo === lineNo) {
-            classes.push('is-focus');
+            classes.push('bg-[#e0e7ff] text-[#1f2937] shadow-[inset_3px_0_0_#6366f1]');
           }
           const annotation = annotations.get(lineNo);
 
@@ -90,8 +91,8 @@ export function OfficialPane({
                 </details>
               ) : null}
               <div data-official-line={lineNo} className={classes.join(' ')}>
-                <span className="official-no">{lineNo}</span>
-                <span className="official-text">{row || ' '}</span>
+                <span className="w-10 flex-none select-none text-right text-[#9aa1ad]">{lineNo}</span>
+                <span className="whitespace-pre">{row || ' '}</span>
               </div>
             </div>
           );
