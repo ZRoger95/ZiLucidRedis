@@ -159,6 +159,14 @@ export default defineConfig([
     languageOptions: { globals: globals.browser },
   },
   {
+    // shadcn 生成的组件统一用 `import * as React`，no-restricted-imports 会把通配导入误判为使用 useEffect。
+    // 这些文件由 CLI 生成、按项目观感直接维护，不手改导入形式；effect 调用仍由 no-restricted-syntax 拦截。
+    files: ['src/components/ui/**/*.tsx'],
+    rules: {
+      'no-restricted-imports': 'off',
+    },
+  },
+  {
     files: ['scripts/**/*.ts', 'vite.config.ts', 'eslint.config.ts'],
     languageOptions: { globals: globals.node },
     rules: {

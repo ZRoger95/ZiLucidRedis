@@ -23,7 +23,7 @@ export function DetailPanel({ view, lineNo, onInsertDefault, onCopy }: DetailPan
   if (!view.name) {
     return (
       <aside className="detail" aria-label="配置项详情">
-        <p style={{ color: 'var(--muted)' }}>{view.body[0] ?? '把光标放到某条配置上查看说明。'}</p>
+        <p style={{ color: 'var(--muted-text)' }}>{view.body[0] ?? '把光标放到某条配置上查看说明。'}</p>
       </aside>
     );
   }

@@ -1,11 +1,13 @@
 @layer ui-sdk;
 
+@import 'tailwindcss';
+@import 'tw-animate-css';
 @import '@ui-sdk/core/web.css';
 
 :root {
   color-scheme: light;
   --ink: #17181c;
-  --muted: #5c6370;
+  --muted-text: #5c6370;
   --line: #e2e5ea;
   --panel: #f7f8fa;
   --changed: #b45309;
@@ -14,6 +16,82 @@
   --newer: #6d28d9;
   --warning: #c2410c;
   --ok: #15803d;
+
+  --background: #ffffff;
+  --foreground: var(--ink);
+  --card: #ffffff;
+  --card-foreground: var(--ink);
+  --popover: #ffffff;
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: #ffffff;
+  --secondary: var(--panel);
+  --secondary-foreground: var(--ink);
+  --muted: var(--panel);
+  --muted-foreground: var(--muted-text);
+  --accent: #eceef2;
+  --accent-foreground: var(--ink);
+  --destructive: var(--unknown);
+  --border: var(--line);
+  --input: var(--line);
+  --ring: #6366f1;
+  --radius: 0.5rem;
+
+  --diff-left: #ffe9e6;
+  --diff-right: #e6f6e6;
+  --diff-token-left: #ffc9c4;
+  --diff-token-right: #b7f0b7;
+  --diff-added: #dcf5dc;
+  --diff-removed: #ffe0dd;
+  --diff-newer: #f5f3ff;
+  --diff-special: #f9fafb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted-text);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-ink: var(--ink);
+  --color-line: var(--line);
+  --color-panel: var(--panel);
+  --color-changed: var(--changed);
+  --color-unknown: var(--unknown);
+  --color-removed: var(--removed);
+  --color-newer: var(--newer);
+  --color-warning: var(--warning);
+  --color-ok: var(--ok);
+  --color-diff-left: var(--diff-left);
+  --color-diff-right: var(--diff-right);
+  --color-diff-token-left: var(--diff-token-left);
+  --color-diff-token-right: var(--diff-token-right);
+  --color-diff-added: var(--diff-added);
+  --color-diff-removed: var(--diff-removed);
+  --color-diff-newer: var(--diff-newer);
+  --color-diff-special: var(--diff-special);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --font-sans: ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
 }
 
 * {
@@ -69,7 +147,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 13px;
 }
 
@@ -148,7 +226,7 @@ button {
   gap: 10px;
   padding: 6px 12px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-text);
   background: var(--panel);
   border-bottom: 1px solid var(--line);
 }
@@ -221,7 +299,7 @@ button {
   border: none;
   border-radius: 6px;
   background: none;
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 13px;
   cursor: pointer;
 }
@@ -279,7 +357,7 @@ button {
 .official-head {
   padding: 6px 12px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-text);
   background: #f3f4f7;
   border-bottom: 1px solid var(--line);
 }
@@ -426,7 +504,7 @@ button {
 }
 
 .detail .meta {
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 12px;
   margin-bottom: 12px;
 }
@@ -440,7 +518,7 @@ button {
 }
 
 .detail dt {
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .detail dd {
@@ -455,7 +533,7 @@ button {
   font-size: 12px;
   border: 1px solid var(--line);
   background: var(--panel);
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .badge.changed,
@@ -482,7 +560,7 @@ button {
 .badge.default,
 .badge.no-default,
 .badge.special {
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .compare-card {
@@ -517,14 +595,14 @@ button {
 }
 
 .compare-label {
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 12px;
 }
 
 .compare-note {
   padding: 5px 10px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-text);
   background: #fafbfc;
 }
 
@@ -538,7 +616,7 @@ button {
   margin: 0 0 6px;
   font-size: 12px;
   font-weight: 600;
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .detail-section p {
@@ -566,7 +644,7 @@ button {
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .empty textarea {
@@ -604,12 +682,12 @@ button {
 }
 
 .palette-hit .hint {
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 12px;
 }
 
 .palette-hit .value {
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 12px;
   font-family: var(--ui-font-mono);
 }
@@ -617,7 +695,7 @@ button {
 .footnote {
   padding: 8px 14px;
   font-size: 12px;
-  color: var(--muted);
+  color: var(--muted-text);
   border-top: 1px solid var(--line);
   background: var(--panel);
 }
@@ -642,7 +720,7 @@ button {
 }
 
 .diff-count {
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 12px;
 }
 
@@ -675,7 +753,7 @@ button {
 .diff-empty {
   margin: 0;
   padding: 10px 14px 14px;
-  color: var(--muted);
+  color: var(--muted-text);
   font-size: 13px;
 }
 
@@ -705,7 +783,7 @@ button {
 
 .diff-nos {
   padding: 2px 6px;
-  color: var(--muted);
+  color: var(--muted-text);
   text-align: right;
   user-select: none;
 }
@@ -771,7 +849,7 @@ button {
 .diff-note {
   grid-column: 2 / 5;
   padding: 0 8px 4px;
-  color: var(--muted);
+  color: var(--muted-text);
   font-family: var(--ui-font-sans);
   font-size: 11px;
 }
@@ -794,7 +872,7 @@ button {
 }
 
 .diff-row.is-default .diff-cell {
-  color: var(--muted);
+  color: var(--muted-text);
 }
 
 .diff-row.is-changed .diff-cell.left,
