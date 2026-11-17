@@ -1,6 +1,7 @@
-import { Button } from '@ui-sdk/react/button';
-import { Tabs, TabsList, TabsPanel, TabsTab } from '@ui-sdk/react/tabs';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import type { ExportKind } from './components/ExportMenu';
 import type { AnnotationMode, DictFile, MetaIndex, PersistedState } from './types';
@@ -29,6 +30,7 @@ import { loadState, saveState } from './lib/persistence';
 import { evaluateRisks } from './lib/risks';
 import { insertDirective } from './lib/search';
 import { replaceSecrets } from './lib/secrets';
+import { cn } from './lib/utils';
 
 const notes = zhNotes as Record<string, string>;
 
@@ -349,8 +351,14 @@ export default function App() {
         />
       ) : null}
 
-      {notice ? <div className="banner">{notice}</div> : null}
-      {activeDictError ? <div className="banner">字典加载失败：{activeDictError}</div> : null}
+      {notice ? (
+        <div className="border-b border-[#fed7aa] bg-[#fff7ed] px-3.5 py-1.5 text-[13px] text-[#9a3412]">{notice}</div>
+      ) : null}
+      {activeDictError ? (
+        <div className="border-b border-[#fed7aa] bg-[#fff7ed] px-3.5 py-1.5 text-[13px] text-[#9a3412]">
+          字典加载失败：{activeDictError}
+        </div>
+      ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="grid min-h-[240px] flex-1 grid-cols-2">
@@ -387,22 +395,46 @@ export default function App() {
           </section>
         </div>
 
-        <div className={`bottom${bottomCollapsed ? ' is-collapsed' : ''}`}>
-          <Tabs defaultValue="compare">
-            <div className="bottom-head">
-              <TabsList aria-label="配置视图">
-                <TabsTab value="compare">配置对比</TabsTab>
-                <TabsTab value="detail">配置项说明</TabsTab>
+        <div
+          className={cn(
+            'flex flex-col border-t border-line',
+            bottomCollapsed ? 'h-auto min-h-0' : 'h-[36vh] min-h-[220px]',
+          )}
+        >
+          <Tabs defaultValue="compare" className="flex min-h-0 flex-1 flex-col">
+            <div
+              className={cn(
+                'flex items-center gap-2 border-b border-line bg-panel px-3 py-1.5',
+                bottomCollapsed && 'border-b-0',
+              )}
+            >
+              <TabsList aria-label="配置视图" className="flex items-center gap-0.5 rounded-lg bg-[#eceef2] p-0.5">
+                <TabsTrigger
+                  value="compare"
+                  className="rounded-md px-3.5 py-1.5 text-[13px] text-muted-foreground data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:shadow-sm"
+                >
+                  配置对比
+                </TabsTrigger>
+                <TabsTrigger
+                  value="detail"
+                  className="rounded-md px-3.5 py-1.5 text-[13px] text-muted-foreground data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:shadow-sm"
+                >
+                  配置项说明
+                </TabsTrigger>
               </TabsList>
-              <span className="spacer" />
+              <span className="flex-1" />
               <Button
+                variant="outline"
                 aria-label={bottomCollapsed ? '展开下方面板' : '收起下方面板'}
                 onClick={() => setBottomCollapsed(!bottomCollapsed)}
               >
                 {bottomCollapsed ? '展开' : '收起'}
               </Button>
             </div>
-            <TabsPanel value="compare" className="tab-panel">
+            <TabsContent
+              value="compare"
+              className={cn('min-h-0 flex-1 overflow-auto bg-white', bottomCollapsed && 'hidden')}
+            >
               {diff ? (
                 <DiffView
                   model={diff}
@@ -416,8 +448,11 @@ export default function App() {
               ) : (
                 <p className="diff-empty">正在加载…</p>
               )}
-            </TabsPanel>
-            <TabsPanel value="detail" className="tab-panel">
+            </TabsContent>
+            <TabsContent
+              value="detail"
+              className={cn('min-h-0 flex-1 overflow-auto bg-white', bottomCollapsed && 'hidden')}
+            >
               <DetailPanel
                 view={view}
                 lineNo={cursorAnalysis ? cursorLine : null}
@@ -428,7 +463,7 @@ export default function App() {
                   }
                 }}
               />
-            </TabsPanel>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
