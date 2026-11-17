@@ -1,6 +1,7 @@
-import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@ui-sdk/react/command';
-import { Dialog, DialogBackdrop, DialogContent, DialogTitle } from '@ui-sdk/react/dialog';
 import { useMemo, useState } from 'react';
+
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 import type { DictFile } from '../types';
 
@@ -28,34 +29,35 @@ export function SearchPalette({ open, onOpenChange, dict, configured, onPick }: 
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogBackdrop />
-      <DialogContent className="palette-dialog">
+      <DialogContent className="w-[min(680px,90vw)] sm:max-w-[680px]">
         <DialogTitle>搜索配置项</DialogTitle>
-        <Command
-          filter={false}
-          query={query}
-          onQueryChange={setQuery}
-          onAction={(value) => {
-            const hit = hits.find((item) => item.name === value);
-            if (!hit) {
-              return;
-            }
-            onPick(hit.name, hit.configured);
-            handleOpenChange(false);
-          }}
-        >
-          <CommandInput aria-label="搜索配置项" placeholder="输入指令名、分组或中文说明，例如 maxmemory" />
+        <Command shouldFilter={false} className="mt-2">
+          <CommandInput
+            aria-label="搜索配置项"
+            placeholder="输入指令名、分组或中文说明，例如 maxmemory"
+            value={query}
+            onValueChange={setQuery}
+          />
           <CommandEmpty>没有匹配的配置项。</CommandEmpty>
-          <CommandList className="palette-list">
+          <CommandList className="max-h-[min(56vh,520px)]">
             {hits.map((hit) => (
-              <CommandItem key={hit.name} value={hit.name} label={hit.name}>
-                <span className="palette-hit">
-                  <span className="name">
+              <CommandItem
+                key={hit.name}
+                value={hit.name}
+                onSelect={() => {
+                  onPick(hit.name, hit.configured);
+                  handleOpenChange(false);
+                }}
+              >
+                <span className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-0.5 rounded-md px-2 py-1.5">
+                  <span className="font-mono text-[13px]">
                     {hit.name}
                     {hit.configured ? ' · 已配置' : ''}
                   </span>
-                  <span className="value">默认 {hit.defaultValue === null ? '未给出' : hit.defaultValue || '空'}</span>
-                  <span className="hint">{hit.summary ?? hit.section}</span>
+                  <span className="font-mono text-xs text-muted-foreground">
+                    默认 {hit.defaultValue === null ? '未给出' : hit.defaultValue || '空'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">{hit.summary ?? hit.section}</span>
                 </span>
               </CommandItem>
             ))}
