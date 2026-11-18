@@ -1,4 +1,4 @@
-import { act, createEvent, fireEvent, render } from '@testing-library/react';
+﻿import { act, createEvent, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 
@@ -39,7 +39,7 @@ async function renderRows(rows: DiffRow[], onJump = vi.fn(), onEscape = vi.fn(),
   const utils = render(
     <DiffView
       model={model}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff
       onJump={onJump}
       onApplyDefault={onApplyDefault}
@@ -111,7 +111,7 @@ test('Enter 走行激活回调时焦点留在行上', async () => {
   const { container } = render(
     <DiffView
       model={model}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff
       onJump={onJump}
       onRowActivate={onRowActivate}

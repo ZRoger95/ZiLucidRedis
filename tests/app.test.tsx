@@ -29,6 +29,9 @@ test('diff 行按 Esc 后焦点回到编辑器', async () => {
   );
 
   const { container } = render(<App />);
+
+  await userEvent.click(screen.getByRole('tab', { name: '配置对比' }));
+
   const row = await waitFor(() => {
     const found = container.querySelector<HTMLElement>('[data-slot="diff-row"]');
     if (!found) {
@@ -45,4 +48,64 @@ test('diff 行按 Esc 后焦点回到编辑器', async () => {
   await waitFor(() => {
     expect(document.activeElement).toHaveClass('cm-content');
   });
+});
+
+test('默认展示体检结果', async () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      v: 1,
+      line: '7.4',
+      text: 'maxmemory 128mb\n',
+      annotationMode: 'off',
+      onlyDiff: false,
+      showZh: false,
+      bottomCollapsed: false,
+    }),
+  );
+
+  render(<App />);
+
+  expect(await screen.findByRole('tab', { name: '体检结果', selected: true })).toBeInTheDocument();
+  expect(await screen.findByRole('list', { name: '已改' })).toBeInTheDocument();
+});
+
+test('点击无默认值的缺失项打开搜索面板', async () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      v: 1,
+      line: '7.4',
+      text: 'maxmemory 128mb\n',
+      annotationMode: 'off',
+      onlyDiff: false,
+      showZh: false,
+      bottomCollapsed: false,
+    }),
+  );
+
+  render(<App />);
+
+  await userEvent.click(await screen.findByRole('button', { name: /bind/ }));
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
+});
+
+test('字典里没有的缺失项也打开搜索面板', async () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      v: 1,
+      line: '6.2',
+      text: 'maxmemory 128mb\n',
+      annotationMode: 'off',
+      onlyDiff: false,
+      showZh: false,
+      bottomCollapsed: false,
+    }),
+  );
+
+  render(<App />);
+
+  await userEvent.click(await screen.findByRole('button', { name: /bind/ }));
+  expect(await screen.findByRole('dialog')).toBeInTheDocument();
 });

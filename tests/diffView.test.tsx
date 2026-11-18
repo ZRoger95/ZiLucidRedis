@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+﻿import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 
@@ -37,7 +37,13 @@ const model = (rows: DiffRow[]): DiffModel => ({ rows, counts, total: rows.lengt
 test('renders both line numbers and applies default from the arrow', async () => {
   const onApplyDefault = vi.fn();
   render(
-    <DiffView model={model([row()])} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={onApplyDefault} />,
+    <DiffView
+      model={model([row()])}
+      onOnlyDiffChange={vi.fn()}
+      onlyDiff={false}
+      onJump={vi.fn()}
+      onApplyDefault={onApplyDefault}
+    />,
   );
 
   expect(screen.getByText('154')).toBeInTheDocument();
@@ -49,7 +55,15 @@ test('renders both line numbers and applies default from the arrow', async () =>
 
 test('jumps to the clicked left line number', async () => {
   const onJump = vi.fn();
-  render(<DiffView model={model([row()])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />);
+  render(
+    <DiffView
+      model={model([row()])}
+      onOnlyDiffChange={vi.fn()}
+      onlyDiff={false}
+      onJump={onJump}
+      onApplyDefault={vi.fn()}
+    />,
+  );
 
   await userEvent.click(screen.getByText('maxmemory 0'));
   expect(onJump).toHaveBeenCalledWith(154);
@@ -61,7 +75,13 @@ test('collapses long unchanged runs and expands on click', async () => {
   );
 
   render(
-    <DiffView model={model(unchanged)} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={vi.fn()} />,
+    <DiffView
+      model={model(unchanged)}
+      onOnlyDiffChange={vi.fn()}
+      onlyDiff={false}
+      onJump={vi.fn()}
+      onApplyDefault={vi.fn()}
+    />,
   );
 
   expect(screen.getByText('@@ 展开 3 行未修改 @@')).toBeInTheDocument();
@@ -71,7 +91,7 @@ test('asks for input when the left side is empty', () => {
   render(
     <DiffView
       model={model([])}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff={false}
       hasContent={false}
       onJump={vi.fn()}
@@ -86,7 +106,7 @@ test('renders the row note', () => {
   render(
     <DiffView
       model={model([row({ note: '旧名：slaveof → replicaof' })])}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff={false}
       onJump={vi.fn()}
       onApplyDefault={vi.fn()}
@@ -100,7 +120,7 @@ test('shows the official baseline version', () => {
   render(
     <DiffView
       model={model([row()])}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff={false}
       baseline="7.4.12 · 2026-10-26"
       onJump={vi.fn()}
@@ -125,7 +145,15 @@ test('jumps to the clicked line inside a multi line block', async () => {
     applyValue: null,
   });
 
-  render(<DiffView model={model([multi])} warnings={[]} onlyDiff={false} onJump={onJump} onApplyDefault={vi.fn()} />);
+  render(
+    <DiffView
+      model={model([multi])}
+      onOnlyDiffChange={vi.fn()}
+      onlyDiff={false}
+      onJump={onJump}
+      onApplyDefault={vi.fn()}
+    />,
+  );
 
   await userEvent.click(screen.getByText('save 300 10'));
   expect(onJump).toHaveBeenCalledWith(169);
@@ -137,7 +165,13 @@ test('expands the unchanged run after clicking the collapse row', async () => {
   );
 
   render(
-    <DiffView model={model(unchanged)} warnings={[]} onlyDiff={false} onJump={vi.fn()} onApplyDefault={vi.fn()} />,
+    <DiffView
+      model={model(unchanged)}
+      onOnlyDiffChange={vi.fn()}
+      onlyDiff={false}
+      onJump={vi.fn()}
+      onApplyDefault={vi.fn()}
+    />,
   );
 
   await userEvent.click(screen.getByText('@@ 展开 3 行未修改 @@'));
@@ -158,7 +192,7 @@ test('applies a quoted empty default through the arrow', async () => {
   render(
     <DiffView
       model={model([emptyDefault])}
-      warnings={[]}
+      onOnlyDiffChange={vi.fn()}
       onlyDiff={false}
       onJump={vi.fn()}
       onApplyDefault={onApplyDefault}
@@ -167,4 +201,20 @@ test('applies a quoted empty default through the arrow', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: '将 logfile 改回官方默认值' }));
   expect(onApplyDefault).toHaveBeenCalledWith(5, '""');
+});
+
+test('切换只看差异调用回调', async () => {
+  const onOnlyDiffChange = vi.fn();
+  render(
+    <DiffView
+      model={model([row()])}
+      onlyDiff={false}
+      onOnlyDiffChange={onOnlyDiffChange}
+      onJump={vi.fn()}
+      onApplyDefault={vi.fn()}
+    />,
+  );
+
+  await userEvent.click(screen.getByText('只看差异'));
+  expect(onOnlyDiffChange).toHaveBeenCalledWith(true);
 });

@@ -1,5 +1,7 @@
 import { memo, useMemo, useState } from 'react';
 
+import { Switch } from '@/components/ui/switch';
+
 import type { DiffModel, DiffRow, DiffSegment } from '../lib/diff';
 import type { RiskWarning } from '../types';
 
@@ -8,8 +10,8 @@ import { DiffRowItem, DiffRows } from './diffRows';
 
 interface DiffViewProps {
   model: DiffModel;
-  warnings: RiskWarning[];
   onlyDiff: boolean;
+  onOnlyDiffChange: (value: boolean) => void;
   hasContent?: boolean;
   baseline?: string;
   onJump: (lineNo: number) => void;
@@ -21,12 +23,6 @@ interface DiffViewProps {
 type DisplayItem = { type: 'row'; row: DiffRow } | { type: 'collapse'; key: string; rows: DiffRow[] };
 
 const LEVEL_SHORT: Record<RiskWarning['level'], string> = { high: '高危', medium: '中危', low: '提示' };
-
-const LEVEL_CLASS: Record<RiskWarning['level'], string> = {
-  high: 'text-unknown',
-  medium: 'text-warning',
-  low: '',
-};
 
 function Segments({ segments, side }: { segments: DiffSegment[]; side: 'left' | 'right' }) {
   return (
@@ -172,8 +168,8 @@ const DiffRowView = memo(function DiffRowViewContent({
 
 export function DiffView({
   model,
-  warnings,
   onlyDiff,
+  onOnlyDiffChange,
   hasContent = true,
   baseline,
   onJump,
@@ -232,35 +228,26 @@ export function DiffView({
     }
   };
 
-  const floating = warnings.filter((warning) => warning.lineNos.length === 0);
-  const diffCount =
-    model.counts.changed +
-    model.counts.added +
-    model.counts.removed +
-    model.counts.newer +
-    model.counts.unknown +
-    model.counts.duplicate;
-
   return (
     <section className="flex h-full min-h-0 flex-col bg-white" aria-label="配置对比">
       <div className="flex items-baseline gap-2.5 px-3.5 pt-2 pb-1.5">
         <strong className="text-[13px]">你的配置</strong>
-        <span className="text-xs text-muted-foreground">
-          差异 {diffCount} 项 / 共 {model.total} 项
-        </span>
+        <span className="text-xs text-muted-foreground">共 {model.total} 项</span>
         <span className="text-xs text-[#6b7280]">官方默认{baseline ? ` · ${baseline}` : ''}</span>
-        <span className="ml-auto text-xs text-[#9aa1ad]">点击左侧行在编辑器中定位</span>
+        <span className="text-xs text-[#9aa1ad]">点击左侧行在编辑器中定位</span>
+        <label
+          htmlFor="toggle-only-diff"
+          className="ml-auto inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+        >
+          <Switch
+            id="toggle-only-diff"
+            aria-label="只看差异"
+            checked={onlyDiff}
+            onCheckedChange={(checked) => onOnlyDiffChange(checked === true)}
+          />
+          只看差异
+        </label>
       </div>
-
-      {floating.length > 0 ? (
-        <ul className="m-0 list-none px-3.5 pb-1.5 text-xs">
-          {floating.map((warning) => (
-            <li key={warning.id} className={LEVEL_CLASS[warning.level]}>
-              {LEVEL_SHORT[warning.level]}：{warning.message}
-            </li>
-          ))}
-        </ul>
-      ) : null}
 
       {model.rows.length === 0 ? (
         <p className="m-0 px-3.5 pt-2.5 pb-3.5 text-[13px] text-muted-foreground">

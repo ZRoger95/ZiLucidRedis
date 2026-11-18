@@ -6,19 +6,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ExportKind } from './components/ExportMenu';
 import type { AnnotationMode, DictFile, JumpTarget, MetaIndex, PersistedState } from './types';
 
+import { CheckupPanel } from './components/CheckupPanel';
 import { DetailPanel } from './components/DetailPanel';
 import { DiffView } from './components/DiffView';
 import { Editor } from './components/Editor';
 import { EmptyState } from './components/EmptyState';
 import { OfficialPane } from './components/OfficialPane';
 import { SearchPalette } from './components/SearchPalette';
-import { SummaryBar } from './components/SummaryBar';
 import { Toolbar } from './components/Toolbar';
 import { aliases } from './data/aliases';
 import zhNotes from './data/zh-notes.json';
 import { useShortcut } from './hooks/useShortcut';
 import { analyze } from './lib/analyze';
 import { buildAnnotationBlocks } from './lib/annotations';
+import { buildCheckup } from './lib/checkup';
 import { describeDirective } from './lib/describe';
 import { DEFAULT_VERSION, loadDict, loadMeta, loadOfficialConf } from './lib/dict';
 import { applyDefaultLine, buildDiff } from './lib/diff';
@@ -109,6 +110,7 @@ export default function App() {
     [analysis, annotationMode, onlyDiff],
   );
   const officialIndex = useMemo(() => (official ? indexOfficialLines(official.text) : new Map()), [official]);
+  const checkup = useMemo(() => (analysis ? buildCheckup(analysis, warnings) : []), [analysis, warnings]);
 
   const officialHighlights = useMemo(() => {
     const lines = new Set<number>();
@@ -208,22 +210,6 @@ export default function App() {
     [text],
   );
 
-  const handleJumpKind = (kind: 'changed' | 'unknown' | 'removed' | 'newer' | 'duplicate' | 'missing') => {
-    if (kind === 'missing') {
-      setSearchOpen(true);
-      return;
-    }
-    if (!analysis) {
-      return;
-    }
-    for (const [lineNo, entry] of analysis.byLine) {
-      if (entry.status === kind) {
-        jumpToLine(lineNo);
-        return;
-      }
-    }
-  };
-
   const handleInsertDefault = () => {
     const doc = cursorAnalysis?.doc;
     if (!doc || doc.defaultValue === null) {
@@ -261,6 +247,15 @@ export default function App() {
     const result = insertDirective(text, parsed, doc, dict);
     setText(result.text);
     jumpToLine(result.lineNo);
+  };
+
+  const handleInsertMissing = (name: string) => {
+    const doc = dict?.directives.find((directive) => directive.name === name);
+    if (!doc || doc.defaultValue === null) {
+      setSearchOpen(true);
+      return;
+    }
+    handlePick(name, false);
   };
 
   const download = (content: string) => {
@@ -333,8 +328,6 @@ export default function App() {
         onLineChange={setLine}
         annotationMode={annotationMode}
         onAnnotationModeChange={setAnnotationMode}
-        onlyDiff={onlyDiff}
-        onOnlyDiffChange={setOnlyDiff}
         showZh={showZh}
         onShowZhChange={setShowZh}
         onUpload={(file) => void readFile(file)}
@@ -350,15 +343,6 @@ export default function App() {
         onExport={handleExport}
         canRestoreSecrets={vault.size > 0}
       />
-
-      {analysis ? (
-        <SummaryBar
-          counts={analysis.counts}
-          missing={analysis.missing}
-          warningCount={warnings.length}
-          onJump={handleJumpKind}
-        />
-      ) : null}
 
       {notice ? (
         <div className="border-b border-[#fed7aa] bg-[#fff7ed] px-3.5 py-1.5 text-[13px] text-[#9a3412]">{notice}</div>
@@ -411,7 +395,7 @@ export default function App() {
             bottomCollapsed ? 'h-auto min-h-0' : 'h-[36vh] min-h-[220px]',
           )}
         >
-          <Tabs defaultValue="compare" className="flex min-h-0 flex-1 flex-col">
+          <Tabs defaultValue="checkup" className="flex min-h-0 flex-1 flex-col">
             <div
               className={cn(
                 'flex items-center gap-2 border-b border-line bg-panel px-3 py-1.5',
@@ -419,6 +403,12 @@ export default function App() {
               )}
             >
               <TabsList aria-label="配置视图" className="flex items-center gap-0.5 rounded-lg bg-[#eceef2] p-0.5">
+                <TabsTrigger
+                  value="checkup"
+                  className="rounded-md px-3.5 py-1.5 text-[13px] text-muted-foreground data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:shadow-sm"
+                >
+                  体检结果
+                </TabsTrigger>
                 <TabsTrigger
                   value="compare"
                   className="rounded-md px-3.5 py-1.5 text-[13px] text-muted-foreground data-[state=active]:bg-white data-[state=active]:font-semibold data-[state=active]:text-ink data-[state=active]:shadow-sm"
@@ -442,14 +432,25 @@ export default function App() {
               </Button>
             </div>
             <TabsContent
+              value="checkup"
+              className={cn('min-h-0 flex-1 overflow-auto bg-white', bottomCollapsed && 'hidden')}
+            >
+              <CheckupPanel
+                groups={checkup}
+                hasContent={hasContent}
+                onJump={jumpToLine}
+                onInsertMissing={handleInsertMissing}
+              />
+            </TabsContent>
+            <TabsContent
               value="compare"
               className={cn('min-h-0 flex-1 overflow-auto bg-white', bottomCollapsed && 'hidden')}
             >
               {diff ? (
                 <DiffView
                   model={diff}
-                  warnings={warnings}
                   onlyDiff={onlyDiff}
+                  onOnlyDiffChange={setOnlyDiff}
                   hasContent={hasContent}
                   baseline={baseline}
                   onJump={jumpToLine}

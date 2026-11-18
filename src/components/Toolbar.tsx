@@ -14,8 +14,6 @@ interface ToolbarProps {
   onLineChange: (line: string) => void;
   annotationMode: AnnotationMode;
   onAnnotationModeChange: (mode: AnnotationMode) => void;
-  onlyDiff: boolean;
-  onOnlyDiffChange: (value: boolean) => void;
   showZh: boolean;
   onShowZhChange: (value: boolean) => void;
   onUpload: (file: File) => void;
@@ -77,16 +75,6 @@ export function Toolbar(props: ToolbarProps) {
           </SelectContent>
         </Select>
       </span>
-
-      <label htmlFor="toggle-only-diff" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
-        <Switch
-          id="toggle-only-diff"
-          aria-label="只看差异"
-          checked={props.onlyDiff}
-          onCheckedChange={(checked) => props.onOnlyDiffChange(checked === true)}
-        />
-        只看差异
-      </label>
 
       <label htmlFor="toggle-zh" className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <Switch
