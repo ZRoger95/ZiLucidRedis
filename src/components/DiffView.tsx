@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 
 import type { DiffModel, DiffRow, DiffSegment } from '../lib/diff';
 import type { RiskWarning } from '../types';
@@ -73,7 +73,7 @@ function rightBackground(kind: DiffRow['kind']): string {
   return '';
 }
 
-function DiffRowView({
+const DiffRowView = memo(function DiffRowViewContent({
   row,
   onJump,
   onApplyDefault,
@@ -132,7 +132,11 @@ function DiffRowView({
             aria-label={`将 ${row.name} 改回官方默认值`}
             title="改回官方默认值"
             onClick={() => onApplyDefault(firstLeft, row.applyValue as string)}
-            onKeyDown={(event) => event.stopPropagation()}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape') {
+                event.stopPropagation();
+              }
+            }}
           >
             »
           </button>
@@ -164,7 +168,7 @@ function DiffRowView({
       ) : null}
     </DiffRowItem>
   );
-}
+});
 
 export function DiffView({
   model,

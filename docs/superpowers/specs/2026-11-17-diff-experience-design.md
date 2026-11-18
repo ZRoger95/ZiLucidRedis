@@ -249,7 +249,7 @@ interface DiffModel {
   - 多行块、`added`、`removed`、`newer`、`unknown`、`duplicate`、`special` 的箭头
     只做视觉指示，不可点击。
   - 箭头按钮 `aria-label` 为「将 maxmemory 改回官方默认值」这类完整描述。
-- 行键盘：`Tab` 可聚焦行，`Enter` 跳转；箭头按钮可单独 `Tab` 聚焦。
+- 行键盘：行组导航见 [diff 行导航行为层设计](2026-11-18-diff-behavior-layer-design.md) §5.1；箭头按钮可单独 `Tab` 聚焦。
 - 「只看差异」开关沿用顶部现有开关，作用于 diff 行集合与上方编辑器。带风险的行在
   编辑器里也不隐藏（见 6.6）。
 - 折叠段点击后在原位展开；不提供「全部展开/收起」按钮（避免本次范围膨胀）。

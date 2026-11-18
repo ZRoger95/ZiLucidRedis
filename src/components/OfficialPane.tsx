@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 
-import type { AnnotationMode, DictFile } from '../types';
+import type { AnnotationMode, DictFile, JumpTarget } from '../types';
 
 import { officialAnnotations } from '../lib/official';
 import './editor.css';
@@ -12,7 +12,7 @@ interface OfficialPaneProps {
   dict: DictFile | null;
   annotationMode: AnnotationMode;
   highlightLines: Set<number>;
-  focus: { lineNo: number; nonce: number } | null;
+  focus: JumpTarget | null;
 }
 
 export function OfficialPane({

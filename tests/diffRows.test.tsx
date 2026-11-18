@@ -1,4 +1,4 @@
-import { createEvent, fireEvent, render } from '@testing-library/react';
+import { act, createEvent, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 
@@ -34,7 +34,7 @@ function makeRow(lineNo: number, overrides: Partial<DiffRow> = {}): DiffRow {
   };
 }
 
-function renderRows(rows: DiffRow[], onJump = vi.fn(), onEscape = vi.fn(), onApplyDefault = vi.fn()) {
+async function renderRows(rows: DiffRow[], onJump = vi.fn(), onEscape = vi.fn(), onApplyDefault = vi.fn()) {
   const model: DiffModel = { rows, counts, total: rows.length };
   const utils = render(
     <DiffView
@@ -46,43 +46,60 @@ function renderRows(rows: DiffRow[], onJump = vi.fn(), onEscape = vi.fn(), onApp
       onEscape={onEscape}
     />,
   );
+  // roving 组通过微任务同步 tabindex，先让这些更新落在 act 内
+  await act(async () => {});
   return { ...utils, onJump, onEscape, onApplyDefault };
+}
+
+async function focusRow(row: HTMLElement) {
+  await act(async () => {
+    row.focus();
+  });
 }
 
 const rowElements = (container: HTMLElement) =>
   Array.from(container.querySelectorAll<HTMLElement>('[data-slot="diff-row"]'));
 
-test('整个行组只有一个 tab stop', () => {
-  const { container } = renderRows([makeRow(10), makeRow(20)]);
+test('整个行组只有一个 tab stop', async () => {
+  const { container } = await renderRows([makeRow(10), makeRow(20)]);
   const rows = rowElements(container);
   expect(rows[0]).toHaveAttribute('tabindex', '0');
   expect(rows[1]).toHaveAttribute('tabindex', '-1');
 });
 
-test('方向键与 Home/End 移动焦点', async () => {
-  const { container } = renderRows([makeRow(10), makeRow(20), makeRow(30)]);
+test('方向键与 Home/End 移动焦点并迁移 tabindex', async () => {
+  const { container } = await renderRows([makeRow(10), makeRow(20), makeRow(30)]);
   const rows = rowElements(container);
 
-  rows[0].focus();
+  await focusRow(rows[0]);
   await userEvent.keyboard('{ArrowDown}');
+  expect(rows[1]).toHaveFocus();
+  expect(rows[0]).toHaveAttribute('tabindex', '-1');
+  expect(rows[1]).toHaveAttribute('tabindex', '0');
+
+  await userEvent.keyboard('{ArrowDown}');
+  expect(rows[2]).toHaveFocus();
+
+  await userEvent.keyboard('{ArrowUp}');
   expect(rows[1]).toHaveFocus();
 
   await userEvent.keyboard('{End}');
   expect(rows[2]).toHaveFocus();
+  expect(rows[2]).toHaveAttribute('tabindex', '0');
 
   await userEvent.keyboard('{Home}');
   expect(rows[0]).toHaveFocus();
 });
 
 test('Enter 跳转且阻止默认行为', async () => {
-  const { container, onJump } = renderRows([makeRow(10), makeRow(20)]);
+  const { container, onJump } = await renderRows([makeRow(10), makeRow(20)]);
   const row = rowElements(container)[1];
   const event = createEvent.keyDown(row, { key: 'Enter' });
   fireEvent(row, event);
   expect(event.defaultPrevented).toBe(true);
   expect(onJump).toHaveBeenCalledWith(20);
 
-  row.focus();
+  await focusRow(row);
   await userEvent.keyboard('{Enter}');
   expect(onJump).toHaveBeenCalledTimes(2);
 });
@@ -101,8 +118,9 @@ test('Enter 走行激活回调时焦点留在行上', async () => {
       onApplyDefault={vi.fn()}
     />,
   );
+  await act(async () => {});
   const rows = rowElements(container);
-  rows[1].focus();
+  await focusRow(rows[1]);
   await userEvent.keyboard('{Enter}');
   expect(onRowActivate).toHaveBeenCalledWith(20);
   expect(onJump).not.toHaveBeenCalled();
@@ -110,10 +128,20 @@ test('Enter 走行激活回调时焦点留在行上', async () => {
 });
 
 test('Esc 请求回到编辑器', async () => {
-  const { container, onEscape } = renderRows([makeRow(10)]);
-  rowElements(container)[0].focus();
+  const { container, onEscape } = await renderRows([makeRow(10)]);
+  await focusRow(rowElements(container)[0]);
   await userEvent.keyboard('{Escape}');
   expect(onEscape).toHaveBeenCalledTimes(1);
+});
+
+test('焦点在行内改回默认值按钮上时 Esc 也回到编辑器', async () => {
+  const { container, onEscape, onApplyDefault } = await renderRows([makeRow(10)]);
+  const arrow = container.querySelector<HTMLButtonElement>('button[aria-label*="改回官方默认值"]');
+  expect(arrow).not.toBeNull();
+  await focusRow(arrow!);
+  await userEvent.keyboard('{Escape}');
+  expect(onEscape).toHaveBeenCalledTimes(1);
+  expect(onApplyDefault).not.toHaveBeenCalled();
 });
 
 test('没有左侧行号的行被方向键跳过', async () => {
@@ -124,19 +152,34 @@ test('没有左侧行号的行被方向键跳过', async () => {
     canApplyDefault: false,
     applyValue: null,
   });
-  const { container } = renderRows([makeRow(10), added, makeRow(30)]);
+  const { container } = await renderRows([makeRow(10), added, makeRow(30)]);
   const rows = rowElements(container);
 
-  rows[0].focus();
+  await focusRow(rows[0]);
   await userEvent.keyboard('{ArrowDown}');
   expect(rows[2]).toHaveFocus();
 });
 
+test('首行为 added 时停靠点落在第一个可聚焦行', async () => {
+  const added = makeRow(0, {
+    key: 'added-first',
+    kind: 'added',
+    left: undefined,
+    canApplyDefault: false,
+    applyValue: null,
+  });
+  const { container } = await renderRows([added, makeRow(10)]);
+  const rows = rowElements(container);
+
+  expect(rows[0]).toHaveAttribute('tabindex', '-1');
+  expect(rows[1]).toHaveAttribute('tabindex', '0');
+});
+
 test('行内改回默认值按钮不触发行跳转', async () => {
-  const { container, onJump, onApplyDefault } = renderRows([makeRow(10)]);
+  const { container, onJump, onApplyDefault } = await renderRows([makeRow(10)]);
   const arrow = container.querySelector<HTMLButtonElement>('button[aria-label*="改回官方默认值"]');
   expect(arrow).not.toBeNull();
-  arrow!.focus();
+  await focusRow(arrow!);
   await userEvent.keyboard('{Enter}');
   expect(onApplyDefault).toHaveBeenCalled();
   expect(onJump).not.toHaveBeenCalled();

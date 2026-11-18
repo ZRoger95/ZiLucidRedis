@@ -21,17 +21,17 @@ const diffRows = definePrimitive({
     return {
       roving,
       keydown(event: KeyboardEvent, el: HTMLElement, value: string) {
+        if (event.key === 'Escape') {
+          event.preventDefault();
+          context.options().onEscape?.();
+          return;
+        }
         if (event.target !== el) {
           return;
         }
         if (event.key === 'Enter') {
           event.preventDefault();
           context.options().onActivate?.(value);
-          return;
-        }
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          context.options().onEscape?.();
           return;
         }
         roving.keydown(event, el);

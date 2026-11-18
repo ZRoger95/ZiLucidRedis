@@ -4,7 +4,7 @@ import { Decoration, type DecorationSet, EditorView, keymap, lineNumbers, Widget
 import { useEffect, useRef } from 'react';
 
 import type { AnnotationBlock } from '../lib/annotations';
-import type { AnalysisResult } from '../types';
+import type { AnalysisResult, JumpTarget } from '../types';
 
 import './editor.css';
 
@@ -14,7 +14,7 @@ interface EditorProps {
   blocks: AnnotationBlock[];
   onlyDiff: boolean;
   forceVisibleLines?: Set<number>;
-  jumpTo: { lineNo: number; nonce: number; focus?: boolean } | null;
+  jumpTo: JumpTarget | null;
   focusRequest?: number;
   onChange: (text: string) => void;
   onCursorLine: (lineNo: number) => void;
@@ -134,6 +134,8 @@ export function Editor(props: EditorProps) {
   const view = useRef<EditorView | null>(null);
   const decorationCompartment = useRef(new Compartment());
   const latest = useRef(props);
+  // 记录已处理的聚焦请求：重新挂载时不应因历史请求值而立即抢焦点
+  const lastFocusRequest = useRef(props.focusRequest);
 
   // 把最新 props 同步给 CodeMirror 的回调，避免在渲染期写 ref
   useEffect(() => {
@@ -221,9 +223,13 @@ export function Editor(props: EditorProps) {
 
   useEffect(() => {
     const instance = view.current;
-    if (!instance || !props.focusRequest) {
+    if (!instance || props.focusRequest === undefined) {
       return;
     }
+    if (lastFocusRequest.current === props.focusRequest) {
+      return;
+    }
+    lastFocusRequest.current = props.focusRequest;
     instance.focus();
   }, [props.focusRequest]);
 

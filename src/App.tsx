@@ -1,10 +1,10 @@
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import type { ExportKind } from './components/ExportMenu';
-import type { AnnotationMode, DictFile, MetaIndex, PersistedState } from './types';
+import type { AnnotationMode, DictFile, JumpTarget, MetaIndex, PersistedState } from './types';
 
 import { DetailPanel } from './components/DetailPanel';
 import { DiffView } from './components/DiffView';
@@ -53,7 +53,7 @@ export default function App() {
   const [meta, setMeta] = useState<MetaIndex>({});
   const [dictError, setDictError] = useState<{ line: string; message: string } | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
-  const [jump, setJump] = useState<{ lineNo: number; nonce: number; focus?: boolean } | null>(null);
+  const [jump, setJump] = useState<JumpTarget | null>(null);
   const [editorFocusNonce, setEditorFocusNonce] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [vault, setVault] = useState<Map<string, string>>(new Map());
@@ -196,10 +196,17 @@ export default function App() {
     importText(decoded, file.name);
   };
 
-  const jumpToLine = (lineNo: number, focus = true) => {
+  const jumpToLine = useCallback((lineNo: number, focus = true) => {
     setCursorLine(lineNo);
     setJump({ lineNo, nonce: Date.now(), focus });
-  };
+  }, []);
+
+  const activateDiffRow = useCallback((lineNo: number) => jumpToLine(lineNo, false), [jumpToLine]);
+  const focusEditorFromDiff = useCallback(() => setEditorFocusNonce((value) => value + 1), []);
+  const applyDiffDefault = useCallback(
+    (lineNo: number, value: string) => setText(applyDefaultLine(text, lineNo, value)),
+    [text],
+  );
 
   const handleJumpKind = (kind: 'changed' | 'unknown' | 'removed' | 'newer' | 'duplicate' | 'missing') => {
     if (kind === 'missing') {
@@ -445,9 +452,9 @@ export default function App() {
                   hasContent={hasContent}
                   baseline={baseline}
                   onJump={jumpToLine}
-                  onRowActivate={(lineNo) => jumpToLine(lineNo, false)}
-                  onEscape={() => setEditorFocusNonce((value) => value + 1)}
-                  onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
+                  onRowActivate={activateDiffRow}
+                  onEscape={focusEditorFromDiff}
+                  onApplyDefault={applyDiffDefault}
                 />
               ) : (
                 <p className="m-0 px-3.5 pt-2.5 pb-3.5 text-[13px] text-muted-foreground">正在加载…</p>

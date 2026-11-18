@@ -80,6 +80,12 @@ export interface RiskWarning {
 
 export type AnnotationMode = 'missing' | 'all' | 'off';
 
+export interface JumpTarget {
+  lineNo: number;
+  nonce: number;
+  focus?: boolean;
+}
+
 export interface PersistedState {
   v: 1;
   line: string;

@@ -64,8 +64,8 @@
 ### 5.2 可聚焦范围
 
 - 只有带左侧行号的 diff 行进入 roving 组（`lineNo > 0`）；只有右侧内容的 `added` 行跳过，与现有 `tabIndex={-1}` 一致。
-- 行内“改回默认值”的 `»` 按钮仍是独立的原生 button，可通过 Tab 到达；它的键盘事件不冒泡到行，不触发行跳转。
-- 折叠行 `@@ 展开 N 行未修改 @@` 是普通按钮，留在行组之外。
+- 行内“改回默认值”的 `»` 按钮仍是独立的原生 button，可通过 Tab 到达；它的 `Enter` 与方向键不冒泡到行，不触发行跳转；`Esc` 会冒泡到行，照样把焦点送回编辑器。
+- 折叠行 `@@ 展开 N 行未修改 @@` 是普通按钮：它渲染在行组容器内，但不是 roving 行，不参与方向键导航，也不改变行组的 Tab 停靠点；它自己可单独 Tab 聚焦。
 
 ### 5.3 ARIA 与焦点
 
@@ -86,6 +86,7 @@
 - [DiffView.tsx](../../../src/components/DiffView.tsx)：用 `DiffRows` 包裹行列表，每行改为 `DiffRowItem`；删除行级 `tabIndex` / `onKeyDown`，保留点击跳转与箭头逻辑。
 - [App.tsx](../../../src/App.tsx)：新增 `editorFocusNonce` 状态，向 `Editor` 传 `focusRequest`，向 `DiffView` 传 `onEscape`。
 - [Editor.tsx](../../../src/components/Editor.tsx)：新增 `focusRequest?: number`，变化时调用 `view.current?.focus()`。
+- [types.ts](../../../src/types.ts)：新增 `JumpTarget`，供 `App` / `Editor` / `OfficialPane` 的跳转与聚焦请求共用。
 - [AGENTS.md](../../../AGENTS.md)：把「ui-sdk 只用于阶段二 diff 行为层」改成当前事实，写清标准控件仍不得引入 ui-sdk。
 
 接口：
@@ -110,13 +111,14 @@ export const DiffRowItem: React.ComponentType<{
 
 - 新增 `tests/diffRows.test.tsx`：
   - 初始只有一行 `tabindex="0"`，其余为 `-1`。
-  - `ArrowDown` / `ArrowUp` / `Home` / `End` 的焦点落点。
+  - `ArrowDown` / `ArrowUp` / `Home` / `End` 的焦点落点，以及导航后的 `tabindex` 迁移。
   - `Enter` 调用 `onJump` 且 `defaultPrevented`。
   - `Enter` 走 `onRowActivate` 时不再调用 `onJump`，焦点留在行上。
-  - `Esc` 调用 `onEscape`。
-  - `added` 行被方向键跳过。
+  - `Esc` 在行上与行内 `»` 按钮上都调用 `onEscape`。
+  - `added` 行被方向键跳过；首行是 `added` 时停靠点落在第一个可聚焦行。
   - 行内 `»` 按钮上的 Enter 不调用 `onJump`。
-- 新增 `tests/editorFocus.test.tsx`：`focusRequest` 变化后 `document.activeElement` 是 CodeMirror 内容区；`jumpTo.focus === false` 时不抢走外部焦点。
+- 新增 `tests/editorFocus.test.tsx`：`focusRequest` 变化后 `document.activeElement` 是 CodeMirror 内容区；`jumpTo.focus === false` 时不抢走外部焦点；重新挂载时不因历史 `focusRequest` 抢焦点。
+- `tests/app.test.tsx` 增加 `diff 行按 Esc 后焦点回到编辑器` 的集成用例。
 - 既有 `tests/diffView.test.tsx` 的 9 个用例保持通过。
 - `npm run check` 与 `npm run build` 必须通过。
 

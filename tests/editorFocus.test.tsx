@@ -44,6 +44,43 @@ test('focusRequest 变化后焦点进入编辑器', () => {
   expect(document.activeElement).toHaveClass('cm-content');
 });
 
+test('重新挂载时不会因历史 focusRequest 立即聚焦', () => {
+  const button = document.createElement('button');
+  document.body.append(button);
+  button.focus();
+
+  const { unmount } = render(
+    <Editor
+      value="maxmemory 0"
+      result={result}
+      blocks={[]}
+      onlyDiff={false}
+      jumpTo={null}
+      focusRequest={1}
+      onChange={vi.fn()}
+      onCursorLine={vi.fn()}
+      onCommitComment={vi.fn()}
+    />,
+  );
+  unmount();
+  render(
+    <Editor
+      value="maxmemory 0"
+      result={result}
+      blocks={[]}
+      onlyDiff={false}
+      jumpTo={null}
+      focusRequest={1}
+      onChange={vi.fn()}
+      onCursorLine={vi.fn()}
+      onCommitComment={vi.fn()}
+    />,
+  );
+  expect(button).toHaveFocus();
+
+  button.remove();
+});
+
 test('jumpTo 要求不聚焦时焦点留在编辑器之外', () => {
   const button = document.createElement('button');
   document.body.append(button);
