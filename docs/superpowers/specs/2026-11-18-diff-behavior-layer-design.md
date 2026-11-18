@@ -75,7 +75,8 @@
 
 ### 5.4 状态变化
 
-- 切换 `onlyDiff`、展开折叠块、diff 重算后，roving 组按新的行集合重新检查；焦点行消失时回到最近的仍存在的行，没有则回到第一行。
+- 切换 `onlyDiff`、展开折叠块、diff 重算后，roving 组按新的行集合重新检查，停靠点回到第一个可聚焦行。
+- 焦点所在的行被移除时（例如在 `onlyDiff` 下按 `»` 把该行改回默认值），浏览器把焦点交回 `body`，用户需再按一次 `Tab` 重新进入行组。`createRovingFocus` 在部件卸载时不迁移焦点，本次接受该边界。
 - `DiffView` 重新挂载（切换 Tabs 后返回）时，焦点状态允许重置。
 
 ## 6. 代码改动
@@ -111,10 +112,11 @@ export const DiffRowItem: React.ComponentType<{
   - 初始只有一行 `tabindex="0"`，其余为 `-1`。
   - `ArrowDown` / `ArrowUp` / `Home` / `End` 的焦点落点。
   - `Enter` 调用 `onJump` 且 `defaultPrevented`。
+  - `Enter` 走 `onRowActivate` 时不再调用 `onJump`，焦点留在行上。
   - `Esc` 调用 `onEscape`。
   - `added` 行被方向键跳过。
   - 行内 `»` 按钮上的 Enter 不调用 `onJump`。
-- 新增 `tests/editorFocus.test.tsx`：`focusRequest` 变化后 `document.activeElement` 是 CodeMirror 内容区。
+- 新增 `tests/editorFocus.test.tsx`：`focusRequest` 变化后 `document.activeElement` 是 CodeMirror 内容区；`jumpTo.focus === false` 时不抢走外部焦点。
 - 既有 `tests/diffView.test.tsx` 的 9 个用例保持通过。
 - `npm run check` 与 `npm run build` 必须通过。
 

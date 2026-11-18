@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { createEvent, fireEvent, render } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 
@@ -76,9 +76,37 @@ test('方向键与 Home/End 移动焦点', async () => {
 
 test('Enter 跳转且阻止默认行为', async () => {
   const { container, onJump } = renderRows([makeRow(10), makeRow(20)]);
-  rowElements(container)[1].focus();
-  await userEvent.keyboard('{Enter}');
+  const row = rowElements(container)[1];
+  const event = createEvent.keyDown(row, { key: 'Enter' });
+  fireEvent(row, event);
+  expect(event.defaultPrevented).toBe(true);
   expect(onJump).toHaveBeenCalledWith(20);
+
+  row.focus();
+  await userEvent.keyboard('{Enter}');
+  expect(onJump).toHaveBeenCalledTimes(2);
+});
+
+test('Enter 走行激活回调时焦点留在行上', async () => {
+  const onJump = vi.fn();
+  const onRowActivate = vi.fn();
+  const model: DiffModel = { rows: [makeRow(10), makeRow(20)], counts, total: 2 };
+  const { container } = render(
+    <DiffView
+      model={model}
+      warnings={[]}
+      onlyDiff
+      onJump={onJump}
+      onRowActivate={onRowActivate}
+      onApplyDefault={vi.fn()}
+    />,
+  );
+  const rows = rowElements(container);
+  rows[1].focus();
+  await userEvent.keyboard('{Enter}');
+  expect(onRowActivate).toHaveBeenCalledWith(20);
+  expect(onJump).not.toHaveBeenCalled();
+  expect(rows[1]).toHaveFocus();
 });
 
 test('Esc 请求回到编辑器', async () => {
