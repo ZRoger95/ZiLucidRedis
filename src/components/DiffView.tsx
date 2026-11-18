@@ -4,6 +4,7 @@ import type { DiffModel, DiffRow, DiffSegment } from '../lib/diff';
 import type { RiskWarning } from '../types';
 
 import { cn } from '../lib/utils';
+import { DiffRowItem, DiffRows } from './diffRows';
 
 interface DiffViewProps {
   model: DiffModel;
@@ -12,7 +13,9 @@ interface DiffViewProps {
   hasContent?: boolean;
   baseline?: string;
   onJump: (lineNo: number) => void;
+  onRowActivate?: (lineNo: number) => void;
   onApplyDefault: (lineNo: number, value: string) => void;
+  onEscape?: () => void;
 }
 
 type DisplayItem = { type: 'row'; row: DiffRow } | { type: 'collapse'; key: string; rows: DiffRow[] };
@@ -88,18 +91,14 @@ function DiffRowView({
   const rightBg = rightBackground(row.kind);
 
   return (
-    <div
+    <DiffRowItem
+      value={row.key}
+      lineNo={firstLeft}
+      label={`第 ${firstLeft} 行，${row.name}`}
       className={cn(
         'grid grid-cols-[52px_minmax(0,1fr)_28px_minmax(0,1fr)_52px] border-b border-[#f2f3f5] font-mono text-xs leading-[1.7] hover:shadow-[inset_0_0_0_1px_#c7d2fe] focus-visible:[outline:2px_solid_#6366f1] focus-visible:[outline-offset:-2px]',
         row.kind === 'default' && '[&_.diff-cell]:text-muted-foreground',
       )}
-      tabIndex={firstLeft ? 0 : -1}
-      onKeyDown={(event) => {
-        if (firstLeft && (event.key === 'Enter' || event.key === ' ')) {
-          event.preventDefault();
-          onJump(firstLeft);
-        }
-      }}
     >
       <div className="select-none px-1.5 py-0.5 text-right text-muted-foreground">
         {Array.from({ length: height }, (_, index) => (
@@ -133,6 +132,7 @@ function DiffRowView({
             aria-label={`将 ${row.name} 改回官方默认值`}
             title="改回官方默认值"
             onClick={() => onApplyDefault(firstLeft, row.applyValue as string)}
+            onKeyDown={(event) => event.stopPropagation()}
           >
             »
           </button>
@@ -162,7 +162,7 @@ function DiffRowView({
       {row.note ? (
         <div className="col-start-2 col-end-5 px-2 pb-1 font-sans text-[11px] text-muted-foreground">{row.note}</div>
       ) : null}
-    </div>
+    </DiffRowItem>
   );
 }
 
@@ -173,7 +173,9 @@ export function DiffView({
   hasContent = true,
   baseline,
   onJump,
+  onRowActivate,
   onApplyDefault,
+  onEscape,
 }: DiffViewProps) {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -207,6 +209,24 @@ export function DiffView({
     }
     return result;
   }, [model.rows, onlyDiff, expanded]);
+
+  const jumpTargets = useMemo(() => {
+    const targets = new Map<string, number>();
+    for (const row of model.rows) {
+      const lineNo = row.left?.lines[0]?.lineNo;
+      if (lineNo) {
+        targets.set(row.key, lineNo);
+      }
+    }
+    return targets;
+  }, [model.rows]);
+
+  const activateRow = (key: string) => {
+    const lineNo = jumpTargets.get(key);
+    if (lineNo) {
+      (onRowActivate ?? onJump)(lineNo);
+    }
+  };
 
   const floating = warnings.filter((warning) => warning.lineNos.length === 0);
   const diffCount =
@@ -243,7 +263,7 @@ export function DiffView({
           {hasContent ? '当前配置与官方默认值一致' : '先在左侧载入或粘贴配置'}
         </p>
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto">
+        <DiffRows className="min-h-0 flex-1 overflow-auto" onActivate={activateRow} onEscape={onEscape}>
           {items.map((item) =>
             item.type === 'collapse' ? (
               <button
@@ -264,7 +284,7 @@ export function DiffView({
               <DiffRowView key={item.row.key} row={item.row} onJump={onJump} onApplyDefault={onApplyDefault} />
             ),
           )}
-        </div>
+        </DiffRows>
       )}
     </section>
   );

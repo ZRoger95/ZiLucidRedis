@@ -14,7 +14,7 @@ interface EditorProps {
   blocks: AnnotationBlock[];
   onlyDiff: boolean;
   forceVisibleLines?: Set<number>;
-  jumpTo: { lineNo: number; nonce: number } | null;
+  jumpTo: { lineNo: number; nonce: number; focus?: boolean } | null;
   onChange: (text: string) => void;
   onCursorLine: (lineNo: number) => void;
   onCommitComment: (lineNo: number, text: string[]) => void;
@@ -213,7 +213,9 @@ export function Editor(props: EditorProps) {
       selection: { anchor: target.from },
       effects: EditorView.scrollIntoView(target.from, { y: 'center' }),
     });
-    instance.focus();
+    if (props.jumpTo.focus !== false) {
+      instance.focus();
+    }
   }, [props.jumpTo]);
 
   return <div className="editor-host" ref={host} />;

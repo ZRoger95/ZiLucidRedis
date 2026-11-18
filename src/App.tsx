@@ -53,7 +53,7 @@ export default function App() {
   const [meta, setMeta] = useState<MetaIndex>({});
   const [dictError, setDictError] = useState<{ line: string; message: string } | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
-  const [jump, setJump] = useState<{ lineNo: number; nonce: number } | null>(null);
+  const [jump, setJump] = useState<{ lineNo: number; nonce: number; focus?: boolean } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [vault, setVault] = useState<Map<string, string>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
@@ -195,9 +195,9 @@ export default function App() {
     importText(decoded, file.name);
   };
 
-  const jumpToLine = (lineNo: number) => {
+  const jumpToLine = (lineNo: number, focus = true) => {
     setCursorLine(lineNo);
-    setJump({ lineNo, nonce: Date.now() });
+    setJump({ lineNo, nonce: Date.now(), focus });
   };
 
   const handleJumpKind = (kind: 'changed' | 'unknown' | 'removed' | 'newer' | 'duplicate' | 'missing') => {
@@ -443,6 +443,7 @@ export default function App() {
                   hasContent={hasContent}
                   baseline={baseline}
                   onJump={jumpToLine}
+                  onRowActivate={(lineNo) => jumpToLine(lineNo, false)}
                   onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
                 />
               ) : (
