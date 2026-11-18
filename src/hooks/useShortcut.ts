@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-export function useShortcut(keys: 'mod+k', handler: () => void): void {
+export function useShortcut(keys: 'mod+k' | 'mod+f', handler: () => void): void {
   useEffect(() => {
     const key = keys.split('+').at(-1) ?? '';
     const onKeyDown = (event: KeyboardEvent) => {

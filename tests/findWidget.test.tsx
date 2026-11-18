@@ -1,7 +1,6 @@
-import { createRef } from 'react';
-
 import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createRef } from 'react';
 import { expect, test, vi } from 'vitest';
 
 import { FindWidget } from '../src/components/FindWidget';

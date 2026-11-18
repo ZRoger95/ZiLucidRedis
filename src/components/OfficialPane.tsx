@@ -1,12 +1,9 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import { memo, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 
-import type { FindMatch, FindOptions, FindResult } from '../lib/find';
-import type { OfficialAnnotation } from '../lib/official';
 import type { AnnotationMode, DictFile, JumpTarget } from '../types';
 
-import { DEFAULT_FIND_OPTIONS, findMatches } from '../lib/find';
-import { officialAnnotations } from '../lib/official';
+import { DEFAULT_FIND_OPTIONS, type FindMatch, findMatches, type FindOptions, type FindResult } from '../lib/find';
+import { type OfficialAnnotation, officialAnnotations } from '../lib/official';
 import { FindWidget } from './FindWidget';
 import './editor.css';
 
@@ -66,7 +63,7 @@ interface OfficialLineProps {
   currentFrom: number;
 }
 
-const OfficialLine = memo(function OfficialLine({
+const OfficialLine = memo(function OfficialLineView({
   lineNo,
   row,
   lineStart,
@@ -131,7 +128,12 @@ export function OfficialPane({
     if (!dict) {
       return new Map<number, OfficialAnnotation>();
     }
-    return officialAnnotations(rows, new Map(dict.directives.map((directive) => [directive.name, directive])), annotationMode, zhNotes);
+    return officialAnnotations(
+      rows,
+      new Map(dict.directives.map((directive) => [directive.name, directive])),
+      annotationMode,
+      zhNotes,
+    );
   }, [rows, dict, annotationMode, zhNotes]);
 
   const findResult = useMemo(

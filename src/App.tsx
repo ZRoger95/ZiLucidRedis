@@ -66,6 +66,8 @@ export default function App() {
   const [jump, setJump] = useState<JumpTarget | null>(null);
   const [editorFocusNonce, setEditorFocusNonce] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [activePane, setActivePane] = useState<'editor' | 'official'>('editor');
+  const [findRequests, setFindRequests] = useState({ editor: 0, official: 0 });
   const [vault, setVault] = useState<Map<string, string>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -177,6 +179,9 @@ export default function App() {
   }, [dict, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed]);
 
   useShortcut('mod+k', () => setSearchOpen(true));
+  useShortcut('mod+f', () => {
+    setFindRequests((prev) => ({ ...prev, [activePane]: prev[activePane] + 1 }));
+  });
 
   const importText = (raw: string, source: string | null, normalize = true) => {
     const { text: replaced, vault: nextVault, found } = replaceSecrets(raw);
@@ -315,6 +320,7 @@ export default function App() {
         forceVisibleLines={riskLines}
         jumpTo={jump}
         focusRequest={editorFocusNonce}
+        findRequest={findRequests.editor}
         onChange={setText}
         onCursorLine={setCursorLine}
         onCommitComment={handleCommitComment}
@@ -370,7 +376,12 @@ export default function App() {
 
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="grid min-h-[240px] flex-1 grid-cols-2">
-          <section className="flex min-h-0 min-w-0 flex-col border-r border-line" aria-label="你的配置">
+          <section
+            className="flex min-h-0 min-w-0 flex-col border-r border-line"
+            aria-label="你的配置"
+            onPointerDownCapture={() => setActivePane('editor')}
+            onFocusCapture={() => setActivePane('editor')}
+          >
             <div className="flex items-baseline gap-2.5 border-b border-line bg-panel px-3 py-1.5 text-xs text-muted-foreground">
               <strong className="text-[13px] text-ink">你的配置</strong>
               {analysis ? (
@@ -397,7 +408,12 @@ export default function App() {
             {editorBody}
           </section>
 
-          <section className="flex min-h-0 min-w-0 flex-col border-r-0 bg-[#fbfbfc]" aria-label="官方完整配置">
+          <section
+            className="flex min-h-0 min-w-0 flex-col border-r-0 bg-[#fbfbfc]"
+            aria-label="官方完整配置"
+            onPointerDownCapture={() => setActivePane('official')}
+            onFocusCapture={() => setActivePane('official')}
+          >
             {official ? (
               <OfficialPane
                 text={official.text}
@@ -408,6 +424,7 @@ export default function App() {
                 annotationMode={annotationMode}
                 highlightLines={officialHighlights}
                 focus={officialFocus}
+                findRequest={findRequests.official}
               />
             ) : (
               <div className="flex flex-1 items-center justify-center text-muted-foreground">

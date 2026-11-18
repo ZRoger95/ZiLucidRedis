@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import type { KeyboardEvent, RefObject } from 'react';
+
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -76,7 +77,12 @@ export function FindWidget({
     }
   };
 
-  const countText = invalid ? '正则无效' : query === '' ? '' : `${matchCount === 0 ? 0 : activeIndex + 1}/${matchCount}`;
+  let countText = '';
+  if (invalid) {
+    countText = '正则无效';
+  } else if (query !== '') {
+    countText = `${matchCount === 0 ? 0 : activeIndex + 1}/${matchCount}`;
+  }
   const toggleClass = (active: boolean) => cn('font-mono text-xs', active && 'bg-accent text-ink');
 
   return (

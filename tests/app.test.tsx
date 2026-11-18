@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 
@@ -119,4 +119,51 @@ test('字典里没有的缺失项也打开搜索面板', async () => {
 
   await userEvent.click(await screen.findByRole('button', { name: /bind/ }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
+});
+
+test('mod+f 默认打开左栏查找', async () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      v: 1,
+      line: '7.4',
+      text: 'maxmemory 128mb\n',
+      annotationMode: 'off',
+      onlyDiff: false,
+      showZh: false,
+      bottomCollapsed: false,
+    }),
+  );
+
+  const { container } = render(<App />);
+  await waitFor(() => {
+    expect(container.querySelector('.cm-content')).not.toBeNull();
+  });
+
+  fireEvent.keyDown(window, { key: 'f', ctrlKey: true, cancelable: true });
+  expect(await screen.findByRole('search', { name: '在你的配置中查找' })).toBeInTheDocument();
+  expect(screen.queryByRole('search', { name: '在官方配置中查找' })).toBeNull();
+});
+
+test('在右栏按 mod+f 只打开右栏查找', async () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      v: 1,
+      line: '7.4',
+      text: 'maxmemory 128mb\n',
+      annotationMode: 'off',
+      onlyDiff: false,
+      showZh: false,
+      bottomCollapsed: false,
+    }),
+  );
+
+  render(<App />);
+  await screen.findByText(/官方完整配置 · /);
+  fireEvent.pointerDown(screen.getByRole('region', { name: '官方完整配置' }));
+
+  fireEvent.keyDown(window, { key: 'f', ctrlKey: true, cancelable: true });
+  expect(await screen.findByRole('search', { name: '在官方配置中查找' })).toBeInTheDocument();
+  expect(screen.queryByRole('search', { name: '在你的配置中查找' })).toBeNull();
 });

@@ -4,10 +4,9 @@ import { Decoration, type DecorationSet, EditorView, keymap, lineNumbers, Widget
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AnnotationBlock } from '../lib/annotations';
-import type { FindMatch, FindOptions, FindResult } from '../lib/find';
 import type { AnalysisResult, JumpTarget } from '../types';
 
-import { DEFAULT_FIND_OPTIONS, findMatches } from '../lib/find';
+import { DEFAULT_FIND_OPTIONS, type FindMatch, findMatches, type FindOptions, type FindResult } from '../lib/find';
 import { FindWidget } from './FindWidget';
 import './editor.css';
 
@@ -92,10 +91,7 @@ class AnnotationWidget extends WidgetType {
 function isQuietLine(result: AnalysisResult, lineNo: number, forceVisibleLines: Set<number> | undefined): boolean {
   const analysis = result.byLine.get(lineNo);
   return (
-    (!analysis ||
-      analysis.status === 'default' ||
-      analysis.status === 'no-default' ||
-      analysis.status === 'special') &&
+    (!analysis || analysis.status === 'default' || analysis.status === 'no-default' || analysis.status === 'special') &&
     !forceVisibleLines?.has(lineNo)
   );
 }
@@ -177,7 +173,7 @@ export function Editor(props: EditorProps) {
 
   const hiddenLines = useMemo(() => {
     if (!props.onlyDiff) {
-      return undefined;
+      return;
     }
     const lines = new Set<number>();
     for (const line of props.result.lines) {

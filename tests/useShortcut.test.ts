@@ -28,3 +28,12 @@ test('单独 k 或带 shift 不触发', () => {
   fireEvent.keyDown(window, { key: 'k', ctrlKey: true, shiftKey: true });
   expect(handler).not.toHaveBeenCalled();
 });
+
+test('mod+f 触发回调并阻止浏览器查找', () => {
+  const handler = vi.fn();
+  renderHook(() => useShortcut('mod+f', handler));
+  const event = new KeyboardEvent('keydown', { key: 'f', metaKey: true, cancelable: true });
+  window.dispatchEvent(event);
+  expect(handler).toHaveBeenCalledTimes(1);
+  expect(event.defaultPrevented).toBe(true);
+});
