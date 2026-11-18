@@ -1,11 +1,14 @@
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { Compartment, EditorState } from '@codemirror/state';
 import { Decoration, type DecorationSet, EditorView, keymap, lineNumbers, WidgetType } from '@codemirror/view';
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import type { AnnotationBlock } from '../lib/annotations';
+import type { FindMatch, FindOptions, FindResult } from '../lib/find';
 import type { AnalysisResult, JumpTarget } from '../types';
 
+import { DEFAULT_FIND_OPTIONS, findMatches } from '../lib/find';
+import { FindWidget } from './FindWidget';
 import './editor.css';
 
 interface EditorProps {
@@ -16,10 +19,13 @@ interface EditorProps {
   forceVisibleLines?: Set<number>;
   jumpTo: JumpTarget | null;
   focusRequest?: number;
+  findRequest?: number;
   onChange: (text: string) => void;
   onCursorLine: (lineNo: number) => void;
   onCommitComment: (lineNo: number, text: string[]) => void;
 }
+
+const EMPTY_FIND_RESULT: FindResult = { matches: [], error: false };
 
 const baseTheme = EditorView.theme({
   '&': { height: '100%' },
@@ -83,6 +89,17 @@ class AnnotationWidget extends WidgetType {
   }
 }
 
+function isQuietLine(result: AnalysisResult, lineNo: number, forceVisibleLines: Set<number> | undefined): boolean {
+  const analysis = result.byLine.get(lineNo);
+  return (
+    (!analysis ||
+      analysis.status === 'default' ||
+      analysis.status === 'no-default' ||
+      analysis.status === 'special') &&
+    !forceVisibleLines?.has(lineNo)
+  );
+}
+
 function buildDecorations(
   state: EditorState,
   result: AnalysisResult,
@@ -100,12 +117,7 @@ function buildDecorations(
     }
     const position = doc.line(line.lineNo).from;
     const analysis = result.byLine.get(line.lineNo);
-    const quiet =
-      (!analysis ||
-        analysis.status === 'default' ||
-        analysis.status === 'no-default' ||
-        analysis.status === 'special') &&
-      !forceVisibleLines?.has(line.lineNo);
+    const quiet = isQuietLine(result, line.lineNo, forceVisibleLines);
 
     if (onlyDiff) {
       if (quiet) {
@@ -136,13 +148,56 @@ function buildDecorations(
   );
 }
 
+function buildFindDecorations(state: EditorState, matches: FindMatch[], activeIndex: number): DecorationSet {
+  const length = state.doc.length;
+  const ranges = matches
+    .filter((match) => match.to > match.from)
+    .map((match, index) =>
+      Decoration.mark({
+        class: index === activeIndex ? 'cm-find-match cm-find-current' : 'cm-find-match',
+      }).range(Math.min(match.from, length), Math.min(match.to, length)),
+    );
+  return Decoration.set(ranges, true);
+}
+
 export function Editor(props: EditorProps) {
   const host = useRef<HTMLDivElement>(null);
   const view = useRef<EditorView | null>(null);
   const decorationCompartment = useRef(new Compartment());
+  const searchCompartment = useRef(new Compartment());
   const latest = useRef(props);
   // 记录已处理的聚焦请求：重新挂载时不应因历史请求值而立即抢焦点
   const lastFocusRequest = useRef(props.focusRequest);
+  const lastFindRequest = useRef(props.findRequest);
+  const findInput = useRef<HTMLInputElement>(null);
+  const [findOpen, setFindOpen] = useState(false);
+  const [findQuery, setFindQuery] = useState('');
+  const [findOptions, setFindOptions] = useState<FindOptions>(DEFAULT_FIND_OPTIONS);
+  const [findIndex, setFindIndex] = useState(0);
+
+  const hiddenLines = useMemo(() => {
+    if (!props.onlyDiff) {
+      return undefined;
+    }
+    const lines = new Set<number>();
+    for (const line of props.result.lines) {
+      if (isQuietLine(props.result, line.lineNo, props.forceVisibleLines)) {
+        lines.add(line.lineNo);
+      }
+    }
+    return lines;
+  }, [props.onlyDiff, props.result, props.forceVisibleLines]);
+
+  const findResult = useMemo(
+    () => (findOpen && findQuery ? findMatches(props.value, findQuery, findOptions) : EMPTY_FIND_RESULT),
+    [findOpen, findQuery, findOptions, props.value],
+  );
+  const matches = useMemo(
+    () => (hiddenLines ? findResult.matches.filter((match) => !hiddenLines.has(match.lineNo)) : findResult.matches),
+    [findResult, hiddenLines],
+  );
+  const activeIndex = matches.length === 0 ? -1 : ((findIndex % matches.length) + matches.length) % matches.length;
+  const activeMatch = activeIndex >= 0 ? matches[activeIndex] : null;
 
   // 把最新 props 同步给 CodeMirror 的回调，避免在渲染期写 ref
   useEffect(() => {
@@ -162,6 +217,7 @@ export function Editor(props: EditorProps) {
         keymap.of([...defaultKeymap, ...historyKeymap]),
         baseTheme,
         decorationCompartment.current.of([]),
+        searchCompartment.current.of([]),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) {
             latest.current.onChange(update.state.doc.toString());
@@ -240,5 +296,83 @@ export function Editor(props: EditorProps) {
     instance.focus();
   }, [props.focusRequest]);
 
-  return <div className="editor-host" ref={host} />;
+  useEffect(() => {
+    if (props.findRequest === undefined || lastFindRequest.current === props.findRequest) {
+      return;
+    }
+    lastFindRequest.current = props.findRequest;
+    setFindOpen(true);
+  }, [props.findRequest]);
+
+  useEffect(() => {
+    if (!findOpen) {
+      return;
+    }
+    findInput.current?.focus();
+    findInput.current?.select();
+  }, [findOpen, props.findRequest]);
+
+  useEffect(() => {
+    const instance = view.current;
+    if (!instance) {
+      return;
+    }
+    instance.dispatch({
+      effects: searchCompartment.current.reconfigure(
+        EditorView.decorations.of(buildFindDecorations(instance.state, matches, activeIndex)),
+      ),
+    });
+  }, [matches, activeIndex]);
+
+  useEffect(() => {
+    const instance = view.current;
+    if (!instance || !findOpen || !activeMatch) {
+      return;
+    }
+    const length = instance.state.doc.length;
+    const from = Math.min(activeMatch.from, length);
+    const to = Math.min(activeMatch.to, length);
+    instance.dispatch({
+      selection: { anchor: from, head: to },
+      effects: EditorView.scrollIntoView(from, { y: 'center' }),
+    });
+  }, [findOpen, activeMatch]);
+
+  return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <FindWidget
+        open={findOpen}
+        query={findQuery}
+        options={findOptions}
+        matchCount={matches.length}
+        activeIndex={activeIndex}
+        invalid={findResult.error}
+        inputRef={findInput}
+        onQueryChange={(value) => {
+          setFindQuery(value);
+          setFindIndex(0);
+        }}
+        onOptionsChange={(next) => {
+          setFindOptions(next);
+          setFindIndex(0);
+        }}
+        onNext={() => {
+          if (matches.length > 0) {
+            setFindIndex(findIndex + 1);
+          }
+        }}
+        onPrev={() => {
+          if (matches.length > 0) {
+            setFindIndex(findIndex - 1);
+          }
+        }}
+        onClose={() => {
+          setFindOpen(false);
+          view.current?.focus();
+        }}
+        label="在你的配置中查找"
+      />
+      <div className="editor-host" ref={host} />
+    </div>
+  );
 }

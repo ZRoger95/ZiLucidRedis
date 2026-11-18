@@ -43,6 +43,14 @@
   display: none !important;
 }
 
+.cm-find-match {
+  background: #fde68a;
+}
+
+.cm-find-current {
+  background: #f59e0b;
+}
+
 .annotation {
   /* 块级 widget 不能有纵向 margin：CodeMirror 量高时不含 margin，会造成点击定位累计偏移 */
   padding: 2px 0;
