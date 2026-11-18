@@ -1,9 +1,33 @@
-import type { AnnotationMode, LineAnalysis, ParsedLine, Status } from '../types';
+import type { AnnotationMode, DirectiveDoc, LineAnalysis, ParsedLine, Status } from '../types';
 
 export interface AnnotationBlock {
   atLineNo: number;
   name: string;
+  summary: string;
   text: string[];
+}
+
+const REDUNDANT_DEFAULT_CLAUSE = /，默认\s*(.+)$/;
+
+function trimDefaultClause(text: string, defaultValue: string | null): string {
+  if (defaultValue === null) {
+    return text;
+  }
+  const match = REDUNDANT_DEFAULT_CLAUSE.exec(text);
+  if (!match) {
+    return text;
+  }
+  const value = match[1].replace(/个$/, '').trim();
+  return value === defaultValue ? text.slice(0, match.index) : text;
+}
+
+export function annotationSummary(doc: DirectiveDoc, zhNotes: Record<string, string>): string {
+  const defaultText = doc.defaultValue === null ? '官方未给出' : doc.defaultValue;
+  const note = zhNotes[doc.name];
+  if (!note) {
+    return `官方注释 · 默认值：${defaultText}`;
+  }
+  return `${trimDefaultClause(note, doc.defaultValue)} · 默认值：${defaultText}`;
 }
 
 export function buildAnnotationBlocks(
@@ -11,6 +35,7 @@ export function buildAnnotationBlocks(
   byLine: Map<number, LineAnalysis>,
   mode: AnnotationMode,
   onlyDiff = false,
+  zhNotes: Record<string, string> = {},
 ): AnnotationBlock[] {
   if (mode === 'off') {
     return [];
@@ -42,6 +67,7 @@ export function buildAnnotationBlocks(
     blocks.push({
       atLineNo: line.lineNo,
       name: doc.name,
+      summary: annotationSummary(doc, zhNotes),
       text: [...doc.comment, `默认值: ${defaultText}`],
     });
   }

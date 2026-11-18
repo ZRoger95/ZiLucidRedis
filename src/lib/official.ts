@@ -1,8 +1,14 @@
 import type { AnnotationMode, DirectiveDoc } from '../types';
 
+import { annotationSummary } from './annotations';
 import { parseConf } from './parseConf';
 
 const NAME_RE = /^([A-Za-z][A-Za-z0-9-]*)(?:\s|$)/;
+
+export interface OfficialAnnotation {
+  summary: string;
+  text: string[];
+}
 
 export function indexOfficialLines(text: string): Map<string, number> {
   const index = new Map<string, number>();
@@ -18,8 +24,9 @@ export function officialAnnotations(
   rows: string[],
   docs: Map<string, DirectiveDoc>,
   mode: AnnotationMode,
-): Map<number, string[]> {
-  const annotations = new Map<number, string[]>();
+  zhNotes: Record<string, string> = {},
+): Map<number, OfficialAnnotation> {
+  const annotations = new Map<number, OfficialAnnotation>();
   if (mode === 'off') {
     return annotations;
   }
@@ -40,7 +47,10 @@ export function officialAnnotations(
     }
 
     const defaultText = doc.defaultValue === null ? '官方未给出' : doc.defaultValue;
-    annotations.set(index + 1, [...doc.comment, `默认值: ${defaultText}`]);
+    annotations.set(index + 1, {
+      summary: annotationSummary(doc, zhNotes),
+      text: [...doc.comment, `默认值: ${defaultText}`],
+    });
   }
 
   return annotations;

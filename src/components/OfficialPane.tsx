@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import type { AnnotationMode, DictFile, JumpTarget } from '../types';
 
-import { officialAnnotations } from '../lib/official';
+import { type OfficialAnnotation, officialAnnotations } from '../lib/official';
 import './editor.css';
 
 interface OfficialPaneProps {
@@ -10,6 +10,7 @@ interface OfficialPaneProps {
   tag: string;
   publishedAt?: string;
   dict: DictFile | null;
+  zhNotes: Record<string, string>;
   annotationMode: AnnotationMode;
   highlightLines: Set<number>;
   focus: JumpTarget | null;
@@ -20,6 +21,7 @@ export function OfficialPane({
   tag,
   publishedAt,
   dict,
+  zhNotes,
   annotationMode,
   highlightLines,
   focus,
@@ -29,11 +31,11 @@ export function OfficialPane({
 
   const annotations = useMemo(() => {
     if (!dict) {
-      return new Map<number, string[]>();
+      return new Map<number, OfficialAnnotation>();
     }
     const docs = new Map(dict.directives.map((directive) => [directive.name, directive]));
-    return officialAnnotations(rows, docs, annotationMode);
-  }, [rows, dict, annotationMode]);
+    return officialAnnotations(rows, docs, annotationMode, zhNotes);
+  }, [rows, dict, annotationMode, zhNotes]);
 
   const focusBlock = useMemo(() => {
     const block = new Set<number>();
@@ -80,9 +82,9 @@ export function OfficialPane({
             <div key={lineNo}>
               {annotation ? (
                 <details className="annotation official-annotation">
-                  <summary>官方注释 · {annotation[annotation.length - 1]}</summary>
+                  <summary>{annotation.summary}</summary>
                   <div className="annotation-body">
-                    {annotation.slice(0, -1).map((comment, commentIndex) => (
+                    {annotation.text.slice(0, -1).map((comment, commentIndex) => (
                       <div key={`${lineNo}-${commentIndex}`}>{comment || ' '}</div>
                     ))}
                   </div>

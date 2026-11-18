@@ -46,6 +46,16 @@ test('annotates official directives whose own comment block is missing', () => {
   expect([...annotations.keys()]).toEqual([6]);
 });
 
+test('summary uses the Chinese note when one is provided', () => {
+  const rows = conf.split('\n');
+  const docs = new Map([['tcp-backlog', doc('tcp-backlog')]]);
+  const annotation = officialAnnotations(rows, docs, 'all', {
+    'tcp-backlog': 'TCP 已完成握手的连接队列长度',
+  }).get(2);
+  expect(annotation?.summary).toBe('TCP 已完成握手的连接队列长度 · 默认值：511');
+  expect(annotation?.text.at(-1)).toBe('默认值: 511');
+});
+
 test('all mode annotates every official directive', () => {
   const rows = conf.split('\n');
   const docs = new Map([['tcp-backlog', doc('tcp-backlog')]]);

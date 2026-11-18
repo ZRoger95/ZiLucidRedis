@@ -37,7 +37,11 @@ class AnnotationWidget extends WidgetType {
   }
 
   eq(other: AnnotationWidget) {
-    return other.block.atLineNo === this.block.atLineNo && other.block.text.join('\n') === this.block.text.join('\n');
+    return (
+      other.block.atLineNo === this.block.atLineNo &&
+      other.block.summary === this.block.summary &&
+      other.block.text.join('\n') === this.block.text.join('\n')
+    );
   }
 
   toDOM() {
@@ -45,7 +49,7 @@ class AnnotationWidget extends WidgetType {
     wrap.className = 'annotation';
 
     const summary = document.createElement('summary');
-    summary.textContent = `官方注释 · ${this.block.text[this.block.text.length - 1] ?? ''}`;
+    summary.textContent = this.block.summary;
     wrap.append(summary);
 
     const body = document.createElement('div');

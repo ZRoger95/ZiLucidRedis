@@ -105,7 +105,7 @@ export default function App() {
   const hasContent = useMemo(() => parsed.some((item) => item.kind === 'directive'), [parsed]);
   const baseline = official ? [official.tag, official.publishedAt?.slice(0, 10)].filter(Boolean).join(' · ') : '';
   const blocks = useMemo(
-    () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff) : []),
+    () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff, notes) : []),
     [analysis, annotationMode, onlyDiff],
   );
   const officialIndex = useMemo(() => (official ? indexOfficialLines(official.text) : new Map()), [official]);
@@ -392,6 +392,7 @@ export default function App() {
                 tag={official.tag}
                 publishedAt={official.publishedAt}
                 dict={dict}
+                zhNotes={notes}
                 annotationMode={annotationMode}
                 highlightLines={officialHighlights}
                 focus={officialFocus}
