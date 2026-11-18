@@ -15,6 +15,7 @@ interface EditorProps {
   onlyDiff: boolean;
   forceVisibleLines?: Set<number>;
   jumpTo: { lineNo: number; nonce: number; focus?: boolean } | null;
+  focusRequest?: number;
   onChange: (text: string) => void;
   onCursorLine: (lineNo: number) => void;
   onCommitComment: (lineNo: number, text: string[]) => void;
@@ -217,6 +218,14 @@ export function Editor(props: EditorProps) {
       instance.focus();
     }
   }, [props.jumpTo]);
+
+  useEffect(() => {
+    const instance = view.current;
+    if (!instance || !props.focusRequest) {
+      return;
+    }
+    instance.focus();
+  }, [props.focusRequest]);
 
   return <div className="editor-host" ref={host} />;
 }

@@ -54,6 +54,7 @@ export default function App() {
   const [dictError, setDictError] = useState<{ line: string; message: string } | null>(null);
   const [cursorLine, setCursorLine] = useState(1);
   const [jump, setJump] = useState<{ lineNo: number; nonce: number; focus?: boolean } | null>(null);
+  const [editorFocusNonce, setEditorFocusNonce] = useState(0);
   const [searchOpen, setSearchOpen] = useState(false);
   const [vault, setVault] = useState<Map<string, string>>(new Map());
   const [notice, setNotice] = useState<string | null>(null);
@@ -296,6 +297,7 @@ export default function App() {
         onlyDiff={onlyDiff}
         forceVisibleLines={riskLines}
         jumpTo={jump}
+        focusRequest={editorFocusNonce}
         onChange={setText}
         onCursorLine={setCursorLine}
         onCommitComment={handleCommitComment}
@@ -444,6 +446,7 @@ export default function App() {
                   baseline={baseline}
                   onJump={jumpToLine}
                   onRowActivate={(lineNo) => jumpToLine(lineNo, false)}
+                  onEscape={() => setEditorFocusNonce((value) => value + 1)}
                   onApplyDefault={(lineNo, value) => setText(applyDefaultLine(text, lineNo, value))}
                 />
               ) : (
