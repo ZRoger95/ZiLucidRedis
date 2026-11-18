@@ -44,13 +44,16 @@ class AnnotationWidget extends WidgetType {
     );
   }
 
-  toDOM() {
+  toDOM(view: EditorView) {
     const wrap = document.createElement('details');
     wrap.className = 'annotation';
 
     const summary = document.createElement('summary');
     summary.textContent = this.block.summary;
     wrap.append(summary);
+
+    // details 展开/收起会改变块高度，需让 CodeMirror 重新测量，否则点击会定位到相邻行
+    wrap.addEventListener('toggle', () => view.requestMeasure());
 
     const body = document.createElement('div');
     body.className = 'annotation-body';

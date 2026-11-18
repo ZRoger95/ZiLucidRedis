@@ -35,6 +35,15 @@ import { cn } from './lib/utils';
 
 const notes = zhNotes as Record<string, string>;
 
+const LINE_LEGEND = [
+  { label: '默认值', className: 'bg-white' },
+  { label: '已改', className: 'bg-[#fffbeb] shadow-[inset_3px_0_0_#b45309]' },
+  { label: '未知/重复', className: 'bg-[#fef2f2] shadow-[inset_3px_0_0_#b91c1c]' },
+  { label: '已移除', className: 'bg-[#f9fafb] shadow-[inset_3px_0_0_#6b7280]' },
+  { label: '版本不支持', className: 'bg-[#f5f3ff] shadow-[inset_3px_0_0_#6d28d9]' },
+  { label: '注释块', className: 'bg-[#f5f7ff] shadow-[inset_3px_0_0_#c7d2fe]' },
+];
+
 interface VersionData {
   line: string;
   dict: DictFile;
@@ -109,7 +118,13 @@ export default function App() {
     () => (analysis ? buildAnnotationBlocks(analysis.lines, analysis.byLine, annotationMode, onlyDiff, notes) : []),
     [analysis, annotationMode, onlyDiff],
   );
-  const officialIndex = useMemo(() => (official ? indexOfficialLines(official.text) : new Map()), [official]);
+  const officialIndex = useMemo(() => {
+    if (!official) {
+      return new Map<string, number>();
+    }
+    const knownNames = new Set(dict?.directives.map((directive) => directive.name) ?? []);
+    return indexOfficialLines(official.text, knownNames);
+  }, [official, dict]);
   const checkup = useMemo(() => (analysis ? buildCheckup(analysis, warnings) : []), [analysis, warnings]);
 
   const officialHighlights = useMemo(() => {
@@ -364,7 +379,20 @@ export default function App() {
                 </span>
               ) : null}
               <span className="flex-1" />
-              <span className="text-[#9aa1ad]">可直接编辑；导入文件时会去注释、按官方顺序重排</span>
+              <span
+                aria-label="行颜色说明"
+                className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] text-[#6b7280]"
+              >
+                {LINE_LEGEND.map((item) => (
+                  <span key={item.label} className="inline-flex items-center gap-1">
+                    <i
+                      aria-hidden="true"
+                      className={cn('h-3 w-3.5 rounded-[2px] border border-line', item.className)}
+                    />
+                    {item.label}
+                  </span>
+                ))}
+              </span>
             </div>
             {editorBody}
           </section>

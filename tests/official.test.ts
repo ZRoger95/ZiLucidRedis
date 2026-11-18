@@ -12,6 +12,8 @@ maxmemory 0
 tcp-backlog 1024
 `;
 
+const known = new Set(['tcp-backlog', 'maxmemory', 'save', 'bind']);
+
 const doc = (name: string) =>
   ({
     name,
@@ -26,14 +28,24 @@ const doc = (name: string) =>
   }) as DirectiveDoc;
 
 test('indexes the first active line of every directive', () => {
-  const index = indexOfficialLines(conf);
+  const index = indexOfficialLines(conf, known);
   expect(index.get('tcp-backlog')).toBe(2);
   expect(index.get('maxmemory')).toBe(5);
 });
 
-test('ignores comments and blank lines', () => {
-  const index = indexOfficialLines('# only comments\n\n');
+test('ignores comments that are not directive examples', () => {
+  const index = indexOfficialLines('# only comments\n\n', known);
   expect(index.size).toBe(0);
+});
+
+test('falls back to the last concrete commented default line', () => {
+  const text = '# save <seconds> <changes> [<seconds> <changes> ...]\n# save ""\n# save 3600 1 300 100 60 10000\n';
+  expect(indexOfficialLines(text, known).get('save')).toBe(3);
+});
+
+test('prefers a real directive over commented examples', () => {
+  const text = '# bind 192.168.1.100 10.0.0.1\nbind 127.0.0.1 -::1\n';
+  expect(indexOfficialLines(text, known).get('bind')).toBe(2);
 });
 
 test('annotates official directives whose own comment block is missing', () => {

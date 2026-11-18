@@ -14,6 +14,17 @@ test('renders the tool title', () => {
   expect(screen.getByRole('heading', { name: 'Redis 配置体检' })).toBeInTheDocument();
 });
 
+test('编辑器标题旁提供行颜色说明', () => {
+  render(<App />);
+  const legend = screen.getByLabelText('行颜色说明');
+  expect(legend).toHaveTextContent('默认值');
+  expect(legend).toHaveTextContent('已改');
+  expect(legend).toHaveTextContent('未知/重复');
+  expect(legend).toHaveTextContent('已移除');
+  expect(legend).toHaveTextContent('版本不支持');
+  expect(legend).toHaveTextContent('注释块');
+});
+
 test('diff 行按 Esc 后焦点回到编辑器', async () => {
   localStorage.setItem(
     STORAGE_KEY,
