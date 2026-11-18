@@ -2,7 +2,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
 
-import { OfficialPane } from '../src/components/OfficialPane';
+import { OfficialPane, rowCurrentFrom } from '../src/components/OfficialPane';
 
 const props = {
   text: 'maxmemory 0\nmaxmemory-policy allkeys-lru\n',
@@ -37,6 +37,12 @@ test('Enter 切换当前命中并滚动到对应行', async () => {
   expect(await screen.findByText('2/2')).toBeInTheDocument();
   expect(scroll).toHaveBeenCalled();
   scroll.mockRestore();
+});
+
+test('未命中行不接收当前命中偏移', () => {
+  const active = { from: 10, to: 19, lineNo: 1 };
+  expect(rowCurrentFrom(undefined, active)).toBe(-1);
+  expect(rowCurrentFrom([active], active)).toBe(10);
 });
 
 test('关闭后焦点落到右栏滚动容器', async () => {

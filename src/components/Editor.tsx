@@ -194,6 +194,7 @@ export function Editor(props: EditorProps) {
   );
   const activeIndex = matches.length === 0 ? -1 : ((findIndex % matches.length) + matches.length) % matches.length;
   const activeMatch = activeIndex >= 0 ? matches[activeIndex] : null;
+  const activeMatchRef = useRef<FindMatch | null>(null);
 
   // 把最新 props 同步给 CodeMirror 的回调，避免在渲染期写 ref
   useEffect(() => {
@@ -321,18 +322,23 @@ export function Editor(props: EditorProps) {
   }, [matches, activeIndex]);
 
   useEffect(() => {
+    activeMatchRef.current = activeMatch;
+  });
+
+  useEffect(() => {
     const instance = view.current;
-    if (!instance || !findOpen || !activeMatch) {
+    const match = activeMatchRef.current;
+    if (!instance || !findOpen || !match) {
       return;
     }
     const length = instance.state.doc.length;
-    const from = Math.min(activeMatch.from, length);
-    const to = Math.min(activeMatch.to, length);
+    const from = Math.min(match.from, length);
+    const to = Math.min(match.to, length);
     instance.dispatch({
       selection: { anchor: from, head: to },
       effects: EditorView.scrollIntoView(from, { y: 'center' }),
     });
-  }, [findOpen, activeMatch]);
+  }, [findOpen, findQuery, findOptions, activeIndex]);
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">

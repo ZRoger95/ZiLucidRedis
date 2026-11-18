@@ -1,3 +1,4 @@
+import { EditorView } from '@codemirror/view';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { expect, test, vi } from 'vitest';
@@ -85,6 +86,36 @@ test('Esc 关闭查找条并把焦点交回编辑器', async () => {
     expect(screen.queryByRole('search', { name: '在你的配置中查找' })).toBeNull();
   });
   expect(document.activeElement).toHaveClass('cm-content');
+});
+
+test('编辑器内容变化时不重设查找选区', async () => {
+  const dispatch = vi.spyOn(EditorView.prototype, 'dispatch');
+  const { rerender } = render(<Editor {...baseProps} onlyDiff={false} findRequest={0} />);
+  rerender(<Editor {...baseProps} onlyDiff={false} findRequest={1} />);
+  const input = await screen.findByRole('searchbox', { name: '在你的配置中查找' });
+  await userEvent.type(input, 'maxmemory');
+  await waitFor(() => {
+    expect(document.querySelectorAll('.cm-find-match')).toHaveLength(1);
+  });
+  dispatch.mockClear();
+
+  rerender(
+    <Editor
+      {...baseProps}
+      value={'maxmemory 128mb\nsave 900 1\nmaxmemory-policy noeviction'}
+      onlyDiff={false}
+      findRequest={1}
+    />,
+  );
+  await waitFor(() => {
+    expect(document.querySelectorAll('.cm-find-match')).toHaveLength(2);
+  });
+
+  const selectionDispatches = dispatch.mock.calls.filter(
+    ([spec]) => !Array.isArray(spec) && spec.selection !== undefined,
+  );
+  expect(selectionDispatches).toHaveLength(0);
+  dispatch.mockRestore();
 });
 
 test('只看差异时隐藏行不计数', async () => {

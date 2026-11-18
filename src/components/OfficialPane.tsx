@@ -63,6 +63,10 @@ interface OfficialLineProps {
   currentFrom: number;
 }
 
+export function rowCurrentFrom(matches: FindMatch[] | undefined, activeMatch: FindMatch | null): number {
+  return matches && activeMatch ? activeMatch.from : -1;
+}
+
 const OfficialLine = memo(function OfficialLineView({
   lineNo,
   row,
@@ -269,7 +273,7 @@ export function OfficialPane({
                 className={classes.join(' ')}
                 annotation={annotations.get(lineNo)}
                 matches={matchesByLine.get(lineNo)}
-                currentFrom={activeMatch?.from ?? -1}
+                currentFrom={rowCurrentFrom(matchesByLine.get(lineNo), activeMatch)}
               />
             );
           })}
