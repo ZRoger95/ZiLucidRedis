@@ -1,5 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
-
+import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
 import { FREE_LINE_NAMES } from '../../src/lib/freeLines';
