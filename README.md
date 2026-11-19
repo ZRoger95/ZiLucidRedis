@@ -4,6 +4,12 @@
 
 纯前端静态站，没有后端，配置内容不会离开浏览器。
 
+## 线上版本
+
+<https://ZRoger95.github.io/ZiLucidRedis/>
+
+push 到 `master` 后由 GitHub Actions 构建并发布（[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)），线上与 `master` 的构建产物一致；也可以在 Actions 页面手动重跑。
+
 ## 使用
 
 - 粘贴文本、上传 `.conf` 文件，或把文件直接拖进编辑区。
