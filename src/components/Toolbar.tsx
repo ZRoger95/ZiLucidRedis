@@ -18,6 +18,7 @@ interface ToolbarProps {
   onShowZhChange: (value: boolean) => void;
   onUpload: (file: File) => void;
   onLoadOfficial: () => void;
+  onGenerate: () => void;
   onClear: () => void;
   onOpenSearch: () => void;
   onExport: (kind: ExportKind) => void;
@@ -95,6 +96,10 @@ export function Toolbar(props: ToolbarProps) {
       </Button>
 
       <span className="flex-1" />
+
+      <Button variant="outline" onClick={props.onGenerate}>
+        生成配置
+      </Button>
 
       <Button variant="outline" onClick={props.onLoadOfficial}>
         载入官方配置

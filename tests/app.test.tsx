@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, expect, test } from 'vitest';
 
 import App from '../src/App';
+import { setPendingConf } from '../src/lib/handoff';
 import { STORAGE_KEY } from '../src/lib/persistence';
 
 afterEach(() => {
@@ -12,6 +13,15 @@ afterEach(() => {
 test('renders the tool title', () => {
   render(<App />);
   expect(screen.getByRole('heading', { name: 'Redis 配置体检' })).toBeInTheDocument();
+});
+
+test('从向导带回的配置进入编辑器', async () => {
+  setPendingConf({ line: '7.4', text: 'port 6380\n', vault: new Map() });
+  const { container } = render(<App />);
+
+  await waitFor(() => {
+    expect(container.querySelector('.cm-content')?.textContent).toContain('port 6380');
+  });
 });
 
 test('编辑器标题旁提供行颜色说明', () => {

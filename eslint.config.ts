@@ -190,7 +190,14 @@ export default defineConfig([
   {
     // 允许直接使用 effect 的文件清单：只放与 React 之外系统同步的代码。
     // 新增文件前先确认无法用事件处理器或渲染期派生解决，并在评审中说明原因。
-    files: ['src/App.tsx', 'src/components/Editor.tsx', 'src/components/OfficialPane.tsx', 'src/hooks/useShortcut.ts'],
+    files: [
+      'src/App.tsx',
+      'src/components/Editor.tsx',
+      'src/components/OfficialPane.tsx',
+      'src/hooks/useShortcut.ts',
+      // useHashRoute 监听浏览器 hashchange，属于 React 之外的 URL 状态。
+      'src/hooks/useHashRoute.ts',
+    ],
     rules: {
       'no-restricted-imports': 'off',
       'no-restricted-syntax': ['error', ...sharedSyntax],

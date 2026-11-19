@@ -24,11 +24,13 @@ import { describeDirective } from './lib/describe';
 import { DEFAULT_VERSION, loadDict, loadMeta, loadOfficialConf } from './lib/dict';
 import { applyDefaultLine, buildDiff } from './lib/diff';
 import { exportOriginal, exportWithComments, exportWithSecrets, suggestFileName } from './lib/exportConf';
+import { takePendingConf } from './lib/handoff';
 import { normalizeConfig } from './lib/normalizeConf';
 import { indexOfficialLines } from './lib/official';
 import { decodeConfBytes, parseConf } from './lib/parseConf';
 import { loadState, saveState } from './lib/persistence';
 import { evaluateRisks } from './lib/risks';
+import { navigate } from './lib/routes';
 import { insertDirective } from './lib/search';
 import { replaceSecrets } from './lib/secrets';
 import { cn } from './lib/utils';
@@ -51,9 +53,10 @@ interface VersionData {
 }
 
 export default function App() {
+  const [pending] = useState(() => takePendingConf());
   const [initial] = useState<PersistedState | null>(() => loadState());
-  const [line, setLine] = useState(initial?.line ?? DEFAULT_VERSION);
-  const [text, setText] = useState(initial?.text ?? '');
+  const [line, setLine] = useState(pending?.line ?? initial?.line ?? DEFAULT_VERSION);
+  const [text, setText] = useState(pending?.text ?? initial?.text ?? '');
   const [onlyDiff, setOnlyDiff] = useState(initial?.onlyDiff ?? false);
   const [showZh, setShowZh] = useState(initial?.showZh ?? true);
   const [annotationMode, setAnnotationMode] = useState<AnnotationMode>(initial?.annotationMode ?? 'missing');
@@ -68,7 +71,7 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [activePane, setActivePane] = useState<'editor' | 'official'>('editor');
   const [findRequests, setFindRequests] = useState({ editor: 0, official: 0 });
-  const [vault, setVault] = useState<Map<string, string>>(new Map());
+  const [vault, setVault] = useState<Map<string, string>>(() => pending?.vault ?? new Map());
   const [notice, setNotice] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -353,6 +356,7 @@ export default function App() {
         onShowZhChange={setShowZh}
         onUpload={(file) => void readFile(file)}
         onLoadOfficial={loadOfficialIntoEditor}
+        onGenerate={() => navigate('configurator')}
         onClear={() => {
           setText('');
           setVault(new Map());
