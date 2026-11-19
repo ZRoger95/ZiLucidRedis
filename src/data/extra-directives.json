@@ -1,0 +1,51 @@
+{
+  "bind": {
+    "type": "special",
+    "defaultValue": null,
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  },
+  "logfile": {
+    "type": "string",
+    "defaultValue": "",
+    "range": null,
+    "sensitive": false,
+    "modifiable": false
+  },
+  "dir": {
+    "type": "special",
+    "defaultValue": null,
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  },
+  "save": {
+    "type": "special",
+    "defaultValue": "3600 1 300 100 60 10000",
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  },
+  "client-output-buffer-limit": {
+    "type": "special",
+    "defaultValue": null,
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  },
+  "oom-score-adj-values": {
+    "type": "special",
+    "defaultValue": "0 200 800",
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  },
+  "notify-keyspace-events": {
+    "type": "special",
+    "defaultValue": "",
+    "range": null,
+    "sensitive": false,
+    "modifiable": true
+  }
+}

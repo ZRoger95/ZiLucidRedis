@@ -80,6 +80,8 @@ export interface RiskWarning {
 
 export type AnnotationMode = 'missing' | 'all' | 'off';
 
+export type FreeLineKind = 'include' | 'loadmodule' | 'user' | 'renameCommand';
+
 export interface JumpTarget {
   lineNo: number;
   nonce: number;

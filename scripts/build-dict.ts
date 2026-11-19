@@ -2,6 +2,8 @@ import type { ConfigCResult } from './lib/parse-config-c.ts';
 import type { OfficialConf, OfficialSection } from './lib/parse-official-conf.ts';
 import type { LockEntry, StableRelease } from './lib/releases.ts';
 
+import { FREE_LINE_NAMES } from '../src/lib/freeLines.ts';
+
 export type DefaultSource = 'config.c' | 'conf-comment' | 'override' | 'none';
 
 export interface DictDirective {
@@ -36,6 +38,15 @@ export interface VersionEntry {
 
 export type Lock = Record<string, LockEntry | string | undefined>;
 
+/** 官方 conf 里有、config.c 标准配置表里没有的指令，人工登记在 src/data/extra-directives.json。 */
+export interface ExtraDirective {
+  type: string;
+  defaultValue: string | null;
+  range: string | null;
+  sensitive: boolean;
+  modifiable: boolean;
+}
+
 export interface BuildDictionaryInput {
   line: string;
   tag: string;
@@ -43,9 +54,25 @@ export interface BuildDictionaryInput {
   configC: ConfigCResult;
   officialConf: OfficialConf;
   overrides?: Record<string, string>;
+  extras?: Record<string, ExtraDirective>;
 }
 
 const lineParts = (line: string): number[] => line.split('.').map(Number);
+
+function activeDirectiveNames(source: string): string[] {
+  const names: string[] = [];
+  for (const raw of source.split(/\r?\n/)) {
+    const line = raw.trim();
+    if (!line || line.startsWith('#')) {
+      continue;
+    }
+    const name = line.split(/\s+/)[0];
+    if (/^[A-Za-z][A-Za-z0-9-]*$/.test(name)) {
+      names.push(name);
+    }
+  }
+  return names;
+}
 
 export function compareLines(a: string, b: string): number {
   const left = lineParts(a);
@@ -66,6 +93,7 @@ export function buildDictionary({
   configC,
   officialConf,
   overrides = {},
+  extras = {},
 }: BuildDictionaryInput): DictFile {
   const directives = configC.entries.map((entry) => {
     const official = officialConf.byName.get(entry.name);
@@ -93,6 +121,27 @@ export function buildDictionary({
       comment: official?.comment ?? [],
     };
   });
+
+  for (const [name, extra] of Object.entries(extras)) {
+    if (directives.some((directive) => directive.name === name)) {
+      continue;
+    }
+    const official = officialConf.byName.get(name);
+    if (!official) {
+      continue;
+    }
+    directives.push({
+      name,
+      section: official.section,
+      type: extra.type,
+      defaultValue: extra.defaultValue,
+      defaultSource: extra.defaultValue === null ? 'none' : 'override',
+      range: extra.range,
+      sensitive: extra.sensitive,
+      modifiable: extra.modifiable,
+      comment: official.comment ?? [],
+    });
+  }
 
   return { line, tag, publishedAt, sections: officialConf.sections, directives };
 }
@@ -156,6 +205,10 @@ async function main(): Promise<void> {
     JSON.parse(await readFile(here('../src/data/no-default.json'), 'utf8')) as string[],
   );
   const renames = JSON.parse(await readFile(here('../src/data/renames.json'), 'utf8')) as Record<string, string>;
+  const extras = JSON.parse(await readFile(here('../src/data/extra-directives.json'), 'utf8')) as Record<
+    string,
+    ExtraDirective
+  >;
 
   await mkdir(here('../src/data/dict/'), { recursive: true });
   await mkdir(here('../src/data/official/'), { recursive: true });
@@ -175,7 +228,7 @@ async function main(): Promise<void> {
       readFile(here(`../data/upstream/${line}/redis.conf`), 'utf8'),
     ]);
     const [configC, officialConf] = [parseConfigC(configSource), parseOfficialConf(confSource)];
-    const dict = buildDictionary({ line, tag, publishedAt, configC, officialConf, overrides });
+    const dict = buildDictionary({ line, tag, publishedAt, configC, officialConf, overrides, extras });
     dicts.push(dict);
 
     if (dict.directives.length < 140 || dict.directives.length > 260) {
@@ -193,6 +246,12 @@ async function main(): Promise<void> {
     for (const directive of dict.directives) {
       if (directive.defaultValue === null && !allowedNulls.has(directive.name)) {
         problems.push(`${line}: ${directive.name} 默认值为 null 但未登记在 no-default.json`);
+      }
+    }
+    const known = new Set(dict.directives.map((directive) => directive.name));
+    for (const name of activeDirectiveNames(confSource)) {
+      if (!known.has(name) && !FREE_LINE_NAMES.has(name)) {
+        problems.push(`${line}: 官方 conf 的 ${name} 不在字典里`);
       }
     }
 
