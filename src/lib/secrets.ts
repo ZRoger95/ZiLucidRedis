@@ -8,6 +8,12 @@ interface LineShape {
   rest: string;
 }
 
+interface Target {
+  token: string;
+  start: number;
+  end: number;
+}
+
 function shapeLine(raw: string): LineShape | null {
   const match = /^(\s*)([A-Za-z][A-Za-z0-9-]*)(\s+)(.*)$/.exec(raw);
   if (!match) {
@@ -16,7 +22,13 @@ function shapeLine(raw: string): LineShape | null {
   return { prefix: match[1], name: match[2], rest: match[4] };
 }
 
-function firstToken(rest: string): { token: string; start: number; end: number } | null {
+/** 取第一个参数；带空格的引号值按整体处理，替换后仍保留引号。 */
+function firstToken(rest: string): Target | null {
+  const quoted = /^\s*("(?:[^"\\]|\\.)*")/.exec(rest);
+  if (quoted) {
+    const start = quoted[0].length - quoted[1].length;
+    return { token: quoted[1], start, end: start + quoted[1].length };
+  }
   const match = /\S+/.exec(rest);
   if (!match) {
     return null;
@@ -26,6 +38,16 @@ function firstToken(rest: string): { token: string; start: number; end: number }
     start: match.index,
     end: match.index + match[0].length,
   };
+}
+
+/** ACL 里一条 user 行可能带多个 `>password`，全部替换。 */
+function passwordTargets(rest: string): Target[] {
+  const targets: Target[] = [];
+  for (const match of rest.matchAll(/(^|\s)(>\S+)/g)) {
+    const start = match.index + match[1].length;
+    targets.push({ token: match[2], start, end: start + match[2].length });
+  }
+  return targets;
 }
 
 export function replaceSecrets(text: string): { text: string; vault: Map<string, string>; found: number } {
@@ -44,29 +66,24 @@ export function replaceSecrets(text: string): { text: string; vault: Map<string,
       return raw;
     }
 
-    let target: { token: string; start: number; end: number } | null;
-    if (isUser) {
-      const match = /(^|\s)(>[^\s]+)/.exec(shape.rest);
-      if (!match) {
-        return raw;
-      }
-      const start = match.index + match[1].length;
-      target = { token: match[2], start, end: start + match[2].length };
-    } else {
-      target = firstToken(shape.rest);
-    }
-    if (!target || !target.token || PLACEHOLDER_RE.test(target.token)) {
+    const targets = isUser ? passwordTargets(shape.rest) : [firstToken(shape.rest)].filter((item) => item !== null);
+    if (targets.length === 0 || targets.every((target) => PLACEHOLDER_RE.test(target.token))) {
       return raw;
     }
 
     const key = isUser ? 'user-pass' : shape.name;
-    const index = (counters.get(key) ?? 0) + 1;
-    counters.set(key, index);
-    vault.set(`${key}#${index}`, target.token);
-    found += 1;
+    const replacements = targets.map((target) => {
+      const index = (counters.get(key) ?? 0) + 1;
+      counters.set(key, index);
+      vault.set(`${key}#${index}`, target.token);
+      found += 1;
+      return { ...target, placeholder: `\${env_${key}}` };
+    });
 
-    const placeholder = `\${env_${key}}`;
-    const rest = shape.rest.slice(0, target.start) + placeholder + shape.rest.slice(target.end);
+    let rest = shape.rest;
+    for (const target of [...replacements].reverse()) {
+      rest = rest.slice(0, target.start) + target.placeholder + rest.slice(target.end);
+    }
     return `${shape.prefix}${shape.name} ${rest}`;
   });
 

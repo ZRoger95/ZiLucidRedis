@@ -24,6 +24,24 @@ test('从向导带回的配置进入编辑器', async () => {
   });
 });
 
+test('切到向导再回来，密码 vault 仍可还原', async () => {
+  setPendingConf({
+    line: '7.4',
+    text: 'requirepass ${env_requirepass}\n',
+    vault: new Map([['requirepass#1', 'secret']]),
+  });
+  const first = render(<App />);
+  await waitFor(() => {
+    expect(first.container.querySelector('.cm-content')?.textContent).toContain('${env_requirepass}');
+  });
+  first.unmount();
+
+  render(<App />);
+  await userEvent.click(screen.getByRole('button', { name: '导出' }));
+  const item = await screen.findByRole('menuitem', { name: /还原密码后导出/ });
+  expect(item.getAttribute('aria-disabled')).not.toBe('true');
+});
+
 test('编辑器标题旁提供行颜色说明', () => {
   render(<App />);
   const legend = screen.getByLabelText('行颜色说明');

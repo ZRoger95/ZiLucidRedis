@@ -130,12 +130,13 @@ export function buildDictionary({
     if (!official) {
       continue;
     }
+    const defaultValue = Object.prototype.hasOwnProperty.call(overrides, name) ? overrides[name] : extra.defaultValue;
     directives.push({
       name,
       section: official.section,
       type: extra.type,
-      defaultValue: extra.defaultValue,
-      defaultSource: extra.defaultValue === null ? 'none' : 'override',
+      defaultValue,
+      defaultSource: defaultValue === null ? 'none' : 'override',
       range: extra.range,
       sensitive: extra.sensitive,
       modifiable: extra.modifiable,

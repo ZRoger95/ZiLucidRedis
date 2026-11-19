@@ -60,3 +60,28 @@ test('releases list follows the version allowlist order', () => {
     { line: '8.10', tag: '8.10.3', publishedAt: '2026-10-26T11:56:24Z' },
   ]);
 });
+
+test('extras 只补官方 conf 里存在、且 config.c 没提取到的指令', () => {
+  const extras = {
+    bind: { type: 'special', defaultValue: null, range: null, sensitive: false, modifiable: true },
+    save: { type: 'special', defaultValue: '999 1', range: null, sensitive: false, modifiable: true },
+    ghost: { type: 'special', defaultValue: '', range: null, sensitive: false, modifiable: true },
+  };
+  const withExtras = buildDictionary({
+    line: '7.4',
+    tag: '7.4.5',
+    configC: parseConfigC(fixture('tests/fixtures/config-sample.c')),
+    officialConf: parseOfficialConf(fixture('tests/fixtures/official-sample.conf')),
+    extras,
+  }) as any;
+
+  const bind = withExtras.directives.find((directive: any) => directive.name === 'bind');
+  // 区域取自官方 conf 中该指令出现的位置（fixture 把示例放在 SNAPSHOTTING 段内）
+  expect(bind?.section).toBe('SNAPSHOTTING');
+  expect(bind?.defaultSource).toBe('none');
+  expect(withExtras.directives.filter((directive: any) => directive.name === 'save')).toHaveLength(1);
+  expect(withExtras.directives.find((directive: any) => directive.name === 'save')?.defaultValue).toBe(
+    '3600 1 300 100',
+  );
+  expect(withExtras.directives.some((directive: any) => directive.name === 'ghost')).toBe(false);
+});

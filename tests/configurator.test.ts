@@ -119,6 +119,14 @@ test('include 落在 INCLUDES 区域末尾、MODULES 横幅之前', () => {
   expect(includeAt).toBeLessThan(modulesBanner);
 });
 
+test('ACL 行缺失 user 前缀时自动补齐', () => {
+  const { dict, official } = load('7.4');
+  const draft: ConfiguratorDraft = { ...emptyDraft('7.4'), user: ['alice on >pass ~* +@all'] };
+  const output = renderConfig(official, dict, draft);
+
+  expect(output).toContain('user alice on >pass ~* +@all');
+});
+
 test('rename-command 空新名序列化为双引号', () => {
   const { dict, official } = load('7.4');
   const draft: ConfiguratorDraft = {

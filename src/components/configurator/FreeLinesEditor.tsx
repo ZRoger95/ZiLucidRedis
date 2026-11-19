@@ -73,7 +73,7 @@ export function FreeLinesEditor({ kind, draft, onChange }: FreeLinesEditorProps)
       <section className="space-y-2 border-t border-line pt-4">
         {title}
         <p className="m-0 text-[12px] text-muted-foreground">
-          一行一条 ACL 规则；密码部分只保存在内存，带回编辑器时会替换成占位符。
+          ACL 用户行不落盘，刷新后需要整行重新填写；带回编辑器时密码会替换成占位符。
         </p>
         <Textarea
           aria-label="ACL 用户规则"

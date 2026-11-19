@@ -52,3 +52,22 @@ test('6.2 的特殊指令都进了字典并归到对应区域', () => {
     expect(byName.get(name)?.section).toBe(section);
   }
 });
+
+test('容易取到散文示例的指令在各版本使用统一默认值', () => {
+  const expected: Record<string, string> = {
+    dir: './',
+    'oom-score-adj-values': '0 200 800',
+    'notify-keyspace-events': '',
+  };
+
+  for (const version of VERSIONS) {
+    const dict = JSON.parse(readFileSync(`src/data/dict/${version}.json`, 'utf8')) as {
+      directives: Array<{ name: string; defaultValue: string | null }>;
+    };
+    for (const [name, value] of Object.entries(expected)) {
+      const directive = dict.directives.find((item) => item.name === name);
+      expect(directive, `${version} 缺少 ${name}`).toBeDefined();
+      expect(directive?.defaultValue, `${version} ${name}`).toBe(value);
+    }
+  }
+});

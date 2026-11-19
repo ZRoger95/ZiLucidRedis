@@ -1,1 +1,5 @@
-{}
+{
+  "dir": "./",
+  "oom-score-adj-values": "0 200 800",
+  "notify-keyspace-events": ""
+}

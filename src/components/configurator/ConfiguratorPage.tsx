@@ -5,9 +5,9 @@ import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
 import { Button } from '@/components/ui/button';
 import { useVersionData } from '@/hooks/useVersionData';
 import { buildSteps, changeCount, emptyDraft, renderConfig } from '@/lib/configurator';
-import { clearDraft, loadDraft, saveDraft } from '@/lib/configuratorState';
+import { clearDraft, loadDraft, loadDraftLine, saveDraft, saveDraftLine } from '@/lib/configuratorState';
 import { DEFAULT_VERSION } from '@/lib/dict';
-import { setPendingConf } from '@/lib/handoff';
+import { setPendingConf, takePendingLine } from '@/lib/handoff';
 import { navigate } from '@/lib/routes';
 import { replaceSecrets } from '@/lib/secrets';
 
@@ -31,10 +31,8 @@ function stepCount(step: ConfiguratorStep, draft: ConfiguratorDraft): number {
 }
 
 export function ConfiguratorPage() {
-  const [line, setLine] = useState(DEFAULT_VERSION);
-  const [draft, setDraft] = useState<ConfiguratorDraft>(
-    () => loadDraft(DEFAULT_VERSION) ?? emptyDraft(DEFAULT_VERSION),
-  );
+  const [line, setLine] = useState(() => takePendingLine() ?? loadDraftLine() ?? DEFAULT_VERSION);
+  const [draft, setDraft] = useState<ConfiguratorDraft>(() => loadDraft(line) ?? emptyDraft(line));
   const [stepIndex, setStepIndex] = useState(0);
   const { data, error } = useVersionData(line);
 
@@ -62,12 +60,16 @@ export function ConfiguratorPage() {
 
   const changeLine = (next: string) => {
     clearDraft();
+    saveDraftLine(next);
     setLine(next);
     setDraft(emptyDraft(next));
     setStepIndex(0);
   };
 
   const download = () => {
+    if (hasSecret && !window.confirm('导出的文件将包含明文密码，确认继续？')) {
+      return;
+    }
     const blob = new Blob([generated], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');

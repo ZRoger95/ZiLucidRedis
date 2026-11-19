@@ -25,6 +25,11 @@ test('never writes plaintext passwords', () => {
   expect(() => saveState({ ...base, text: 'requirepass s3cr3t\n' })).toThrow();
 });
 
+test('ACL 用户行残留明文密码时拒绝持久化', () => {
+  expect(() => saveState({ ...base, text: 'user alice on >s3cr3t ~* +@all\n' })).toThrow();
+  expect(() => saveState({ ...base, text: 'user alice on ${env_user-pass} ~* +@all\n' })).not.toThrow();
+});
+
 test('invalid or absent state returns null', () => {
   localStorage.setItem('zilucid:state', '{oops');
   expect(loadState()).toBeNull();

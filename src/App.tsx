@@ -24,7 +24,7 @@ import { describeDirective } from './lib/describe';
 import { DEFAULT_VERSION, loadDict, loadMeta, loadOfficialConf } from './lib/dict';
 import { applyDefaultLine, buildDiff } from './lib/diff';
 import { exportOriginal, exportWithComments, exportWithSecrets, suggestFileName } from './lib/exportConf';
-import { takePendingConf } from './lib/handoff';
+import { clearPendingConf, keepEditorSession, peekPendingConf, readEditorSession, setPendingLine } from './lib/handoff';
 import { normalizeConfig } from './lib/normalizeConf';
 import { indexOfficialLines } from './lib/official';
 import { decodeConfBytes, parseConf } from './lib/parseConf';
@@ -53,7 +53,7 @@ interface VersionData {
 }
 
 export default function App() {
-  const [pending] = useState(() => takePendingConf());
+  const [pending] = useState(() => peekPendingConf());
   const [initial] = useState<PersistedState | null>(() => loadState());
   const [line, setLine] = useState(pending?.line ?? initial?.line ?? DEFAULT_VERSION);
   const [text, setText] = useState(pending?.text ?? initial?.text ?? '');
@@ -71,9 +71,9 @@ export default function App() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [activePane, setActivePane] = useState<'editor' | 'official'>('editor');
   const [findRequests, setFindRequests] = useState({ editor: 0, official: 0 });
-  const [vault, setVault] = useState<Map<string, string>>(() => pending?.vault ?? new Map());
+  const [vault, setVault] = useState<Map<string, string>>(() => pending?.vault ?? readEditorSession().vault);
   const [notice, setNotice] = useState<string | null>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileName, setFileName] = useState<string | null>(() => readEditorSession().fileName);
   const fileInput = useRef<HTMLInputElement>(null);
 
   // 版本数据在加载完成前保持“未就绪”，用版本号比对代替 effect 里的同步 setState(null)
@@ -180,6 +180,16 @@ export default function App() {
       // 手写密码时不落盘，避免明文进 localStorage
     }
   }, [dict, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed]);
+
+  // 带回的数据只消费一次；读取本身在渲染期完成，避免 StrictMode 下初始化被调用两次丢内容
+  useEffect(() => {
+    clearPendingConf();
+  }, []);
+
+  // 路由切换会卸载 App，vault 与文件名放在模块内存里，回来仍可用
+  useEffect(() => {
+    keepEditorSession(vault, fileName);
+  }, [vault, fileName]);
 
   useShortcut('mod+k', () => setSearchOpen(true));
   useShortcut('mod+f', () => {
@@ -356,7 +366,10 @@ export default function App() {
         onShowZhChange={setShowZh}
         onUpload={(file) => void readFile(file)}
         onLoadOfficial={loadOfficialIntoEditor}
-        onGenerate={() => navigate('configurator')}
+        onGenerate={() => {
+          setPendingLine(line);
+          navigate('configurator');
+        }}
         onClear={() => {
           setText('');
           setVault(new Map());

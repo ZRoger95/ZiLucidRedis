@@ -62,8 +62,8 @@
 - 路由用 hash：`#/configurator`，其余 hash 一律视为体检页。
 - 新增 `src/lib/routes.ts` 纯函数：`parseRoute(hash): 'checkup' | 'configurator'`、`routeHash(route): string`。新增 `src/hooks/useHashRoute.ts` 监听 `hashchange`，并加入 [eslint.config.ts](../../../eslint.config.ts) 的 effect 允许清单（它同步的是浏览器 URL，属于 React 之外的系统）。
 - [main.tsx](../../../src/main.tsx) 渲染一个 `Root`：按路由挂载 `App` 或 `ConfiguratorPage`，两个页面互斥挂载。
-- 体检页状态在 `App` 内，切到向导再回来会重建 `App`；编辑器文本来自 `loadState()`，因此不丢。
-- 「带回编辑器」通过内存交接：向导先用 `replaceSecrets` 把生成文本转成占位符，再通过 `setPendingConf` 交给体检页；文本与 vault 都只在内存里，不写任何存储。
+- 体检页状态在 `App` 内，切到向导再回来会重建 `App`；编辑器文本来自 `loadState()`，`vault` 与上传文件名放在模块内存里（`keepEditorSession` / `readEditorSession`），「还原密码后导出」不会因页面切换而失效。
+- 「带回编辑器」通过内存交接：向导先用 `replaceSecrets` 把生成文本转成占位符，再通过 `setPendingConf` 交给体检页；读取用 `peekPendingConf`（可重复读），`App` 挂载后再 `clearPendingConf`，避免 StrictMode 下渲染期初始化执行两次把内容吃掉。
 - 放弃路径路由：`base: './'` 的静态托管下，`/configurator` 需要 404 兜底或服务端重写，GitHub Pages 上代价明显高于收益。
 
 页面骨架（最小宽度 1024px，三栏）：
@@ -134,6 +134,8 @@ interface ConfiguratorDraft {
 
 每个字段展示：名称（等宽）、官方默认值、`range`、一句中文摘要（复用 `src/data/zh-notes.json`，没有则用官方注释首行）、「恢复默认」按钮。`modifiable: false` 的字段照常可编辑，但标注「需重启生效」。
 
+输入框用官方默认值做占位提示，不预填值：只有用户真正输入才写入草稿。这样「未改动」的语义与输出算法一致，也避免用户为了改一个数字先清空一长串默认值。清空输入等同恢复默认。
+
 放弃 `Select` 作为 enum 控件：`shutdown-on-sigint` / `shutdown-on-sigterm` 接受多值组合，`Select` 会丢掉合法输入；`datalist` 同时满足「给候选」与「允许自由输入」。
 
 ### 5.4 输出算法
@@ -141,21 +143,21 @@ interface ConfiguratorDraft {
 `renderConfig(officialText, dict, draft): string` 是纯函数，永远从官方原文渲染，不基于上一次输出叠加：
 
 1. 按行扫描官方 conf，识别每条指令所在行（去掉行首 `#` 与空白后，首 token 与指令名完全相等；注释示例行也算）。
-2. 对 `draft.values` 里的每条指令，替换**第一处**匹配行为生效行：`name value`；值含换行时按行展开为多条同指令行。其余同名的注释示例保留，不影响运行。
+2. 对 `draft.values` 里的每条指令，优先替换**第一处没有模板占位符**（`<`、`[`、`|`）的匹配行；同名的其它**生效行**会被注释掉，避免留下重复指令让后者覆盖前者。注释示例保持原样。值含换行时按行展开为多条同指令行。
 3. 官方模板里没有的指令（`MISC`）统一追加到文件末尾，前置横幅 `# 官方模板未收录的指令（来自 config.c）`。
 4. 自由行在**所属区域末尾**插入，各自带一行中文注释标题：
    - `include <path>`（支持通配符，行原样输出；官方建议放在文件靠前位置，本区域位于文件开头，满足该建议）
    - `loadmodule <path> [args...]`
-   - `user <acl rules>`（原样输出；含 `>password` 时由 `replaceSecrets` 处理）
+   - `user <acl rules>`（原样输出；缺少 `user ` 前缀时自动补齐，保证能被 `replaceSecrets` 识别；含 `>password` 时由它处理）
    - `rename-command <command> "<target>"`（`target` 为空串时输出 `""`，即禁用该命令）
 5. 未改动的行逐字节保留；结尾统一为单个换行。
 
-`draftChangeCount(dict, draft)` 统计 `values` 条数 + 非空自由行条数，用于导航与完成页。
+`changeCount(draft)` 统计 `values` 条数 + 非空自由行条数，用于导航与完成页。
 
 ### 5.5 草稿与敏感信息
 
-- 草稿存 `localStorage`，键 `zilucidredis.configurator.v1`，与体检页状态分开；换版本时丢弃旧版本草稿（区域与指令都变了）。
-- 写入前剔除 `sensitive: true` 的字段与 `user` 自由行：明文不落盘。刷新后这些字段为空，界面提示「敏感值不保存，请重新填写」。
+- 草稿存 `localStorage`，键 `zilucidredis.configurator.v1`，与体检页状态分开；所选版本另存 `zilucidredis.configurator.line`，刷新后回到上次的版本。切换版本时丢弃旧版本草稿。
+- 写入前剔除 `sensitive: true` 的字段与整条 `user` 自由行：明文不落盘。刷新后这些字段为空，界面提示「敏感值不保存，请重新填写」；ACL 行需要整行重填。
 - 下载与带回编辑器都把敏感值按现状写进内存文本；下载前沿用体检页的 `window.confirm` 明文提醒。
 
 ### 5.6 插图（hairline）
@@ -189,7 +191,7 @@ interface ConfiguratorDraft {
 ## 7. 验收
 
 - 工具栏点「生成配置」进入 `#/configurator`；浏览器前进/后退在两页之间正常切换；直接刷新 `#/configurator` 仍停留在向导。
-- 版本选择与体检页版本独立；切换版本后草稿重置并提示。
+- 进入向导时沿用体检页当前版本；进入后两端各自独立，切换版本会重置草稿并记住所选版本。
 - 遍历 10 个版本的步骤：每条字典指令恰好出现在一个步骤里；`include` / `loadmodule` / `user` / `rename-command` 出现在对应区域；`MISC` 指令出现在最后一步。
 - 在任一区域改一个 bool、一个数值、一个多行 `special`，完成页预览出现对应的生效行，其余行与官方原文一致。
 - 不填任何内容时，生成的 conf 与官方 conf 逐字节一致（行尾统一为 `\n`）。

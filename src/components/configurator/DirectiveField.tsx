@@ -74,7 +74,9 @@ export function DirectiveField({ doc, value, changed, onChange }: DirectiveField
         <label htmlFor={id} className="font-mono text-[13px] font-medium text-ink">
           {doc.name}
         </label>
-        <span className="text-[11px] text-muted-foreground">默认 {doc.defaultValue ?? '—'}</span>
+        <span className="text-[11px] text-muted-foreground">
+          默认 {doc.defaultValue === '' ? '（空）' : (doc.defaultValue ?? '—')}
+        </span>
         {doc.range ? <span className="text-[11px] text-muted-foreground">范围 {doc.range}</span> : null}
         {doc.modifiable ? null : <span className="text-[11px] text-[#9a3412]">需重启生效</span>}
         <span className="flex-1" />

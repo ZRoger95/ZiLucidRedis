@@ -4,7 +4,14 @@ import { beforeEach, expect, test } from 'vitest';
 import type { ConfiguratorDraft, DictFile } from '../src/types';
 
 import { emptyDraft } from '../src/lib/configurator';
-import { DRAFT_KEY, draftForStorage, loadDraft, saveDraft } from '../src/lib/configuratorState';
+import {
+  DRAFT_KEY,
+  draftForStorage,
+  loadDraft,
+  loadDraftLine,
+  saveDraft,
+  saveDraftLine,
+} from '../src/lib/configuratorState';
 
 const dict = JSON.parse(readFileSync('src/data/dict/7.4.json', 'utf8')) as DictFile;
 
@@ -39,4 +46,9 @@ test('草稿按版本恢复，版本不符返回 null', () => {
 test('损坏的草稿返回 null', () => {
   localStorage.setItem(DRAFT_KEY, '{');
   expect(loadDraft('7.4')).toBeNull();
+});
+
+test('所选版本单独保存，清空草稿不影响版本', () => {
+  saveDraftLine('8.2');
+  expect(loadDraftLine()).toBe('8.2');
 });

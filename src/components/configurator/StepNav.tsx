@@ -1,3 +1,5 @@
+import { useCallback } from 'react';
+
 import type { ConfiguratorStep } from '@/types';
 
 import registry from '@/data/configurator.json';
@@ -18,6 +20,10 @@ function stepLabel(step: ConfiguratorStep): string {
 }
 
 export function StepNav({ steps, activeIndex, counts, onSelect }: StepNavProps) {
+  const scrollActive = useCallback((node: HTMLButtonElement | null) => {
+    node?.scrollIntoView({ block: 'nearest' });
+  }, []);
+
   return (
     <nav
       aria-label="配置步骤"
@@ -30,6 +36,7 @@ export function StepNav({ steps, activeIndex, counts, onSelect }: StepNavProps) 
             <li key={step.id}>
               <button
                 type="button"
+                ref={active ? scrollActive : undefined}
                 aria-current={active ? 'step' : undefined}
                 onClick={() => onSelect(index)}
                 className={cn(

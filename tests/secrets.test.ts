@@ -21,6 +21,21 @@ test('acl user passwords are replaced but the username is kept', () => {
   expect(result.text).not.toContain('mypass');
 });
 
+test('acl 行里的多个密码都替换，恢复时按顺序还原', () => {
+  const result = replaceSecrets('user alice on >pass1 ~* >pass2 +@all\n');
+
+  expect(result.text).toBe('user alice on ${env_user-pass} ~* ${env_user-pass} +@all\n');
+  expect(result.found).toBe(2);
+  expect(restoreSecrets(result.text, result.vault)).toBe('user alice on >pass1 ~* >pass2 +@all\n');
+});
+
+test('带空格的引号密码整体替换并原样恢复', () => {
+  const result = replaceSecrets('requirepass "my secret"\n');
+
+  expect(result.text).toBe('requirepass ${env_requirepass}\n');
+  expect(restoreSecrets(result.text, result.vault)).toBe('requirepass "my secret"\n');
+});
+
 test('running twice does not double-replace', () => {
   const once = replaceSecrets('requirepass a\n').text;
   expect(replaceSecrets(once).found).toBe(0);

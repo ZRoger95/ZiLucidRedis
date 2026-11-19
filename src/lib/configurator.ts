@@ -116,7 +116,10 @@ function freeLineRows(kind: FreeLineKind, draft: ConfiguratorDraft): string[] {
     return rows.length ? [FREE_LINE_TITLES.loadmodule, ...rows.map((row) => `loadmodule ${row}`)] : [];
   }
   if (kind === 'user') {
-    const rows = draft.user.map((value) => value.trim()).filter(Boolean);
+    const rows = draft.user
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .map((value) => (/^user\s/i.test(value) ? value : `user ${value}`));
     return rows.length ? [FREE_LINE_TITLES.user, ...rows] : [];
   }
   const rows = draft.renameCommand.filter((row) => row.command.trim());
