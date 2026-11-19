@@ -11,6 +11,7 @@ import { setPendingConf } from '@/lib/handoff';
 import { navigate } from '@/lib/routes';
 import { replaceSecrets } from '@/lib/secrets';
 
+import { FigurePanel } from './FigurePanel';
 import { FinishStep } from './FinishStep';
 import { SectionStep } from './SectionStep';
 import { StepNav } from './StepNav';
@@ -123,11 +124,12 @@ export function ConfiguratorPage() {
       ) : null}
 
       {data ? (
-        <div className="grid min-h-0 flex-1 grid-cols-[220px_minmax(0,1fr)]">
+        <div className="flex min-h-0 flex-1">
           <StepNav steps={steps} activeIndex={stepIndex} counts={counts} onSelect={setStepIndex} />
-          <section className="min-h-0 overflow-auto bg-white px-8 py-6" aria-label="当前步骤">
+          <section className="min-w-0 flex-1 overflow-auto bg-white px-8 py-6" aria-label="当前步骤">
             {stepBody}
           </section>
+          {step ? <FigurePanel id={step.id} /> : null}
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center text-muted-foreground">

@@ -19,7 +19,10 @@ function stepLabel(step: ConfiguratorStep): string {
 
 export function StepNav({ steps, activeIndex, counts, onSelect }: StepNavProps) {
   return (
-    <nav aria-label="配置步骤" className="min-h-0 overflow-auto border-r border-line bg-[#fbfbfc] py-2">
+    <nav
+      aria-label="配置步骤"
+      className="w-[220px] min-h-0 shrink-0 overflow-auto border-r border-line bg-[#fbfbfc] py-2"
+    >
       <ol className="m-0 list-none p-0">
         {steps.map((step, index) => {
           const active = index === activeIndex;

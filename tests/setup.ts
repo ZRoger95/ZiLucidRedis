@@ -1,11 +1,29 @@
 import '@testing-library/jest-dom/vitest';
 
+class ObserverStub {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords() {
+    return [];
+  }
+}
+
 Object.assign(globalThis, {
-  ResizeObserver: class {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-  },
+  ResizeObserver: ObserverStub,
+  // hairline 用 IntersectionObserver 暂停离屏插图，jsdom 没有实现
+  IntersectionObserver: ObserverStub,
+  // hairline 在模块加载时读取 prefers-reduced-motion
+  matchMedia: (query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener() {},
+    removeListener() {},
+    addEventListener() {},
+    removeEventListener() {},
+    dispatchEvent: () => false,
+  }),
 });
 
 Object.assign(Element.prototype, {
