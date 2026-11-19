@@ -6,7 +6,7 @@
 
 ## 线上版本
 
-<https://ZRoger95.github.io/ZiLucidRedis/>
+<https://zilucidredis.zroger.top/>
 
 push 到 `master` 后由 GitHub Actions 构建并发布（[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)），线上与 `master` 的构建产物一致；也可以在 Actions 页面手动重跑。
 

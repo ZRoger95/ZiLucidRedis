@@ -1,7 +1,7 @@
 # GitHub Pages 自动部署设计
 
 日期：2026-11-19
-状态：待评审
+状态：已实现
 范围：为纯前端静态站增加 GitHub Actions 构建与 GitHub Pages 项目站点部署；不涉及运行时功能、数据生成脚本与仓库结构改造。
 
 ## 1. 意图：为什么做
@@ -16,10 +16,11 @@
 - 仓库 `ZRoger95/ZiLucidRedis` 为 public，主分支 `master`，当前没有 `.github/` 目录。
 - `package-lock.json` 存在，`resolved` 指向 `registry.npmmirror.com`。
 - 应用是单页、无前端路由，只有 `index.html` 入口。
+- 项目仓库单独绑定了子域名 `zilucidredis.zroger.top`，站点位于该子域名根路径；用户站点仓库仍以 `zroger.top` 为自定义域名，旧路径 `zroger.top/ZiLucidRedis/` 与 `github.io/ZiLucidRedis/` 都会 301 到子域名。
 
 ## 3. 目标
 
-- 访问 `https://ZRoger95.github.io/ZiLucidRedis/` 即可使用完整功能。
+- 访问 `https://zilucidredis.zroger.top/` 即可使用完整功能。
 - push 到 `master` 自动构建并部署；保留 `workflow_dispatch` 手动重跑入口。
 - 部署前执行与本地一致的门禁：`npm run check` + `npm run build`。
 - 不改 `base`、不改构建脚本、不新增仓库分支。
@@ -28,7 +29,8 @@
 
 非目标（本次不做）：
 
-- 自定义域名、HTTPS 强制、PR 预览部署。
+- 域名注册、DNS 托管与 Cloudflare 代理/证书配置（沿用已有的 `zroger.top`）。
+- GitHub Pages 的 Enforce HTTPS 与 PR 预览部署。
 - 在 CI 中运行 `scripts/fetch-upstream.ts` 或 `scripts/build-dict.ts`。
 - 发布流程自动化（打 tag、changelog、版本号管理）。
 - 移动端适配或任何运行时功能改动。
@@ -56,8 +58,9 @@
 手动步骤（需要仓库管理员操作，一次性）：
 
 1. Settings → Pages → Build and deployment → Source 选 **GitHub Actions**（首次部署前完成）。
-2. 可选：在 Actions 页面确认首个 `build` job 的 `npm ci` 耗时；若明显偏慢或超时，再处理镜像问题（见第 6 节）。
-3. 可选：若以后启用 PR 流程，再把 `build` 加为 required status check；当前直接推 `master`，不做此配置。
+2. Settings → Pages → Custom domain 填 `zilucidredis.zroger.top`；Cloudflare 加 `CNAME zilucidredis → zroger95.github.io`，先 DNS only 等 GitHub 完成校验与证书，再切到代理模式。
+3. 可选：在 Actions 页面确认首个 `build` job 的 `npm ci` 耗时；若明显偏慢或超时，再处理镜像问题（见第 6 节）。
+4. 可选：若以后启用 PR 流程，再把 `build` 加为 required status check；当前直接推 `master`，不做此配置。
 
 放弃的方案：
 
@@ -70,10 +73,12 @@
 - **Pages 未启用**：Source 没选 GitHub Actions 时 `deploy` job 会失败，属于配置缺失而非代码问题。
 - **数据漂移**：CI 只消费已提交的生成物，禁止在流水线里运行抓取脚本；上游更新仍走本地脚本 + 提交。
 - **相对路径**：`base: './'` 适用于项目站点子路径，无需改成 `/ZiLucidRedis/`，也因此在本地根路径预览同样可用。
+- **自定义域名**：域名由仓库 Settings 管理，源码不放 `CNAME` 文件；Cloudflare 开启代理时 GitHub 可能签不下证书，保持 DNS only 直到证书就绪。
 
 ## 7. 验收
 
 - push 一次 `master` 后，`build` 与 `deploy` 两个 job 全绿，Actions 输出可访问的站点 URL。
-- `https://ZRoger95.github.io/ZiLucidRedis/` 能打开，样式、字典、CodeMirror 与本地 `npm run preview` 表现一致。
+- `https://zilucidredis.zroger.top/` 能打开，样式、字典、CodeMirror 与本地 `npm run preview` 表现一致。
+- 旧地址 `zroger95.github.io/ZiLucidRedis/` 与 `zroger.top/ZiLucidRedis/` 均 301 到新子域名。
 - 页面没有绝对路径资源导致的 404（无路由，不需要 404 兜底）。
-- README 的「本地开发」附近补充线上地址，并说明部署由 push `master` 触发。
+- README 写明线上地址，并说明部署由 push `master` 触发。
