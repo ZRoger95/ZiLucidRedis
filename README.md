@@ -27,6 +27,16 @@ push 到 `master` 后由 GitHub Actions 构建并发布（[`.github/workflows/de
   `Esc` 回到编辑器；行内 `»` 按钮可单独 `Tab` 聚焦。
 - 导出三种：原样导出、补全官方注释后导出、还原密码后导出。
 
+## 生成配置（向导）
+
+体检页右上角「生成配置」进入 `#/configurator`：
+
+- 第 1 步选版本，之后按官方 `redis.conf` 的区域一区一步；左侧导航可跳转并显示各步改动数。
+- 每个字段预填官方默认值，只有改过的项才取消注释写入；未改动的行保持官方注释原样。
+- `include`、`loadmodule`、`user`、`rename-command` 在对应区域单独填写；`config.c` 里有、官方模板未收录的指令放在最后的「其他」步。
+- 完成页可预览、下载 `redis-<版本>.conf`，或「带回体检页」继续检查（密码会先替换成 `${env_*}` 占位符）。
+- 草稿保存在浏览器本地；`requirepass` 与 ACL 用户行不落盘，刷新后需要重填。
+
 ## 密码怎么处理
 
 导入时，`requirepass`、`masterauth`、`tls-key-file-pass`、`tls-client-key-file-pass` 和
