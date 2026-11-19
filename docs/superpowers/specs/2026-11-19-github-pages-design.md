@@ -13,7 +13,7 @@
 - Vite 8 + React 19，[vite.config.ts](../../../vite.config.ts) 已经是 `base: './'`，产物资源走相对路径。
 - `npm run build` = `lint` + `tsc --noEmit` + `vite build`；`npm run check` = `lint` + `format:check` + `typecheck` + `test`。
 - 字典、官方 conf、`releases.json` 均已生成并提交进仓库；`scripts/fetch-upstream.ts` 与 `scripts/build-dict.ts` 只在本地手工运行，会访问 GitHub。
-- 仓库 `ZRoger95/ZiLucidRedis` 为 public，主分支 `master`，当前没有 `.github/` 目录。
+- 仓库 `ZRoger95/ZiLucidRedis` 为 public，主分支 `master`。
 - `package-lock.json` 存在，`resolved` 指向 `registry.npmmirror.com`。
 - 应用是单页、无前端路由，只有 `index.html` 入口。
 - 项目仓库单独绑定了子域名 `zilucidredis.zroger.top`，站点位于该子域名根路径；用户站点仓库仍以 `zroger.top` 为自定义域名，旧路径 `zroger.top/ZiLucidRedis/` 与 `github.io/ZiLucidRedis/` 都会 301 到子域名。
