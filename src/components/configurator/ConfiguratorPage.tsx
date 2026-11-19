@@ -4,10 +4,14 @@ import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
 
 import { Button } from '@/components/ui/button';
 import { useVersionData } from '@/hooks/useVersionData';
-import { buildSteps, changeCount, emptyDraft } from '@/lib/configurator';
+import { buildSteps, changeCount, emptyDraft, renderConfig } from '@/lib/configurator';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/configuratorState';
 import { DEFAULT_VERSION } from '@/lib/dict';
+import { setPendingConf } from '@/lib/handoff';
 import { navigate } from '@/lib/routes';
+import { replaceSecrets } from '@/lib/secrets';
 
+import { FinishStep } from './FinishStep';
 import { SectionStep } from './SectionStep';
 import { StepNav } from './StepNav';
 import { VersionStep } from './VersionStep';
@@ -27,18 +31,55 @@ function stepCount(step: ConfiguratorStep, draft: ConfiguratorDraft): number {
 
 export function ConfiguratorPage() {
   const [line, setLine] = useState(DEFAULT_VERSION);
-  const [draft, setDraft] = useState<ConfiguratorDraft>(() => emptyDraft(DEFAULT_VERSION));
+  const [draft, setDraft] = useState<ConfiguratorDraft>(
+    () => loadDraft(DEFAULT_VERSION) ?? emptyDraft(DEFAULT_VERSION),
+  );
   const [stepIndex, setStepIndex] = useState(0);
   const { data, error } = useVersionData(line);
 
   const steps = useMemo(() => (data ? buildSteps(data.dict) : []), [data]);
   const counts = useMemo(() => steps.map((step) => stepCount(step, draft)), [steps, draft]);
   const step = steps[stepIndex];
+  const generated = useMemo(() => (data ? renderConfig(data.official, data.dict, draft) : ''), [data, draft]);
+  const hasSecret = useMemo(() => {
+    if (!data) {
+      return false;
+    }
+    const sensitive = new Set(
+      data.dict.directives.filter((directive) => directive.sensitive).map((directive) => directive.name),
+    );
+    return Object.keys(draft.values).some((name) => sensitive.has(name)) || draft.user.some((row) => row.trim() !== '');
+  }, [data, draft]);
+
+  const updateDraft = (patch: Partial<ConfiguratorDraft>) => {
+    const next = { ...draft, ...patch };
+    setDraft(next);
+    if (data) {
+      saveDraft(next, data.dict);
+    }
+  };
 
   const changeLine = (next: string) => {
+    clearDraft();
     setLine(next);
     setDraft(emptyDraft(next));
     setStepIndex(0);
+  };
+
+  const download = () => {
+    const blob = new Blob([generated], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `redis-${line}.conf`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handoff = () => {
+    const { text, vault } = replaceSecrets(generated);
+    setPendingConf({ line, text, vault });
+    navigate('checkup');
   };
 
   const stepBody = (() => {
@@ -50,20 +91,18 @@ export function ConfiguratorPage() {
     }
     if (step.kind === 'finish') {
       return (
-        <div className="max-w-2xl space-y-4">
-          <h2 className="m-0 text-[18px] font-semibold text-ink">完成</h2>
-          <p className="m-0 text-[13px] text-muted-foreground">共改 {changeCount(draft)} 项。</p>
-        </div>
+        <FinishStep
+          line={line}
+          text={generated}
+          changed={changeCount(draft)}
+          hasSecret={hasSecret}
+          onBack={() => setStepIndex((value) => value - 1)}
+          onDownload={download}
+          onHandoff={handoff}
+        />
       );
     }
-    return (
-      <SectionStep
-        step={step}
-        official={data.official}
-        draft={draft}
-        onDraftChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
-      />
-    );
+    return <SectionStep step={step} official={data.official} draft={draft} onDraftChange={updateDraft} />;
   })();
 
   return (
