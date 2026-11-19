@@ -1,0 +1,164 @@
+{
+  "sections": {
+    "INCLUDES": {
+      "name": "包含其他配置文件",
+      "summary": "在主配置靠前位置引入额外 conf；后加载的值会覆盖先前的"
+    },
+    "MODULES": {
+      "name": "模块加载",
+      "summary": "启动时加载 .so 模块，加载失败会拒绝启动"
+    },
+    "NETWORK": {
+      "name": "网络",
+      "summary": "监听端口、绑定地址、超时与 TCP 参数"
+    },
+    "TLS/SSL": {
+      "name": "传输加密",
+      "summary": "证书、CA、协议版本与密码套件"
+    },
+    "GENERAL": {
+      "name": "常规",
+      "summary": "守护进程、日志、进程标题与数据库数量"
+    },
+    "SNAPSHOTTING": {
+      "name": "快照持久化",
+      "summary": "RDB 保存策略、文件位置与校验"
+    },
+    "REPLICATION": {
+      "name": "主从复制",
+      "summary": "replicaof、复制缓冲、超时与优先级"
+    },
+    "KEYS TRACKING": {
+      "name": "键跟踪",
+      "summary": "客户端缓存失效表的上限"
+    },
+    "SECURITY": {
+      "name": "安全",
+      "summary": "ACL 用户、密码与危险命令改名"
+    },
+    "CLIENTS": {
+      "name": "客户端",
+      "summary": "最大连接数"
+    },
+    "MEMORY MANAGEMENT": {
+      "name": "内存管理",
+      "summary": "maxmemory、淘汰策略与采样"
+    },
+    "LAZY FREEING": {
+      "name": "惰性释放",
+      "summary": "用后台线程释放大对象，降低主线程卡顿"
+    },
+    "THREADED I/O": {
+      "name": "多线程 I/O",
+      "summary": "io-threads 数量与读线程开关"
+    },
+    "KERNEL OOM CONTROL": {
+      "name": "OOM 控制",
+      "summary": "进程的 OOM 评分调整与取值"
+    },
+    "KERNEL transparent hugepage CONTROL": {
+      "name": "透明大页",
+      "summary": "启动时是否禁用 THP"
+    },
+    "APPEND ONLY MODE": {
+      "name": "AOF 持久化",
+      "summary": "追加日志、fsync 与重写策略"
+    },
+    "BACKUP / RESTORE": {
+      "name": "备份与恢复",
+      "summary": "备份目录与恢复相关参数"
+    },
+    "SHUTDOWN": {
+      "name": "关闭行为",
+      "summary": "信号触发的保存、等待与超时"
+    },
+    "NON-DETERMINISTIC LONG BLOCKING COMMANDS": {
+      "name": "长阻塞命令",
+      "summary": "脚本与函数的执行时限"
+    },
+    "REDIS CLUSTER": {
+      "name": "集群",
+      "summary": "节点开关、超时、迁移与槽覆盖策略"
+    },
+    "CLUSTER DOCKER/NAT support": {
+      "name": "集群地址宣告",
+      "summary": "NAT 环境下对外宣告的地址与端口"
+    },
+    "SLOW LOG": {
+      "name": "慢日志",
+      "summary": "慢查询阈值与日志长度"
+    },
+    "LATENCY MONITOR": {
+      "name": "延迟监控",
+      "summary": "事件延迟的采集阈值"
+    },
+    "LATENCY TRACKING": {
+      "name": "延迟跟踪",
+      "summary": "命令延迟百分位与直方图"
+    },
+    "EVENT NOTIFICATION": {
+      "name": "键空间通知",
+      "summary": "键空间与键事件通知的开关组合"
+    },
+    "ADVANCED CONFIG": {
+      "name": "高级参数",
+      "summary": "编码阈值、缓冲区、hz 与 LFU 调优"
+    },
+    "ACTIVE DEFRAGMENTATION": {
+      "name": "主动碎片整理",
+      "summary": "触发阈值与 CPU 占用"
+    },
+    "LUA SCRIPTING": {
+      "name": "脚本",
+      "summary": "Lua 脚本的阻塞时限（6.2 旧参数）"
+    },
+    "GOPHER SERVER": {
+      "name": "Gopher",
+      "summary": "已移除的 Gopher 协议支持"
+    },
+    "MISC": {
+      "name": "其他",
+      "summary": "官方模板未收录、但 config.c 里存在的指令"
+    }
+  },
+  "enums": {
+    "acl-pubsub-default": ["allchannels", "resetchannels"],
+    "appendfsync": ["everysec", "always", "no"],
+    "cluster-preferred-endpoint-type": ["ip", "hostname", "unknown-endpoint"],
+    "cluster-slot-stats-enabled": ["no", "yes"],
+    "enable-debug-command": ["no", "yes", "local"],
+    "enable-module-command": ["no", "yes", "local"],
+    "enable-protected-configs": ["no", "yes", "local"],
+    "loglevel": ["notice", "verbose", "debug", "warning", "nothing"],
+    "maxmemory-policy": [
+      "noeviction",
+      "allkeys-lru",
+      "allkeys-lfu",
+      "allkeys-random",
+      "volatile-lru",
+      "volatile-lfu",
+      "volatile-random",
+      "volatile-ttl"
+    ],
+    "oom-score-adj": ["no", "yes", "absolute", "relative"],
+    "propagation-error-behavior": ["ignore", "panic", "panic-on-replicas"],
+    "repl-diskless-load": ["disabled", "swapdb", "on-empty-db"],
+    "sanitize-dump-payload": ["no", "yes", "clients"],
+    "shutdown-on-sigint": ["default", "save", "nosave", "now", "force"],
+    "shutdown-on-sigterm": ["default", "save", "nosave", "now", "force"],
+    "supervised": ["no", "upstart", "systemd", "auto"],
+    "syslog-facility": [
+      "USER",
+      "LOCAL0",
+      "LOCAL1",
+      "LOCAL2",
+      "LOCAL3",
+      "LOCAL4",
+      "LOCAL5",
+      "LOCAL6",
+      "LOCAL7"
+    ],
+    "tls-auth-clients": ["yes", "no", "optional"],
+    "tls-auth-clients-user": ["off", "CN"]
+  }
+}

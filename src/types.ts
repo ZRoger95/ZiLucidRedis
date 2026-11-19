@@ -82,6 +82,35 @@ export type AnnotationMode = 'missing' | 'all' | 'off';
 
 export type FreeLineKind = 'include' | 'loadmodule' | 'user' | 'renameCommand';
 
+export interface ConfiguratorSectionMeta {
+  name: string;
+  summary: string;
+  figure?: string;
+}
+
+export interface ConfiguratorRegistry {
+  sections: Record<string, ConfiguratorSectionMeta>;
+  enums: Record<string, string[]>;
+}
+
+export interface ConfiguratorStep {
+  id: string;
+  kind: 'version' | 'section' | 'extra' | 'finish';
+  title: string;
+  directives: DirectiveDoc[];
+  freeLines: FreeLineKind[];
+}
+
+export interface ConfiguratorDraft {
+  v: 1;
+  line: string;
+  values: Record<string, string>;
+  include: string[];
+  loadmodule: string[];
+  user: string[];
+  renameCommand: Array<{ command: string; target: string }>;
+}
+
 export interface JumpTarget {
   lineNo: number;
   nonce: number;
