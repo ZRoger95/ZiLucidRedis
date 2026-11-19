@@ -3,12 +3,12 @@ import { useMemo, useState } from 'react';
 import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
 
 import { Button } from '@/components/ui/button';
-import registry from '@/data/configurator.json';
 import { useVersionData } from '@/hooks/useVersionData';
 import { buildSteps, changeCount, emptyDraft } from '@/lib/configurator';
 import { DEFAULT_VERSION } from '@/lib/dict';
 import { navigate } from '@/lib/routes';
 
+import { SectionStep } from './SectionStep';
 import { StepNav } from './StepNav';
 import { VersionStep } from './VersionStep';
 
@@ -42,7 +42,7 @@ export function ConfiguratorPage() {
   };
 
   const stepBody = (() => {
-    if (!step) {
+    if (!step || !data) {
       return null;
     }
     if (step.kind === 'version') {
@@ -56,22 +56,13 @@ export function ConfiguratorPage() {
         </div>
       );
     }
-    const meta = registry.sections[step.id as keyof typeof registry.sections];
     return (
-      <div className="max-w-3xl space-y-4">
-        <h2 className="m-0 font-mono text-[18px] font-semibold text-ink">{step.title}</h2>
-        <p className="m-0 text-[13px] text-muted-foreground">{meta ? `${meta.name} · ${meta.summary}` : '官方区域'}</p>
-        {step.freeLines.length > 0 ? (
-          <p className="m-0 text-[13px] text-muted-foreground">本区域还提供自由行编辑器。</p>
-        ) : null}
-        <ul className="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-1 p-0 text-[13px] text-muted-foreground">
-          {step.directives.map((directive) => (
-            <li key={directive.name} className="font-mono">
-              {directive.name}
-            </li>
-          ))}
-        </ul>
-      </div>
+      <SectionStep
+        step={step}
+        official={data.official}
+        draft={draft}
+        onDraftChange={(patch) => setDraft((current) => ({ ...current, ...patch }))}
+      />
     );
   })();
 

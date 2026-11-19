@@ -119,6 +119,17 @@ test('include 落在 INCLUDES 区域末尾、MODULES 横幅之前', () => {
   expect(includeAt).toBeLessThan(modulesBanner);
 });
 
+test('rename-command 空新名序列化为双引号', () => {
+  const { dict, official } = load('7.4');
+  const draft: ConfiguratorDraft = {
+    ...emptyDraft('7.4'),
+    renameCommand: [{ command: 'CONFIG', target: '' }],
+  };
+  const output = renderConfig(official, dict, draft);
+
+  expect(output).toContain('rename-command CONFIG ""');
+});
+
 test('MISC 指令追加到文件末尾', () => {
   const { dict, official } = load('7.4');
   const draft: ConfiguratorDraft = { ...emptyDraft('7.4'), values: { 'prefetch-batch-max-size': '32' } };
