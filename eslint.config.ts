@@ -195,8 +195,6 @@ export default defineConfig([
       'src/components/Editor.tsx',
       'src/components/OfficialPane.tsx',
       'src/hooks/useShortcut.ts',
-      // useHashRoute 监听浏览器 hashchange，属于 React 之外的 URL 状态。
-      'src/hooks/useHashRoute.ts',
       // useVersionData 触发按版本的动态 import，属于 React 之外的异步加载。
       'src/hooks/useVersionData.ts',
     ],

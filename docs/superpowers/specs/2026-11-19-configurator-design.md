@@ -192,7 +192,6 @@ interface ConfiguratorDraft {
 ### 待处理
 
 - **路由层级**：当前只支持单段路径（`/configurator`），因为 `base: './'` 的相对资源依赖这一层级；以后要加嵌套路由，需要把 `base` 改成 `/` 并同步调整部署校验。
-- **遗留代码**：`src/lib/routes.ts` 与 `src/hooks/useHashRoute.ts` 是 hash 路由版本的残留，改为 React Router 后已无引用，待确认后删除（连同 `tests/routes.test.ts`）。
 
 ## 7. 验收
 

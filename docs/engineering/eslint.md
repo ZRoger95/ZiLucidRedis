@@ -79,7 +79,6 @@ ESLint 9 起已把格式规则移出核心，React 官方与 Prettier 官方也�
 | `src/components/Editor.tsx` | 挂载 / 销毁 / 同步 CodeMirror 实例 |
 | `src/components/OfficialPane.tsx` | 渲染提交后滚动到焦点行 |
 | `src/hooks/useShortcut.ts` | 订阅全局键盘事件 |
-| `src/hooks/useHashRoute.ts` | 订阅浏览器 `hashchange` |
 | `src/hooks/useVersionData.ts` | 按版本动态 `import()` 字典与官方 conf |
 
 新增文件需要改配置并说明原因，评审时重点看“为什么不能用事件处理器或渲染期派生”。已有的反例：搜索面板关闭时重置查询，改为在 `onOpenChange` 里清空，不再用 effect 监听 `open`。
