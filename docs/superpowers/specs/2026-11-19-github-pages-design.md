@@ -58,7 +58,7 @@
 - `npm run check` 与 `npm run build` 都会跑一遍 lint 与 tsc，重复几秒，换取与本地完全一致的门禁，不做脚本裁剪。
 - 门禁落在发版这一刻：`npm run check` 失败的 Release 会红且不部署，线上不会出现未过门禁的构建；日常提交没有自动检查，靠本地 `npm run check`。
 
-手动步骤（需要仓库管理员操作，一次性）：
+手动步骤（需要仓库管理员操作，一次性；2026-11-20 已确认 1–3 到位）：
 
 1. Settings → Pages → Build and deployment → Source 选 **GitHub Actions**（首次部署前完成）。
 2. Settings → Pages → Custom domain 填 `zilucidredis.zroger.top`；Cloudflare 加 `CNAME zilucidredis → zroger95.github.io`，先 DNS only 等 GitHub 完成校验与证书，再切到代理模式。

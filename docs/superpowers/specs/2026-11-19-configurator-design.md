@@ -191,7 +191,8 @@ interface ConfiguratorDraft {
 
 ### 待处理
 
-- **路由层级**：当前只支持单段路径（`/configurator`），因为 `base: './'` 的相对资源依赖这一层级；以后要加嵌套路由，需要把 `base` 改成 `/` 并同步调整部署校验。
+- **路由层级（当前不做，加嵌套路由前必读）**：页面地址只能有一层（`/`、`/configurator`）。`base: './'` 让资源按相对路径解析：地址为 `/configurator` 时基准目录仍是 `/`，资源取 `/assets/…`，正常；地址变成 `/configurator/` 或 `/configurator/abc` 时基准目录落到 `/configurator/`，资源被解析成 `/configurator/assets/…` 而 404，整页白屏（带尾斜杠那种线上已实测）。GitHub Pages 没有 rewrite，是构建期复制出的 `404.html` 让单层路径能兜底。
+  要加嵌套路由，把 `base` 改成 `/`（站点在自定义域名根路径，成立），代价是不再能部署在子路径（如 `github.io/ZiLucidRedis/`）；若仍要子路径，改用 `base: '/ZiLucidRedis/'` 并给 `BrowserRouter` 加对应的 `basename`。改完复核三处：`dist/index.html` 的资源前缀、`/configurator` 与带尾斜杠的地址、旧地址 301。
 
 ## 7. 验收
 

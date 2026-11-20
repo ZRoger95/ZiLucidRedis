@@ -6,13 +6,14 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 
 ## 底线约束
 
-- **纯前端，运行时零外部请求。** 不引入后端；构建产物必须能由静态服务器托管并离线使用（`base: './'`）。新增数据一律在构建期生成并提交。
+- **纯前端，运行时零外部请求。** 不引入后端；构建产物必须能由静态服务器托管，并用相对资源路径（`base: './'`）以便整体部署到任意目录或子路径。新增数据一律在构建期生成并提交。
 - **明文密码不落盘。** 敏感指令在导入时即替换为 `${env_<指令名>}`；原值只存在于内存；`localStorage`、默认导出和任何默认值都不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换逻辑在 [secrets.ts](src/lib/secrets.ts)。
 - **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`。
 - **TypeScript strict。** 不新增 `any`；共享类型放 [types.ts](src/types.ts)。未使用变量由 `tsc` 的 `noUnusedLocals` / `noUnusedParameters` 把关。
 - **Lint 与格式门禁。** ESLint 管正确性和团队习惯，Prettier 管格式；`npm run lint` 必须零告警，`eslint-disable` 必须写原因。规则与取舍见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
 - **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器和渲染期派生；只有与 React 之外系统同步的文件才能进入 [eslint.config.ts](eslint.config.ts) 的允许清单。清单与替代方案见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
 - **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
+- **页面地址只允许一层。** 在 `base: './'` 下 `/configurator/`、`/configurator/xxx` 这类更深的地址会把资源解析到 `/configurator/assets/…` 而 404 白屏；GitHub Pages 没有 rewrite，只能靠 `404.html` 副本兜底单层路径。要加嵌套路由先改 `base` 并复核部署，取舍见 [生成向导设计](docs/superpowers/specs/2026-11-19-configurator-design.md) 的「待处理」。
 - **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。
 
 ## UI 与 shadcn

@@ -293,8 +293,8 @@ type Line =
 
 `npm run build` 产出静态文件：
 - 托管：任意静态托管（GitHub Pages / Nginx / 对象存储），无需服务端。
-- 离线：因 `base: './'`，产物目录可直接双击 `index.html` 打开使用；构建期额外把 `index.html`
-  复制成 `404.html`，供 GitHub Pages 直接打开 `/configurator` 时兜底。
+- 运行方式：产物是 ES module，`file://` 下无法加载，必须由静态服务器托管（`npm run preview`、Nginx、对象存储、GitHub Pages 均可）；`base: './'` 只用于让产物可整体部署到任意目录或子路径。
+- 页面地址只能有一层：构建期把 `index.html` 复制成 `404.html`，供 GitHub Pages 直接打开 `/configurator` 时兜底。更深的地址（`/configurator/`、`/configurator/abc`）会让相对资源解析到 `/configurator/assets/…` 而 404，取舍与改法见[生成向导设计](2026-11-19-configurator-design.md)的「待处理」。
 
 线上部署由 GitHub Actions 在发布 Release 时构建并发布该 tag，见
 [GitHub Pages 自动部署设计](2026-11-19-github-pages-design.md)；本地构建与预览（`npm run dev`）
