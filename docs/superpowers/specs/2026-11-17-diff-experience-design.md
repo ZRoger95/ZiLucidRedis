@@ -52,7 +52,7 @@
 
 ### 5.1 数据源
 
-`scripts/fetch-upstream.mjs` 改用 GitHub Releases：
+[`scripts/fetch-upstream.ts`](../../../scripts/fetch-upstream.ts) 改用 GitHub Releases：
 
 - 请求 `https://api.github.com/repos/redis/redis/releases?per_page=100&page=1..3`。
 - 只保留 `draft === false`、`prerelease === false`、tag 匹配 `^\d+\.\d+\.\d+$` 的项。
@@ -78,19 +78,19 @@
 
 ### 5.2 构建产物
 
-- `scripts/build-dict.mjs` 在生成 `src/data/dict/<line>.json` 时，把 `publishedAt` 一并写入
+- `scripts/build-dict.ts` 在生成 `src/data/dict/<line>.json` 时，把 `publishedAt` 一并写入
   `DictFile`。
 - 新增 `src/data/releases.json`：`[{ "line": "7.4", "tag": "7.4.12", "publishedAt": "..." }]`，
-  顺序按 minor 线升序。由 `build-dict.mjs` 生成并提交。
+  顺序按 minor 线升序。由 `build-dict.ts` 生成并提交。
 - `src/lib/dict.ts` 的 `VERSIONS` 改为从 `releases.json` 派生，不再手写。
 - `Toolbar` 的版本项 label 格式：`7.4 · 7.4.12 · 2026-10-26`。
 - 右侧官方面板标题格式：`官方完整配置 · 7.4.12 · 2026-10-26`。
 
 ### 5.3 清理
 
-- 删除 `scripts/lib/tags.mjs` 与 `tests/build/tags.test.ts`，用
-  `scripts/lib/releases.mjs` + `tests/build/releases.test.ts` 替代。
-- `releases.mjs` 暴露 `pickStableReleases(releases, lines)`：输入 release 数组与线白名单，
+- 删除 `scripts/lib/tags.ts` 与 `tests/build/tags.test.ts`，用
+  `scripts/lib/releases.ts` + `tests/build/releases.test.ts` 替代。
+- `releases.ts` 暴露 `pickStableReleases(releases, lines)`：输入 release 数组与线白名单，
   输出 `{ line, tag, publishedAt }[]`。纯函数，便于单测。
 
 ## 6. diff 数据模型与算法
@@ -263,10 +263,10 @@ interface DiffModel {
 
 ## 8. 代码改动清单
 
-- `scripts/lib/releases.mjs`（新增）：`pickStableReleases`。
-- `scripts/lib/tags.mjs`（删除）。
-- `scripts/fetch-upstream.mjs`：改用 Releases API，写新结构 lock.json。
-- `scripts/build-dict.mjs`：写入 `publishedAt`；生成 `src/data/releases.json`。
+- `scripts/lib/releases.ts`（新增）：`pickStableReleases`。
+- `scripts/lib/tags.ts`（删除）。
+- `scripts/fetch-upstream.ts`：改用 Releases API，写新结构 lock.json。
+- `scripts/build-dict.ts`：写入 `publishedAt`；生成 `src/data/releases.json`。
 - `src/types.ts`：`DictFile` 增加 `publishedAt?: string`。
 - `src/lib/dict.ts`：`VERSIONS` 从 `releases.json` 派生。
 - `src/lib/diff.ts`（新增）：`buildDiff`、`diffSegments`。

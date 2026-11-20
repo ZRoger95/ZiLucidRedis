@@ -86,7 +86,8 @@ node scripts/build-dict.ts       # 生成 src/data/dict/<line>.json、releases.j
 
 ## 目录
 
-- `src/lib/`：解析、归一化、分析、风险规则、密码占位、搜索、导出（纯函数，全部有单测）
-- `src/components/`：工具栏、体检结果面板、CodeMirror 编辑器、详情面板、搜索面板
+- `src/lib/`：解析、归一化、分析、风险规则、diff、体检分组、查找、密码占位、导出、配置生成（纯函数，全部有单测）
+- `src/components/`：工具栏、体检结果面板、CodeMirror 编辑器、官方面板、配置对比、栏内查找、搜索面板、导出菜单
+- `src/components/configurator/`：生成向导的步骤导航、字段、自由行与完成页
 - `src/data/dict/`：每版本一份配置项字典 + 跨版本索引
 - `docs/superpowers/specs/`、`docs/superpowers/plans/`：设计文档与实施计划

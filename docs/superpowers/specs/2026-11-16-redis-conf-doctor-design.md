@@ -95,16 +95,17 @@
 ]
 ```
 
-`fetch-upstream.mjs` 通过 GitHub tags API 解析每条线最新的 patch tag
-（实测 2026-11：`6.2.x` / `7.0.x` / `7.2.x` / `7.4.12` / `8.0.6` / `8.2.11` /
-`8.4.8` / `8.6.8` / `8.8.4` / `8.10.3`），把解析结果写进 `data/upstream/lock.json`；
-API 不可用时读 lock.json 里上次的 tag，保证构建可离线复现。
+[`scripts/fetch-upstream.ts`](../../../scripts/fetch-upstream.ts) 通过 GitHub Releases API
+（只取正式版）解析每条 minor 线最新的 patch tag 与发布日期，写进 `data/upstream/lock.json`；
+API 不可用时沿用 lock.json 里上一次的 tag，保证构建可离线复现。各线当前使用的 tag 以
+`lock.json` 为准，不在文档里手抄。
 
-`scripts/fetch-upstream.mjs`：下载 `<tag>/src/config.c` 与 `<tag>/redis.conf` 到
-`data/upstream/<line>/`，记录 sha256，已存在且一致则跳过；单文件失败重试 3 次
+同一脚本下载 `<tag>/redis.conf` 与 `<tag>/src/config.c` 到 `data/upstream/<line>/`，
+文件已存在且该线的 tag 未变化则跳过；单文件请求失败重试 3 次
 （实测 raw.githubusercontent.com 偶发连接超时）。
 
-`scripts/build-dict.mjs`：产出 `src/data/dict/<line>.json`（每版本一份，按需加载），
+[`scripts/build-dict.ts`](../../../scripts/build-dict.ts) 产出 `src/data/dict/<line>.json`
+（每版本一份，按需加载）、`src/data/dict/meta.json`、`src/data/releases.json`，
 同时把官方 `redis.conf` 原文复制到 `src/data/official/<line>.conf`，
 供右栏只读展示与「载入官方配置」使用。
 
@@ -292,34 +293,30 @@ type Line =
 
 `npm run build` 产出静态文件：
 - 托管：任意静态托管（GitHub Pages / Nginx / 对象存储），无需服务端。
-- 离线：因 `base: './'`，产物目录可直接双击 `index.html` 打开使用。
+- 离线：因 `base: './'`，产物目录可直接双击 `index.html` 打开使用；构建期额外把 `index.html`
+  复制成 `404.html`，供 GitHub Pages 直接打开 `/configurator` 时兜底。
 
-v1 不引入 CI，构建与本地预览（`npm run dev`）说明写进 README。
+线上部署由 GitHub Actions 在发布 Release 时构建并发布该 tag，见
+[GitHub Pages 自动部署设计](2026-11-19-github-pages-design.md)；本地构建与预览（`npm run dev`）
+说明写进 README。
 
 ## 7. 目录结构
 
 ```
 ZiLucidRedis/
-  index.html  package.json  vite.config.ts  tsconfig.json  README.md
-  data/versions.json                   # minor 线清单
-  data/upstream/lock.json              # 线 → 实际使用的 patch tag（构建期写入）
-  data/upstream/<line>/redis.conf      # 上游原文（构建期下载，提交入库）
-  data/upstream/<line>/config.c
-  scripts/fetch-upstream.mjs
-  scripts/build-dict.mjs
+  index.html  package.json  vite.config.ts  tsconfig.json  eslint.config.ts  README.md
+  data/        versions.json（minor 线清单）、upstream/（lock.json 与各线上游原文）
+  scripts/     Node 原生 TS：fetch-upstream.ts、build-dict.ts、lib/（releases 与两个解析器）
   src/
-    main.tsx  App.tsx  styles/
-    components/  Toolbar.tsx  CheckupPanel.tsx  Editor.tsx  OfficialPane.tsx
-                 ComparisonList.tsx  DetailPanel.tsx  SearchPalette.tsx
-                 ExportMenu.tsx  EmptyState.tsx
-    lib/         parseConf.ts  normalize.ts  analyze.ts  risks.ts  describe.ts
-                 annotations.ts  secrets.ts  dict.ts  search.ts  official.ts
-                 exportConf.ts  persistence.ts
-    data/        dict/<line>.json  dict/meta.json  official/<line>.conf
-                 aliases.ts  zh-notes.json  renames.json
-                 no-default.json  defaults-override.json  risk-rules.json
-  tests/         parseConf.test.ts  analyze.test.ts  exportConf.test.ts  secrets.test.ts
-  docs/superpowers/specs/2026-11-16-redis-conf-doctor-design.md
+    App.tsx  Root.tsx     体检页与路由壳
+    components/           工具栏、编辑器、官方面板、体检结果、对比、查找、搜索、导出控件
+    components/configurator/  生成向导：步骤导航、字段、自由行、插图与完成页
+    components/ui/        shadcn 生成的控件
+    lib/                  纯函数层：解析、归一化、分析、风险、diff、体检、查找、导出、密码、配置生成
+    hooks/                快捷键与按版本数据加载
+    data/                 dict/、official/ 生成物与人工登记表
+  tests/     Vitest 用例（纯函数、组件、构建断言）
+  docs/      工程规范、设计文档与实施计划
 ```
 
 ## 8. 验证方式
