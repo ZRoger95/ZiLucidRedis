@@ -60,7 +60,7 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 
 ## 改动流程
 
-- **新增能力：** 先在 `docs/superpowers/specs/` 写设计（现状、目标、非目标、已选方案和被放弃的方案），再在 `docs/superpowers/plans/` 写任务计划，然后实现；实现完成后把 spec 的状态改为「已实现」。
+- **新增能力：** 先在 `docs/superpowers/specs/` 写设计（现状、目标、非目标、已选方案和被放弃的方案），再在 `docs/superpowers/plans/` 写任务计划，然后实现；实现完成后把 spec 的状态改为「已实现」，并在计划文件头标 `状态：已实现`（步骤不必逐条勾选）。
 - **修改现有行为：** 同步更新所属 spec 的现状描述，以及 README 中受影响的用法说明。
 - **修 bug：** 能直接定位就直接修，补一个能复现的测试；不新建设计文档。
 - **提交信息：** 沿用现有前缀 `feat:` / `fix:` / `docs:` / `test:` / `refactor:`。
@@ -76,7 +76,7 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 | [README.md](README.md) | 面向用户的产品行为、使用方式、数据来源 | 实现细节、评审记录、未做的计划 |
 | `docs/engineering/` | 工程规范与门禁的现状：规则分组、取舍、例外清单 | 产品用法、任务清单 |
 | `docs/superpowers/specs/` | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案 | 逐步实现步骤 |
-| `docs/superpowers/plans/` | 一份可执行计划：Goal、Architecture、Global Constraints、任务与 checkbox | 设计取舍的长篇论证 |
+| `docs/superpowers/plans/` | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
 | [types.ts](src/types.ts)、代码注释、测试 | 当前契约与行为可执行的事实 | 历史、计划、评审叙述 |
 
 写作规则：
@@ -87,6 +87,7 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 - **不写实现流水账和评审对话。** 只保留结论、约束、失败模式和验证方式。
 - **设计必须带取舍。** spec 的「已选方案」要列出被放弃的方案和原因。
 - **状态只用三种：** `待评审` / `已实现` / `已废弃`。实现完成时改状态，不补写实现过程；废弃时保留原因。
+- **计划是执行记录。** 完成后只在计划文件头标 `状态：已实现`，不回头勾选或改写正文；计划里被后续改动覆盖的做法（脚本后缀、路由方案、触发方式）在状态行注明已被什么替换。当前行为以所属 spec 的现状章节为准。
 - **文档与代码同一次改动更新。** 行为变更要么更新所属 spec，要么明确属于无需设计记录的 bug 修复。
 
 ## 维护本文件

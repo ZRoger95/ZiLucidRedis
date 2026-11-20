@@ -1,5 +1,7 @@
 # diff 行导航行为层实施计划（阶段二）
 
+状态：已实现 · 本文件是原始计划，步骤未逐条勾选；当前行为以 [设计文档](../specs/2026-11-18-diff-behavior-layer-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 给「配置对比」加上 roving tabindex 行导航：方向键移动、Home/End、Enter 跳转、Esc 回编辑器。

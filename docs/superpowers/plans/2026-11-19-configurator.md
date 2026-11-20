@@ -1,5 +1,7 @@
 ﻿# 配置向导（/configurator）实施计划
 
+状态：已实现 · 步骤按当时做法逐条勾选；Task 1 的 hash 路由后来换成 React Router 历史路由（`571b2b1`），`src/lib/routes.ts`、`src/hooks/useHashRoute.ts` 与 `tests/routes.test.ts` 已删除，当前路径是 `/configurator`。当前行为以 [设计文档](../specs/2026-11-19-configurator-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 新增 `#/configurator` 配置向导：先选版本，再按官方 redis.conf 的区域一区一步，生成「官方模板 + 用户改动」的 conf，可导出或带回体检页。

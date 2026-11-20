@@ -1,5 +1,7 @@
 # v2 官方版本来源与 IDEA 式配置 diff 实施计划
 
+状态：已实现 · 本文件是原始计划，步骤未逐条勾选；计划里把构建脚本写作 `.mjs`，最终落地为 Node 原生 `.ts`。当前行为以 [设计文档](../specs/2026-11-17-diff-experience-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把版本来源换成 GitHub Releases 的正式版，并把底部「配置对比」重做成按指令语义对齐、IDEA 风格的并排 diff。

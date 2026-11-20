@@ -1,5 +1,7 @@
 # Redis 配置体检工具（ZiLucidRedis）实施计划
 
+状态：已实现 · 本文件是 v1 的原始计划，步骤未逐条勾选；后续版本已把构建脚本从 `.mjs` 换成 Node 原生 `.ts`、「配置对比」从 `ComparisonList` 换成 `DiffView`、摘要条换成「体检结果」面板、控件迁到 shadcn/ui。当前行为以 [设计文档](../specs/2026-11-16-redis-conf-doctor-design.md) 的现状章节为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 做一个纯前端静态网站：贴入或上传 `redis.conf`，逐项对照官方默认值给出体检结果、内联显示官方注释、可编辑，并导出可用的新 conf。

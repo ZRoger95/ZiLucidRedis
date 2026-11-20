@@ -1,5 +1,7 @@
 # shadcn/ui 迁移实施计划
 
+状态：已实现 · 本文件是原始计划，步骤未逐条勾选；其中「`DiffView` 只做样式迁移、行为层留到阶段二」已由 [diff 行导航计划](2026-11-18-diff-behavior-layer.md) 接续完成（ui-sdk 现仅用于行导航）。当前行为以 [设计文档](../specs/2026-11-17-shadcn-migration-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把界面控件从 `@ui-sdk/react` 换成 shadcn/ui，引入 Tailwind CSS v4 并将布局样式全量改为原子类，最终移除 ui-sdk。

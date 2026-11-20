@@ -1,5 +1,7 @@
 # GitHub Pages 自动部署实施计划
 
+状态：已实现 · 本文件是原始计划，步骤未逐条勾选（Task 3 的 Step 5 已完成）。与现状的差异：触发从 `push: master` 改为 Release `published`，站点从 `ZRoger95.github.io/ZiLucidRedis/` 迁到 `zilucidredis.zroger.top`，action 版本已升级。当前部署方式以 [设计文档](../specs/2026-11-19-github-pages-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** push 到 `master` 时由 GitHub Actions 构建，并把 `dist/` 发布到项目站点 `https://ZRoger95.github.io/ZiLucidRedis/`。
@@ -159,7 +161,7 @@ Expected: `build` 与 `deploy` 均为 success；若 `npm ci` 超时，改用 `np
 
 打开 `https://ZRoger95.github.io/ZiLucidRedis/`：样式正常、版本下拉有 10 条 minor 线、编辑器可输入、去重后的资源无 404。
 
-- [ ] **Step 5: 把 spec 状态改为「已实现」并提交**
+- [x] **Step 5: 把 spec 状态改为「已实现」并提交**
 
 ```bash
 git add docs/superpowers/specs/2026-11-19-github-pages-design.md

@@ -1,5 +1,7 @@
 # 体检结果面板 Implementation Plan
 
+状态：已实现 · 本文件是原始计划，步骤未逐条勾选；当前行为以 [设计文档](../specs/2026-11-18-checkup-panel-design.md) 为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把编辑器上方的摘要条替换为底部默认选中的「体检结果」Tab，并把「只看差异」开关移到「配置对比」页头。
