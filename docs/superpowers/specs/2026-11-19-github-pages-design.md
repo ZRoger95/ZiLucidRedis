@@ -62,8 +62,9 @@
 
 1. Settings → Pages → Build and deployment → Source 选 **GitHub Actions**（首次部署前完成）。
 2. Settings → Pages → Custom domain 填 `zilucidredis.zroger.top`；Cloudflare 加 `CNAME zilucidredis → zroger95.github.io`，先 DNS only 等 GitHub 完成校验与证书，再切到代理模式。
-3. 可选：在 Actions 页面确认首个 `build` job 的 `npm ci` 耗时；若明显偏慢或超时，再处理镜像问题（见第 6 节）。
-4. 可选：若以后启用 PR 流程，另加一个只在 `pull_request` 上跑 `npm run check` 的 workflow；部署仍只由 Release 触发。
+3. Settings → Environments → `github-pages` → Deployment branches and tags 选 **Selected branches and tags**，加一条 `master` 分支规则和一条 `v*` tag 规则；默认的「Protected branches only」只认分支，Release 用 tag 部署会被拒。
+4. 可选：在 Actions 页面确认首个 `build` job 的 `npm ci` 耗时；若明显偏慢或超时，再处理镜像问题（见第 6 节）。
+5. 可选：若以后启用 PR 流程，另加一个只在 `pull_request` 上跑 `npm run check` 的 workflow；部署仍只由 Release 触发。
 
 放弃的方案：
 
@@ -74,6 +75,7 @@
 
 ## 6. 约束与风险
 
+- **环境规则会挡住 tag**：`github-pages` 环境的「Deployment branches and tags」默认只允许受保护分支，Release 触发的 `deploy` 会以 `Tag "v0.1.0" is not allowed to deploy to github-pages due to environment protection rules` 失败；部署 ref 是 tag，必须在环境里显式允许 `v*`。
 - **npm 镜像**：lockfile 的 `resolved` 指向 `registry.npmmirror.com`，GitHub runner 可达但可能偏慢。若首次部署在 `npm ci` 阶段超时，改用 `npm ci --replace-registry-host=always`（不修改 lockfile），仍不行再统一改写 lockfile 的源。
 - **Pages 未启用**：Source 没选 GitHub Actions 时 `deploy` job 会失败，属于配置缺失而非代码问题。
 - **数据漂移**：CI 只消费已提交的生成物，禁止在流水线里运行抓取脚本；上游更新仍走本地脚本 + 提交。
