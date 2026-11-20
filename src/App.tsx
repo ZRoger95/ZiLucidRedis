@@ -1,4 +1,5 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +31,6 @@ import { indexOfficialLines } from './lib/official';
 import { decodeConfBytes, parseConf } from './lib/parseConf';
 import { loadState, saveState } from './lib/persistence';
 import { evaluateRisks } from './lib/risks';
-import { navigate } from './lib/routes';
 import { insertDirective } from './lib/search';
 import { replaceSecrets } from './lib/secrets';
 import { cn } from './lib/utils';
@@ -53,6 +53,7 @@ interface VersionData {
 }
 
 export default function App() {
+  const navigate = useNavigate();
   const [pending] = useState(() => peekPendingConf());
   const [initial] = useState<PersistedState | null>(() => loadState());
   const [line, setLine] = useState(pending?.line ?? initial?.line ?? DEFAULT_VERSION);
@@ -368,7 +369,7 @@ export default function App() {
         onLoadOfficial={loadOfficialIntoEditor}
         onGenerate={() => {
           setPendingLine(line);
-          navigate('configurator');
+          navigate('/configurator');
         }}
         onClear={() => {
           setText('');

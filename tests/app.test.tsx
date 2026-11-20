@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { afterEach, expect, test } from 'vitest';
 
 import App from '../src/App';
@@ -11,13 +12,21 @@ afterEach(() => {
 });
 
 test('renders the tool title', () => {
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   expect(screen.getByRole('heading', { name: 'Redis 配置体检' })).toBeInTheDocument();
 });
 
 test('从向导带回的配置进入编辑器', async () => {
   setPendingConf({ line: '7.4', text: 'port 6380\n', vault: new Map() });
-  const { container } = render(<App />);
+  const { container } = render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
 
   await waitFor(() => {
     expect(container.querySelector('.cm-content')?.textContent).toContain('port 6380');
@@ -30,20 +39,32 @@ test('切到向导再回来，密码 vault 仍可还原', async () => {
     text: 'requirepass ${env_requirepass}\n',
     vault: new Map([['requirepass#1', 'secret']]),
   });
-  const first = render(<App />);
+  const first = render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   await waitFor(() => {
     expect(first.container.querySelector('.cm-content')?.textContent).toContain('${env_requirepass}');
   });
   first.unmount();
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   await userEvent.click(screen.getByRole('button', { name: '导出' }));
   const item = await screen.findByRole('menuitem', { name: /还原密码后导出/ });
   expect(item.getAttribute('aria-disabled')).not.toBe('true');
 });
 
 test('编辑器标题旁提供行颜色说明', () => {
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   const legend = screen.getByLabelText('行颜色说明');
   expect(legend).toHaveTextContent('默认值');
   expect(legend).toHaveTextContent('已改');
@@ -67,7 +88,11 @@ test('diff 行按 Esc 后焦点回到编辑器', async () => {
     }),
   );
 
-  const { container } = render(<App />);
+  const { container } = render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
 
   await userEvent.click(screen.getByRole('tab', { name: '配置对比' }));
 
@@ -103,7 +128,11 @@ test('默认展示体检结果', async () => {
     }),
   );
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
 
   expect(await screen.findByRole('tab', { name: '体检结果', selected: true })).toBeInTheDocument();
   expect(await screen.findByRole('list', { name: '已改' })).toBeInTheDocument();
@@ -123,7 +152,11 @@ test('点击无默认值的缺失项打开搜索面板', async () => {
     }),
   );
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
 
   await userEvent.click(await screen.findByRole('button', { name: /bind/ }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -143,7 +176,11 @@ test('字典里没有的缺失项也打开搜索面板', async () => {
     }),
   );
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
 
   await userEvent.click(await screen.findByRole('button', { name: /bind/ }));
   expect(await screen.findByRole('dialog')).toBeInTheDocument();
@@ -163,7 +200,11 @@ test('mod+f 默认打开左栏查找', async () => {
     }),
   );
 
-  const { container } = render(<App />);
+  const { container } = render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   await waitFor(() => {
     expect(container.querySelector('.cm-content')).not.toBeNull();
   });
@@ -187,7 +228,11 @@ test('在右栏按 mod+f 只打开右栏查找', async () => {
     }),
   );
 
-  render(<App />);
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
   await screen.findByText(/官方完整配置 · /);
   fireEvent.pointerDown(screen.getByRole('region', { name: '官方完整配置' }));
 

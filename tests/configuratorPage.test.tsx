@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import { ConfiguratorPage } from '../src/components/configurator/ConfiguratorPage';
@@ -38,7 +39,11 @@ async function switchVersion(label: RegExp): Promise<void> {
 
 test('向导加载后显示版本选择与区域导航', async () => {
   const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
 
   expect(await screen.findByRole('heading', { name: '选择版本' })).toBeInTheDocument();
   const nav = screen.getByRole('navigation', { name: '配置步骤' });
@@ -50,7 +55,11 @@ test('向导加载后显示版本选择与区域导航', async () => {
 });
 
 test('下一步进入 INCLUDES 区域', async () => {
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
 
   await userEvent.click(screen.getByRole('button', { name: '下一步' }));
@@ -63,7 +72,11 @@ test('下一步进入 INCLUDES 区域', async () => {
 });
 
 test('区域步展示可编辑字段', async () => {
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
 
   for (let index = 0; index < 3; index += 1) {
@@ -75,7 +88,11 @@ test('区域步展示可编辑字段', async () => {
 });
 
 test('编辑字段后导航与本页改动数同步', async () => {
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
 
   for (let index = 0; index < 3; index += 1) {
@@ -89,7 +106,11 @@ test('编辑字段后导航与本页改动数同步', async () => {
 });
 
 test('上一步在第一步禁用，最后一步不能继续', async () => {
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
 
   expect(screen.getByRole('button', { name: '上一步' })).toBeDisabled();
@@ -97,13 +118,21 @@ test('上一步在第一步禁用，最后一步不能继续', async () => {
 });
 
 test('非敏感改动在重新挂载后恢复', async () => {
-  const first = render(<ConfiguratorPage />);
+  const first = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   await nextTimes(3);
   await userEvent.type(screen.getByLabelText('port'), '6380');
   first.unmount();
 
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   await nextTimes(3);
 
@@ -111,7 +140,11 @@ test('非敏感改动在重新挂载后恢复', async () => {
 });
 
 test('完成页可以带回编辑器', async () => {
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   await nextTimes(3);
   await userEvent.type(screen.getByLabelText('port'), '6380');
@@ -132,7 +165,11 @@ test('完成页可以下载 conf', async () => {
   Object.defineProperty(URL, 'revokeObjectURL', { value: vi.fn(), configurable: true });
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
 
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   await goToFinish();
   await userEvent.click(screen.getByRole('button', { name: '下载 conf' }));
@@ -143,13 +180,21 @@ test('完成页可以下载 conf', async () => {
 
 test('进入向导时沿用体检页的版本', async () => {
   setPendingLine('8.2');
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
 
   expect(await screen.findByText('当前版本 8.2')).toBeInTheDocument();
 });
 
 test('切换版本清空草稿并记住所选版本', async () => {
-  const first = render(<ConfiguratorPage />);
+  const first = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   await nextTimes(3);
   await userEvent.type(screen.getByLabelText('port'), '6380');
@@ -161,7 +206,11 @@ test('切换版本清空草稿并记住所选版本', async () => {
   expect(screen.getByLabelText('port')).toHaveValue('');
   first.unmount();
 
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   expect(await screen.findByText('当前版本 8.2')).toBeInTheDocument();
   await nextTimes(3);
   expect(screen.getByLabelText('port')).toHaveValue('');
@@ -174,7 +223,11 @@ test('含明文密码时下载前需要确认', async () => {
   const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
   const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
 
-  render(<ConfiguratorPage />);
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
   await screen.findByRole('heading', { name: '选择版本' });
   const nav = screen.getByRole('navigation', { name: '配置步骤' });
   await userEvent.click(within(nav).getByRole('button', { name: /安全/ }));

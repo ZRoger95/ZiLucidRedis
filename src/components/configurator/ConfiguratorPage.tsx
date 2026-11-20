@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
 
@@ -8,7 +9,6 @@ import { buildSteps, changeCount, emptyDraft, renderConfig } from '@/lib/configu
 import { clearDraft, loadDraft, loadDraftLine, saveDraft, saveDraftLine } from '@/lib/configuratorState';
 import { DEFAULT_VERSION } from '@/lib/dict';
 import { setPendingConf, takePendingLine } from '@/lib/handoff';
-import { navigate } from '@/lib/routes';
 import { replaceSecrets } from '@/lib/secrets';
 
 import { FigurePanel } from './FigurePanel';
@@ -31,6 +31,7 @@ function stepCount(step: ConfiguratorStep, draft: ConfiguratorDraft): number {
 }
 
 export function ConfiguratorPage() {
+  const navigate = useNavigate();
   const [line, setLine] = useState(() => takePendingLine() ?? loadDraftLine() ?? DEFAULT_VERSION);
   const [draft, setDraft] = useState<ConfiguratorDraft>(() => loadDraft(line) ?? emptyDraft(line));
   const [stepIndex, setStepIndex] = useState(0);
@@ -82,7 +83,7 @@ export function ConfiguratorPage() {
   const handoff = () => {
     const { text, vault } = replaceSecrets(generated);
     setPendingConf({ line, text, vault });
-    navigate('checkup');
+    navigate('/');
   };
 
   const stepBody = (() => {
@@ -114,7 +115,7 @@ export function ConfiguratorPage() {
         <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">生成配置</h1>
         <span className="text-[13px] text-muted-foreground">当前版本 {line}</span>
         <span className="flex-1" />
-        <Button variant="outline" onClick={() => navigate('checkup')}>
+        <Button variant="outline" onClick={() => navigate('/')}>
           返回体检
         </Button>
       </header>

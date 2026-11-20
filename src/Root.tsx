@@ -1,13 +1,14 @@
+import { Navigate, Route, Routes } from 'react-router';
+
 import App from './App';
 import { ConfiguratorPage } from './components/configurator/ConfiguratorPage';
-import { useHashRoute } from './hooks/useHashRoute';
 
 export function Root() {
-  const route = useHashRoute();
-
-  if (route === 'configurator') {
-    return <ConfiguratorPage />;
-  }
-
-  return <App />;
+  return (
+    <Routes>
+      <Route path="/" element={<App />} />
+      <Route path="/configurator" element={<ConfiguratorPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }

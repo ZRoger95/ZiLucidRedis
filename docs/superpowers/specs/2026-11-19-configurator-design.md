@@ -59,12 +59,13 @@
 
 ### 5.1 路由与页面骨架
 
-- 路由用 hash：`#/configurator`，其余 hash 一律视为体检页。
-- 新增 `src/lib/routes.ts` 纯函数：`parseRoute(hash): 'checkup' | 'configurator'`、`routeHash(route): string`。新增 `src/hooks/useHashRoute.ts` 监听 `hashchange`，并加入 [eslint.config.ts](../../../eslint.config.ts) 的 effect 允许清单（它同步的是浏览器 URL，属于 React 之外的系统）。
-- [main.tsx](../../../src/main.tsx) 渲染一个 `Root`：按路由挂载 `App` 或 `ConfiguratorPage`，两个页面互斥挂载。
+- 路由用 React Router 8 的 `BrowserRouter` + `Routes`：`/` 体检页、`/configurator` 向导、未知路径重定向回 `/`。地址栏不带 `#`，与 Vue Router 的 history 模式对应。
+- `src/Root.tsx` 只维护路由表；`src/main.tsx` 在 `StrictMode` 内包一层 `BrowserRouter`。测试用 `MemoryRouter` 包裹页面，路由行为见 `tests/root.test.tsx`。
+- 构建期由 [vite.config.ts](../../../vite.config.ts) 的 `spa-404-fallback` 把 `dist/index.html` 复制成 `dist/404.html`：GitHub Pages 直接打开 `/configurator` 或刷新时也能加载应用。路由只允许单段路径（`/configurator`），因为 `base: './'` 的相对资源依赖这一层级。
 - 体检页状态在 `App` 内，切到向导再回来会重建 `App`；编辑器文本来自 `loadState()`，`vault` 与上传文件名放在模块内存里（`keepEditorSession` / `readEditorSession`），「还原密码后导出」不会因页面切换而失效。
 - 「带回编辑器」通过内存交接：向导先用 `replaceSecrets` 把生成文本转成占位符，再通过 `setPendingConf` 交给体检页；读取用 `peekPendingConf`（可重复读），`App` 挂载后再 `clearPendingConf`，避免 StrictMode 下渲染期初始化执行两次把内容吃掉。
-- 放弃路径路由：`base: './'` 的静态托管下，`/configurator` 需要 404 兜底或服务端重写，GitHub Pages 上代价明显高于收益。
+- 放弃 hash 路由：`#/configurator` 与 Vue Router 的 history 模式不对应，分享链接观感也差；代价是需要 404 兜底。
+- 放弃自研 `history.pushState` 小路由：只省一个依赖，却要自己处理 `popstate`、编程式导航与测试用的内存路由；React Router 的 `MemoryRouter` 让页面测试无需碰浏览器历史。
 
 页面骨架（最小宽度 1024px，三栏）：
 
@@ -190,7 +191,7 @@ interface ConfiguratorDraft {
 
 ## 7. 验收
 
-- 工具栏点「生成配置」进入 `#/configurator`；浏览器前进/后退在两页之间正常切换；直接刷新 `#/configurator` 仍停留在向导。
+- 工具栏点「生成配置」进入 `/configurator`；浏览器前进/后退在两页之间正常切换；直接打开或刷新 `/configurator` 仍停留在向导（GitHub Pages 由 `404.html` 兜底）。
 - 进入向导时沿用体检页当前版本；进入后两端各自独立，切换版本会重置草稿并记住所选版本。
 - 遍历 10 个版本的步骤：每条字典指令恰好出现在一个步骤里；`include` / `loadmodule` / `user` / `rename-command` 出现在对应区域；`MISC` 指令出现在最后一步。
 - 在任一区域改一个 bool、一个数值、一个多行 `special`，完成页预览出现对应的生效行，其余行与官方原文一致。

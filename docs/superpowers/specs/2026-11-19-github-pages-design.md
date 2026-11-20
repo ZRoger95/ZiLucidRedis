@@ -15,7 +15,7 @@
 - 字典、官方 conf、`releases.json` 均已生成并提交进仓库；`scripts/fetch-upstream.ts` 与 `scripts/build-dict.ts` 只在本地手工运行，会访问 GitHub。
 - 仓库 `ZRoger95/ZiLucidRedis` 为 public，主分支 `master`。
 - `package-lock.json` 存在，`resolved` 指向 `registry.npmmirror.com`。
-- 应用是单页、无前端路由，只有 `index.html` 入口。
+- 应用是单页，前端路由为 `/` 与 `/configurator`；构建产物额外生成 `404.html` 作为直接打开子路径时的兜底。
 - 项目仓库单独绑定了子域名 `zilucidredis.zroger.top`，站点位于该子域名根路径；用户站点仓库仍以 `zroger.top` 为自定义域名，旧路径 `zroger.top/ZiLucidRedis/` 与 `github.io/ZiLucidRedis/` 都会 301 到子域名。
 
 ## 3. 目标
@@ -80,5 +80,5 @@
 - push 一次 `master` 后，`build` 与 `deploy` 两个 job 全绿，Actions 输出可访问的站点 URL。
 - `https://zilucidredis.zroger.top/` 能打开，样式、字典、CodeMirror 与本地 `npm run preview` 表现一致。
 - 旧地址 `zroger95.github.io/ZiLucidRedis/` 与 `zroger.top/ZiLucidRedis/` 均 301 到新子域名。
-- 页面没有绝对路径资源导致的 404（无路由，不需要 404 兜底）。
+- 页面没有绝对路径资源导致的 404；直接打开 `/configurator` 或刷新时 GitHub Pages 返回 `404.html`（`index.html` 的副本），应用正常渲染向导。
 - README 写明线上地址，并说明部署由 push `master` 触发。
