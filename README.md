@@ -8,7 +8,7 @@
 
 <https://zilucidredis.zroger.top/>
 
-push 到 `master` 后由 GitHub Actions 构建并发布（[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)），线上与 `master` 的构建产物一致；也可以在 Actions 页面手动重跑。
+在 GitHub 上发布 Release（状态为 `Published`）后由 GitHub Actions 构建并发布该 tag（[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)），线上对应该 Release 的提交；push 到 `master` 不触发部署，也可以在 Actions 页面手动重跑。
 
 ## 使用
 
