@@ -115,13 +115,18 @@ export function ConfiguratorPage() {
       <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
         <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">生成配置</h1>
 
-        <RepoLink />
-
         <span className="text-[13px] text-muted-foreground">当前版本 {line}</span>
         <span className="flex-1" />
-        <Button variant="outline" onClick={() => navigate('/')}>
-          返回体检
-        </Button>
+        <span className="inline-flex items-center gap-2">
+          <Button variant="outline" onClick={() => navigate('/')}>
+            返回体检
+          </Button>
+
+          <span aria-hidden="true" className="select-none text-[13px] leading-none text-muted-foreground/50">
+            |
+          </span>
+          <RepoLink />
+        </span>
       </header>
 
       {error ? (

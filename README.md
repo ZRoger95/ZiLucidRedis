@@ -26,7 +26,7 @@
 - diff 行组只占一个 Tab 停靠点：`↑` / `↓` 移动，`Home` / `End` 到首尾，`Enter` 跳转且焦点留在 diff，
   `Esc` 回到编辑器；行内 `»` 按钮可单独 `Tab` 聚焦。
 - 导出三种：原样导出、补全官方注释后导出、还原密码后导出。
-- 标题右侧的 GitHub 图标在新窗口打开[仓库首页](https://github.com/ZRoger95/ZiLucidRedis)，生成向导页头也有同一个入口。
+- 导出按钮右侧（竖线分隔）的 GitHub 图标在新窗口打开[仓库首页](https://github.com/ZRoger95/ZiLucidRedis)，生成向导页头也有同一个入口。
 
 ## 生成配置（向导）
 

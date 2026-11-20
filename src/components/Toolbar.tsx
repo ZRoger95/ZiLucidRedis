@@ -43,8 +43,6 @@ export function Toolbar(props: ToolbarProps) {
     <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
       <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">Redis 配置体检</h1>
 
-      <RepoLink />
-
       <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>版本</span>
         <Select value={props.line} onValueChange={(value) => props.onLineChange(value)}>
@@ -125,7 +123,14 @@ export function Toolbar(props: ToolbarProps) {
         }}
       />
 
-      <ExportMenu onExport={props.onExport} canRestoreSecrets={props.canRestoreSecrets} />
+      <span className="inline-flex items-center gap-2">
+        <ExportMenu onExport={props.onExport} canRestoreSecrets={props.canRestoreSecrets} />
+
+        <span aria-hidden="true" className="select-none text-[13px] leading-none text-muted-foreground/50">
+          |
+        </span>
+        <RepoLink />
+      </span>
     </header>
   );
 }
