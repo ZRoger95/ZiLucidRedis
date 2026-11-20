@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 
 import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
 
+import { RepoLink } from '@/components/RepoLink';
 import { Button } from '@/components/ui/button';
 import { useVersionData } from '@/hooks/useVersionData';
 import { buildSteps, changeCount, emptyDraft, renderConfig } from '@/lib/configurator';
@@ -113,6 +114,9 @@ export function ConfiguratorPage() {
     <main className="flex h-full min-w-[1024px] flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
         <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">生成配置</h1>
+
+        <RepoLink />
+
         <span className="text-[13px] text-muted-foreground">当前版本 {line}</span>
         <span className="flex-1" />
         <Button variant="outline" onClick={() => navigate('/')}>

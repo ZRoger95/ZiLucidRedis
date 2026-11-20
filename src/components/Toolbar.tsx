@@ -8,6 +8,7 @@ import type { AnnotationMode } from '../types';
 
 import { formatVersionLabel, RELEASES } from '../lib/dict';
 import { type ExportKind, ExportMenu } from './ExportMenu';
+import { RepoLink } from './RepoLink';
 
 interface ToolbarProps {
   line: string;
@@ -41,6 +42,8 @@ export function Toolbar(props: ToolbarProps) {
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
       <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">Redis 配置体检</h1>
+
+      <RepoLink />
 
       <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
         <span>版本</span>
