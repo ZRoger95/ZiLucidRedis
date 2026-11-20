@@ -189,6 +189,11 @@ interface ConfiguratorDraft {
 - **发版影响**：新增 hairline 依赖与 textarea 组件会让产物变大；hairline 全部 33 张 gzip 约 64 kB，只 import 用到的张数。
 - **测试环境**：`renderConfig` 依赖官方 conf 文本，测试直接读 `src/data/official/*.conf`，不 mock 文件系统。
 
+### 待处理
+
+- **路由层级**：当前只支持单段路径（`/configurator`），因为 `base: './'` 的相对资源依赖这一层级；以后要加嵌套路由，需要把 `base` 改成 `/` 并同步调整部署校验。
+- **遗留代码**：`src/lib/routes.ts` 与 `src/hooks/useHashRoute.ts` 是 hash 路由版本的残留，改为 React Router 后已无引用，待确认后删除（连同 `tests/routes.test.ts`）。
+
 ## 7. 验收
 
 - 工具栏点「生成配置」进入 `/configurator`；浏览器前进/后退在两页之间正常切换；直接打开或刷新 `/configurator` 仍停留在向导（GitHub Pages 由 `404.html` 兜底）。
