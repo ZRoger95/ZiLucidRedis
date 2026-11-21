@@ -77,7 +77,6 @@ export default function App() {
   const [fileName, setFileName] = useState<string | null>(() => readEditorSession().fileName);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // 版本数据在加载完成前保持“未就绪”，用版本号比对代替 effect 里的同步 setState(null)
   const dict = versionData?.line === line ? versionData.dict : null;
   const official = versionData?.line === line ? versionData.official : null;
   const activeDictError = dictError?.line === line ? dictError.message : null;
@@ -170,24 +169,19 @@ export default function App() {
     return lineNo ? { lineNo, nonce: cursorLine } : null;
   }, [cursorAnalysis, officialIndex, cursorLine]);
 
-  // 写入 localStorage 属于外部系统副作用，只能放在 effect 里
   useEffect(() => {
     if (!dict) {
       return;
     }
     try {
       saveState({ v: 1, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed });
-    } catch {
-      // 手写密码时不落盘，避免明文进 localStorage
-    }
+    } catch {}
   }, [dict, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed]);
 
-  // 带回的数据只消费一次；读取本身在渲染期完成，避免 StrictMode 下初始化被调用两次丢内容
   useEffect(() => {
     clearPendingConf();
   }, []);
 
-  // 路由切换会卸载 App，vault 与文件名放在模块内存里，回来仍可用
   useEffect(() => {
     keepEditorSession(vault, fileName);
   }, [vault, fileName]);

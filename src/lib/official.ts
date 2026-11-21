@@ -10,11 +10,6 @@ export interface OfficialAnnotation {
   text: string[];
 }
 
-/**
- * 官方 conf 里大多数配置项只以注释形式给出默认值（例如 `# save 3600 1 ...`），
- * 只索引未注释的行会导致这些项在右侧面板定位不到。这里优先取真实指令行，
- * 其次取注释里的具体默认值行，最后退到带 `<>` 的模板说明行。
- */
 export function indexOfficialLines(text: string, knownNames: Set<string>): Map<string, number> {
   const index = new Map<string, number>();
   const concrete = new Map<string, number>();

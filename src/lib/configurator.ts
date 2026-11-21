@@ -208,7 +208,7 @@ export function sectionComment(officialText: string, sectionId: string): string[
       rows.push('');
       continue;
     }
-    // 生效行原样保留：官方说明里「the following bind directive」这类指代需要它在场
+
     rows.push(trimmed.startsWith('#') ? trimmed.replace(/^#\s?/, '') : trimmed);
   }
 

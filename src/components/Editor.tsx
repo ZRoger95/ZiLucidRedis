@@ -57,7 +57,6 @@ class AnnotationWidget extends WidgetType {
     summary.textContent = this.block.summary;
     wrap.append(summary);
 
-    // details 展开/收起会改变块高度，需让 CodeMirror 重新测量，否则点击会定位到相邻行
     wrap.addEventListener('toggle', () => view.requestMeasure());
 
     const body = document.createElement('div');
@@ -162,7 +161,7 @@ export function Editor(props: EditorProps) {
   const decorationCompartment = useRef(new Compartment());
   const searchCompartment = useRef(new Compartment());
   const latest = useRef(props);
-  // 记录已处理的聚焦请求：重新挂载时不应因历史请求值而立即抢焦点
+
   const lastFocusRequest = useRef(props.focusRequest);
   const lastFindRequest = useRef(props.findRequest);
   const findInput = useRef<HTMLInputElement>(null);
@@ -196,12 +195,10 @@ export function Editor(props: EditorProps) {
   const activeMatch = activeIndex >= 0 ? matches[activeIndex] : null;
   const activeMatchRef = useRef<FindMatch | null>(null);
 
-  // 把最新 props 同步给 CodeMirror 的回调，避免在渲染期写 ref
   useEffect(() => {
     latest.current = props;
   });
 
-  // CodeMirror 是 React 之外的编辑器实例，必须手动挂载和销毁
   useEffect(() => {
     if (!host.current) {
       return;

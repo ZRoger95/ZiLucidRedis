@@ -18,16 +18,12 @@ import { fadeUp, type GraphPalette, graphViewport, staggerList, toneClass } from
 import { cn } from '@/lib/utils';
 
 type AnnotateProps = {
-  /** Defaults to the fence language, or `code`. */
   title?: string;
-  /** Data form. Or a fenced block in the children. */
+
   code?: string;
-  /** Data form. Or an ordered list after the fence. */
+
   notes?: ReactNode[];
-  /**
-   * Markdown. A fenced block with `// (1)` markers, then an ordered list. The
-   * first item explains (1), the second (2).
-   */
+
   children?: ReactNode;
   palette?: GraphPalette;
   corner?: string;
@@ -37,7 +33,6 @@ type AnnotateProps = {
 
 type CodeLine = { text: string; mark?: number };
 
-/** `// (1)`, `# (2)`, `/* (3) *\/`, `<!-- (4) -->`, `{/* (5) *\/}` at line end. */
 const MARKER = /\s*(?:\/\/|#|--|;|%|\/\*|<!--|\{\/\*)\s*\((\d{1,2})\)\s*(?:\*\/\}|\*\/|-->)?\s*$/;
 
 function linesOfCode(source: string): CodeLine[] {
@@ -61,23 +56,6 @@ function languageOf(pre: ReactElement | undefined) {
   return match?.[1];
 }
 
-/**
- * Code with numbered notes. Markdown:
- *
- * ````mdx
- * <Annotate>
- *
- * ```tsx
- * import { withMdxcn } from "@/registry/default/mdx/mdx" // (1)
- * ```
- *
- * 1. Server-safe. No "use client" in this file.
- *
- * </Annotate>
- * ````
- *
- * Marked lines stay bright. The rest recede.
- */
 function Annotate({
   title,
   code: codeProp,

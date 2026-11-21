@@ -10,7 +10,6 @@ import zhNotes from '@/data/zh-notes.json';
 
 const notes = zhNotes as Record<string, string>;
 
-// 最窄双列约 356px、12px 字号下两行约容纳 56 个加权字符（CJK 计 1，拉丁计 0.55）
 const CLAMP_CAPACITY = 56;
 
 function noteWeight(text: string): number {

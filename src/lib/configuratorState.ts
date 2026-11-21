@@ -13,7 +13,6 @@ export function loadDraftLine(): string | null {
   return localStorage.getItem(DRAFT_LINE_KEY);
 }
 
-/** 落盘前剔除敏感字段与 ACL 用户行；其余改动（含 include 路径）保留。 */
 export function draftForStorage(draft: ConfiguratorDraft, dict: DictFile): ConfiguratorDraft {
   const sensitive = new Set(
     dict.directives.filter((directive) => directive.sensitive).map((directive) => directive.name),

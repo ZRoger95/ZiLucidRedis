@@ -10,6 +10,7 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 - **明文密码不落盘。** 敏感指令在导入时即替换为 `${env_<指令名>}`；原值只存在于内存；`localStorage`、默认导出和任何默认值都不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换逻辑在 [secrets.ts](src/lib/secrets.ts)。
 - **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`。
 - **TypeScript strict。** 不新增 `any`；共享类型放 [types.ts](src/types.ts)。未使用变量由 `tsc` 的 `noUnusedLocals` / `noUnusedParameters` 把关。
+- **源码不加普通注释。** AI Agent 不得在 `src/` 手写源码中新增解释性注释或 JSDoc；需求、原因和设计约束写入对应文档。过时注释可能误导后续 Agent，因此由 ESLint 与 CSS 检查门禁阻止普通注释。仅保留工具必需的指令注释（如 ESLint 指令、TypeScript 三斜线引用）；生成的 Redis 配置注释属于产品数据，不受此规则限制。
 - **Lint 与格式门禁。** ESLint 管正确性和团队习惯，Prettier 管格式；`npm run lint` 必须零告警，`eslint-disable` 必须写原因。规则与取舍见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
 - **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器和渲染期派生；只有与 React 之外系统同步的文件才能进入 [eslint.config.ts](eslint.config.ts) 的允许清单。清单与替代方案见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
 - **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
@@ -72,14 +73,14 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 
 每个事实只有一个归属层级；其他位置链接过去，不复制。
 
-| 层级                                     | 职责                                                                                                | 不放                           |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 根 `AGENTS.md`（本文件）                 | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单   |
-| [README.md](README.md)                   | 面向用户的产品行为、使用方式、数据来源                                                              | 实现细节、评审记录、未做的计划 |
-| `docs/engineering/`                      | 工程规范与门禁的现状：规则分组、取舍、例外清单                                                      | 产品用法、任务清单             |
-| `docs/superpowers/specs/`                | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                   |
-| `docs/superpowers/plans/`                | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
-| [types.ts](src/types.ts)、代码注释、测试 | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述           |
+| 层级                           | 职责                                                                                                | 不放                           |
+| ------------------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 根 `AGENTS.md`（本文件）       | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单   |
+| [README.md](README.md)         | 面向用户的产品行为、使用方式、数据来源                                                              | 实现细节、评审记录、未做的计划 |
+| `docs/engineering/`            | 工程规范与门禁的现状：规则分组、取舍、例外清单                                                      | 产品用法、任务清单             |
+| `docs/superpowers/specs/`      | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                   |
+| `docs/superpowers/plans/`      | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
+| [types.ts](src/types.ts)、测试 | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述           |
 
 写作规则：
 

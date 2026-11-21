@@ -9,6 +9,8 @@ import unicorn from 'eslint-plugin-unicorn';
 import { defineConfig, globalIgnores } from 'eslint/config';
 import globals from 'globals';
 
+import noSourceComments from './scripts/no-source-comments-rule';
+
 const CODE_FILES = ['**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx}'];
 
 const RAW_EFFECT_MESSAGE =
@@ -56,6 +58,7 @@ const baseRules: Linter.RulesRecord = {
   eqeqeq: ['error', 'always', { null: 'ignore' }],
   'no-console': ['error', { allow: ['warn', 'error'] }],
   'no-debugger': 'error',
+  'no-empty': ['error', { allowEmptyCatch: true }],
   'no-else-return': 'error',
   'no-implicit-coercion': 'error',
   'no-nested-ternary': 'error',
@@ -142,6 +145,7 @@ export default defineConfig([
     plugins: {
       'eslint-comments': eslintComments,
       perfectionist,
+      'source-comments': { rules: { 'no-comments': noSourceComments } },
       unicorn,
     },
     extends: [reactHooks.configs.flat.recommended],
@@ -157,6 +161,7 @@ export default defineConfig([
   {
     files: ['src/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
+    rules: { 'source-comments/no-comments': 'error' },
   },
   {
     // shadcn 生成的组件统一用 `import * as React`，no-restricted-imports 会把通配导入误判为使用 useEffect。

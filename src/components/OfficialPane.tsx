@@ -175,7 +175,6 @@ export function OfficialPane({
     return block;
   }, [focus, rows]);
 
-  // 滚动位置属于 DOM 外部状态，只能在渲染提交后同步
   useEffect(() => {
     if (!focus) {
       return;

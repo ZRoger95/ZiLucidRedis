@@ -35,7 +35,7 @@ type PathProps = {
 
 type GraphFlowProps = {
   title?: string;
-  /** Data form. Or write `<Path>` children. */
+
   rows?: FlowRow[];
   children?: ReactNode;
   palette?: GraphPalette;
@@ -44,19 +44,6 @@ type GraphFlowProps = {
   className?: string;
 };
 
-/**
- * One row of the flow. Markdown:
- *
- * ```mdx
- * <GraphFlow title="PUBLISH">
- *
- * write → review → **ship**
- *
- * </GraphFlow>
- * ```
- *
- * Split on `→` or `->`. Bold is the accent node, italic recedes.
- */
 const Path = defineItem<PathProps>('Path');
 
 const ARROW = /\s*(?:→|->|—>|=>)\s*/;

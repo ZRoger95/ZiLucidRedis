@@ -4,11 +4,6 @@ import { cn } from '@/lib/utils';
 
 import { childItems, defineItem, textOf, words } from './graph-markdown';
 
-/**
- * Corner marks and the edge title paint over the dashed line with the
- * surface behind the figure. Set `--graph-surface` on a parent when a graph
- * sits on anything other than the page background.
- */
 function GraphCorners({ mark = '+' }: { mark?: string }) {
   const corner =
     'pointer-events-none absolute z-10 flex size-4 items-center justify-center bg-[var(--graph-surface,var(--background))] font-mono text-sm leading-none text-graph-frame select-none';
@@ -31,27 +26,12 @@ function GraphCorners({ mark = '+' }: { mark?: string }) {
   );
 }
 
-/**
- * How a graph is framed.
- *
- * - `box`: dashed border, corner marks, title on the top edge. The default.
- * - `corners`: corner marks only, title on the top edge.
- * - `rule`: dashed rules above and below, title on the top rule.
- * - `none`: no border and no padding. The title sits above the content.
- */
 type GraphFrame = 'box' | 'corners' | 'rule' | 'none';
 
 const GRAPH_FRAMES = ['box', 'corners', 'rule', 'none'] as const;
 
 const GraphFrameContext = React.createContext<GraphFrame | undefined>(undefined);
 
-/**
- * Sets the frame for every graph inside it. A graph's own `frame` prop wins.
- *
- * ```tsx
- * <GraphFrameProvider frame="none">{children}</GraphFrameProvider>
- * ```
- */
 function GraphFrameProvider({ frame, children }: { frame: GraphFrame; children?: React.ReactNode }) {
   return <GraphFrameContext.Provider value={frame}>{children}</GraphFrameContext.Provider>;
 }
@@ -66,7 +46,6 @@ function GraphTitle({
   children,
   ...props
 }: React.ComponentProps<'figcaption'> & {
-  /** `edge` sits on the top border. `inline` sits above the content. */
   placement?: 'edge' | 'inline';
 }) {
   return (
@@ -114,14 +93,6 @@ function GraphTick({ className, ...props }: React.ComponentProps<'span'>) {
   return <span className={cn('min-w-0 flex-1 overflow-hidden text-center', className)} {...props} />;
 }
 
-/**
- * Markdown children inside a frame — paragraphs, lists, inline code, links.
- * MDX renders `<p>` / `<ul>` / `<code>` here; this keeps them quiet and
- * on the mono grid instead of inheriting the page's prose styles, and capped
- * at 72 characters so a wide page doesn't stretch lines past reading length.
- * Block flow,
- * not flex, so JSX text with an inline link stays on one line.
- */
 const graphProseClass = cn(
   'max-w-[72ch] min-w-0 space-y-3 leading-relaxed',
   '[&_p]:m-0 [&_p]:text-pretty',
@@ -139,28 +110,23 @@ function GraphProse({ className, ...props }: React.ComponentProps<'div'>) {
   return <div className={cn(graphProseClass, className)} {...props} />;
 }
 
-/* ---- MDX children ------------------------------------------------------ */
-
 type CellProps = {
   align?: 'left' | 'right';
 };
 
 type RowProps = {
-  /** Matrix / compare / heatmap. Table rows ignore this. */
   label?: string;
   cells?: React.ReactNode[];
 };
 
-/** Column headings. Pipe text or `<Cell>` children. */
 const Head = defineItem('Head');
-/** One body row. Table: cells. Labeled graphs: `label` + values in the text. */
+
 const Row = defineItem<RowProps>('Row');
-/** Totals row under the rule. */
+
 const Foot = defineItem<RowProps>('Foot');
-/** One table cell. `align` on a Head cell sets the column. */
+
 const Cell = defineItem<CellProps>('Cell');
 
-/** Cells from an array, pipe text, or `<Cell>` children. */
 function cellsOf(value?: React.ReactNode[] | string, children?: React.ReactNode): React.ReactNode[] {
   if (Array.isArray(value)) {
     return value;
@@ -183,7 +149,6 @@ function cellsOf(value?: React.ReactNode[] | string, children?: React.ReactNode)
   return words(text);
 }
 
-/** Align list from a Head's `<Cell align>` children. */
 function alignsOf(children?: React.ReactNode): ('left' | 'right')[] | undefined {
   const cells = childItems(children, Cell);
   if (!cells.some((cell) => cell.align)) {
@@ -201,7 +166,6 @@ function Graph({
   children,
   ...props
 }: React.ComponentProps<'figure'> & {
-  /** Drawn as `[ TITLE ]`. Pass `""` to drop a default title. */
   title?: string;
   corner?: string;
   frame?: GraphFrame;

@@ -10,7 +10,6 @@ interface VersionData {
   official: string;
 }
 
-/** 按版本异步加载字典与官方 conf；模块加载是 React 之外的异步系统，只能在 effect 里触发。 */
 export function useVersionData(line: string): { data: VersionData | null; error: string | null } {
   const [data, setData] = useState<VersionData | null>(null);
   const [error, setError] = useState<string | null>(null);

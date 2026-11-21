@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint . --max-warnings=0",
+    "lint": "eslint . --max-warnings=0 && node --experimental-strip-types scripts/check-css-comments.ts",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"vite.config.ts\" \"eslint.config.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"tests/**/*.{ts,tsx}\" \"scripts/**/*.ts\" \"vite.config.ts\" \"eslint.config.ts\"",

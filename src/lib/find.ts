@@ -48,7 +48,6 @@ export function findMatches(
     return { matches: EMPTY_MATCHES, error: false };
   }
 
-  // 与 VS Code 一致：正则默认按行处理 ^ 和 $，因此带上 m 标志
   const source = options.regexp ? query : escapeRegExp(query);
   let regex: RegExp;
   try {

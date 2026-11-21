@@ -1,11 +1,5 @@
 import { Children, cloneElement, Fragment, isValidElement, type ReactElement, type ReactNode } from 'react';
 
-/*
- * Markdown children, read as data. No "use client" here: these are pure
- * functions over React elements, so a server `mdx-components.tsx` can call
- * them too. `graph-frame.tsx` re-exports everything.
- */
-
 type WithChildren<P> = P & { children?: ReactNode };
 
 type GraphItemComponent<P extends object> = ((props: WithChildren<P>) => null) & {
@@ -13,20 +7,10 @@ type GraphItemComponent<P extends object> = ((props: WithChildren<P>) => null) &
   displayName?: string;
 };
 
-/**
- * A data-only child. `<Stat value="12" label="docs" />` renders nothing by
- * itself; the parent graph reads its props with `childItems`. Matching is by
- * the tag name (and the RSC client-reference id), not function identity.
- */
 function defineItem<P extends object>(name: string): GraphItemComponent<P> {
   return Object.assign(() => null, { displayName: name, graphItem: name });
 }
 
-/**
- * Function name, host tag, or the `#Export` of a React Server client ref.
- * `graphHost` is set by `withMdxcn` on an overridden tag (`li: ListItem`), so
- * the parent still sees an `li`.
- */
 function typeName(type: unknown): string {
   if (typeof type === 'string') {
     return type;
@@ -71,11 +55,6 @@ function typeName(type: unknown): string {
   return '';
 }
 
-/**
- * The tag an element stands for. Under React Server Components a wrapped
- * override reaches the client already rendered, so `withMdxcn` also leaves a
- * `data-graph-host` prop on it.
- */
 function hostOf(element: ReactElement): string {
   const marked = (element.props as { 'data-graph-host'?: unknown })['data-graph-host'];
   return typeof marked === 'string' ? marked : typeName(element.type);
@@ -89,11 +68,6 @@ function isHost(element: ReactElement, tags: string | readonly string[]): boolea
 
 const LAZY = Symbol.for('react.lazy');
 
-/**
- * React Server Components can hand a client component its children wrapped
- * in `React.lazy` — already resolved, but not an element yet. Unwrap so the
- * parsers see the `<pre>` or `<li>` underneath. A pending one reads as empty.
- */
 function unlazy(node: ReactNode): ReactNode {
   let current: unknown = node;
   for (let depth = 0; depth < 8; depth += 1) {
@@ -114,7 +88,6 @@ function unlazy(node: ReactNode): ReactNode {
   return current as ReactNode;
 }
 
-/** `Children.toArray`, with lazy children unwrapped. */
 function childNodes(children: ReactNode): ReactNode[] {
   return Children.toArray(unlazy(children)).map(unlazy);
 }
@@ -134,7 +107,6 @@ function elementsOf(children: ReactNode): ReactElement[] {
   return out;
 }
 
-/** Direct `ul`/`ol` items, or `li` children if the parent already is a list. */
 function listItems(children: ReactNode): ReactElement[] {
   const elements = elementsOf(children);
   const lists = elements.filter((element) => isHost(element, ['ul', 'ol']));
@@ -149,7 +121,6 @@ function nestedList(item: ReactElement): ReactElement[] {
   return listItems((item.props as { children?: ReactNode }).children);
 }
 
-/** Visible text of a list item, ignoring nested lists. */
 function itemText(item: ReactElement): string {
   const parts: ReactNode[] = [];
   for (const child of childNodes((item.props as { children?: ReactNode }).children)) {
@@ -184,11 +155,6 @@ function childrenOf(element: ReactElement): ReactNode {
   return (element.props as { children?: ReactNode }).children;
 }
 
-/**
- * A list item split the way the grammar reads it. Tight item: the text is the
- * head. Loose item (blank lines between): the first paragraph is the head and
- * every block after it is the body. Nested lists are kept apart.
- */
 function itemParts(item: ReactElement): {
   head: ReactNode;
   body: ReactElement[];
@@ -211,11 +177,6 @@ function itemParts(item: ReactElement): {
   };
 }
 
-/**
- * Drop the first `count` characters of visible text, keeping the inline
- * markup after them. `**user:** hi \`there\`` minus `user:` keeps the code.
- * An element emptied by the cut is removed. Leading space after the cut goes.
- */
 function dropText(node: ReactNode, count: number): ReactNode {
   let left = count;
   let trimming = count > 0;
@@ -265,7 +226,6 @@ function dropText(node: ReactNode, count: number): ReactNode {
   return walk(node);
 }
 
-/** Keep the first `count` characters of visible text and the markup on them. */
 function takeText(node: ReactNode, count: number): ReactNode {
   let left = count;
 
@@ -304,10 +264,6 @@ function takeText(node: ReactNode, count: number): ReactNode {
   return walk(node);
 }
 
-/**
- * Strip a leading pattern from rich text. Returns the match (or null) and the
- * rest with its inline markup intact.
- */
 function dropLead(node: ReactNode, pattern: RegExp): { match: RegExpMatchArray | null; rest: ReactNode } {
   const match = textOf(node).match(pattern);
   if (!match || match.index !== 0) {
@@ -316,10 +272,6 @@ function dropLead(node: ReactNode, pattern: RegExp): { match: RegExpMatchArray |
   return { match, rest: dropText(node, match[0].length) };
 }
 
-/**
- * Text with the Markdown marks put back. `ok*5 down*2` parses as
- * `ok<em>5 down</em>2`; this returns `ok*5 down*2` so runs survive.
- */
 function sourceText(input: ReactNode): string {
   const node = unlazy(input);
   if (node == null || typeof node === 'boolean') {
@@ -354,7 +306,6 @@ function sourceText(input: ReactNode): string {
   return '';
 }
 
-/** `ok*40` → forty `ok`s. Any token list in the grammar can use a run. */
 function runs(value: readonly string[] | string | undefined): string[] {
   if (value == null) {
     return [];
@@ -379,7 +330,6 @@ function runs(value: readonly string[] | string | undefined): string[] {
 
 const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 
-/** `### Scope` followed by a table or list — used by Sheet. */
 function headingSections(children: ReactNode): {
   title: string;
   children: ReactNode;
@@ -458,7 +408,6 @@ function isTotal(row: ReactElement) {
   return bold || /^total$/i.test(textOf(content).trim());
 }
 
-/** A Markdown / HTML table written as children of a graph. */
 function tableOf(children: ReactNode): MdTable | null {
   const table = elementsOf(children).find((element) => isHost(element, 'table'));
   if (!table) {
@@ -481,7 +430,7 @@ function tableOf(children: ReactNode): MdTable | null {
   const head = rowCells(headRow);
   const rest = heads[0] ? bodies : bodies.slice(1);
   const last = rest.at(-1);
-  // Markdown has no <tfoot>. A last row led by **bold** or "Total" is it.
+
   const written = !foots[0] && last && rest.length > 1 && isTotal(last) ? last : undefined;
   const dataRows = (written ? rest.slice(0, -1) : rest).map((row) => rowCells(row).values);
   const footRow = foots[0] ?? written;
@@ -498,7 +447,6 @@ function tableOf(children: ReactNode): MdTable | null {
   };
 }
 
-/** First column is the row label. Used by compare / matrix / heatmap. */
 function labeledTable(children: ReactNode): {
   columns: string[];
   rows: { label: string; values: string[] }[];
@@ -532,7 +480,6 @@ function labeledTable(children: ReactNode): {
   };
 }
 
-/** Split `Mar 18: Docs, live` / `14:02: p95 crossed` on `: `. */
 function splitLabel(text: string): { label: string; rest: string } {
   const match = text.match(/^(.+?):\s+(.+)$/);
   if (!match) {
@@ -544,7 +491,6 @@ function splitLabel(text: string): { label: string; rest: string } {
   };
 }
 
-/** Split `graph-tree.tsx — ui` / `Copy the source — Run the CLI` on em dash. */
 function splitDash(text: string): { label: string; rest: string } {
   const parts = text.split(/\s+[—–]\s+/);
   if (parts.length < 2) {
@@ -556,7 +502,6 @@ function splitDash(text: string): { label: string; rest: string } {
   };
 }
 
-/** First word and the rest: `12,400 docs`, `100% frame`. */
 function firstToken(text: string): { token: string; rest: string } {
   const match = text.match(/^(\S+)\s*(.*)$/);
   if (!match) {
@@ -565,7 +510,6 @@ function firstToken(text: string): { token: string; rest: string } {
   return { token: match[1] ?? text, rest: match[2] ?? '' };
 }
 
-/** Plain text of a React tree. Strings, numbers, and element children. */
 function textOf(input: ReactNode): string {
   const node = unlazy(input);
   if (node == null || typeof node === 'boolean') {
@@ -587,7 +531,6 @@ function textOf(input: ReactNode): string {
   return '';
 }
 
-/** Props of each direct child rendered with the given item component. */
 function childItems<P extends object>(children: ReactNode, Item: GraphItemComponent<P>): WithChildren<P>[] {
   const tag = Item.graphItem;
   return elementsOf(children)
@@ -595,7 +538,6 @@ function childItems<P extends object>(children: ReactNode, Item: GraphItemCompon
     .map((element) => element.props as WithChildren<P>);
 }
 
-/** Every direct child element, in order, with its item tag if it has one. */
 function childElements(children: ReactNode) {
   return elementsOf(children).map((element) => ({
     element,
@@ -603,7 +545,6 @@ function childElements(children: ReactNode) {
   }));
 }
 
-/** `[2, 3, 4]`, `"2 3 4"`, `"2, 3, 4"`, or `"0*2 4"` → `[0, 0, 4]`. */
 function numbers(value: readonly number[] | string | undefined): number[] {
   if (value == null) {
     return [];
@@ -618,7 +559,6 @@ function numbers(value: readonly number[] | string | undefined): number[] {
   return [...value];
 }
 
-/** `["ok", "down"]` or `"ok down"` → `["ok", "down"]`. */
 function words<T extends string>(value: readonly T[] | string | undefined): T[] {
   if (value == null) {
     return [];
@@ -631,7 +571,6 @@ function words<T extends string>(value: readonly T[] | string | undefined): T[] 
   return [...value];
 }
 
-/** `0.67`, `"0.67"`, or `"67%"` → `0.67`. */
 function fraction(value: number | string | undefined, fallback = 0): number {
   if (value == null) {
     return fallback;
@@ -652,7 +591,6 @@ function fraction(value: number | string | undefined, fallback = 0): number {
   return percent ? parsed / 100 : parsed;
 }
 
-/** `42` or `"12,400"` or `"100%"` → `42`. */
 function numberOf(value: number | string | undefined, fallback = 0): number {
   if (value == null) {
     return fallback;
@@ -666,10 +604,6 @@ function numberOf(value: number | string | undefined, fallback = 0): number {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
-/**
- * Numbers written as children. `2 3 5 8 — caption`, or a list of
- * `- Mon: 4` rows (labels kept). Spark, plot, and KPI read this.
- */
 function seriesOf(children: ReactNode): {
   data: number[];
   labels: string[];
@@ -692,7 +626,6 @@ function seriesOf(children: ReactNode): {
   return { data: numbers(label), labels: [], caption: rest || undefined };
 }
 
-/** Text of a node, one trimmed line per newline. Paragraphs break lines. */
 function linesOf(node: ReactNode): string[] {
   const paragraphs = paragraphsOf(node);
   if (paragraphs.length > 0) {
@@ -704,10 +637,6 @@ function linesOf(node: ReactNode): string[] {
     .filter(Boolean);
 }
 
-/**
- * Tags the parents read from Markdown. If `mdx-components.tsx` swaps one for
- * its own component, `withMdxcn` marks the swap so parsing still finds it.
- */
 const GRAPH_HOST_TAGS = [
   'p',
   'ul',

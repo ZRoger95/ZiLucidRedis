@@ -3,7 +3,7 @@ import type { PersistedState } from '../types';
 export const STORAGE_KEY = 'zilucid:state';
 
 const PLAINTEXT_SECRET = /^\s*(requirepass|masterauth|tls-key-file-pass|tls-client-key-file-pass)\s+(?!\$\{env_)(\S+)/m;
-// ACL 行的密码是 `>password`；替换后整段变成 ${env_user-pass}，不会再命中。
+
 const PLAINTEXT_USER_SECRET = /^\s*user\b[^\n]*\s>\S+/m;
 
 export function saveState(state: PersistedState): void {

@@ -22,7 +22,6 @@ function shapeLine(raw: string): LineShape | null {
   return { prefix: match[1], name: match[2], rest: match[4] };
 }
 
-/** 取第一个参数；带空格的引号值按整体处理，替换后仍保留引号。 */
 function firstToken(rest: string): Target | null {
   const quoted = /^\s*("(?:[^"\\]|\\.)*")/.exec(rest);
   if (quoted) {
@@ -40,7 +39,6 @@ function firstToken(rest: string): Target | null {
   };
 }
 
-/** ACL 里一条 user 行可能带多个 `>password`，全部替换。 */
 function passwordTargets(rest: string): Target[] {
   const targets: Target[] = [];
   for (const match of rest.matchAll(/(^|\s)(>\S+)/g)) {

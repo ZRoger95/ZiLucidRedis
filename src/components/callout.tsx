@@ -9,11 +9,10 @@ import { cn } from '@/lib/utils';
 type CalloutType = 'note' | 'tip' | 'warning' | 'danger';
 
 type CalloutProps = {
-  /** Sets the frame title and the glyph. Default note. */
   type?: CalloutType;
-  /** Overrides the frame title. Defaults to the type, uppercase. */
+
   title?: string;
-  /** Markdown. Paragraphs, lists, inline code, links. */
+
   children?: ReactNode;
   corner?: string;
   frame?: GraphFrame;
@@ -34,15 +33,6 @@ const tone: Record<CalloutType, string> = {
   danger: 'text-destructive',
 };
 
-/**
- * An aside between paragraphs.
- *
- * ```mdx
- * <Callout type="warning">
- *   The CLI copies files. It does not add an npm dependency.
- * </Callout>
- * ```
- */
 function Callout({ type = 'note', title, children, corner, frame, className }: CalloutProps) {
   const reduce = useReducedMotion();
 
