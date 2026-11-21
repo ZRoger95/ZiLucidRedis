@@ -21,7 +21,7 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 - **先看现有组件。** 任何 UI 新增或改动前先读 [components.json](components.json) 和 [src/components/ui/](src/components/ui/)；需要新组件时用 `npx shadcn@latest add <name>` 生成并提交，不手写同类控件。
 - **只从子路径导入。** 使用 `@/components/ui/button`、`/select`、`/switch`、`/dropdown-menu`、`/dialog`、`/command`、`/tabs` 等入口，不从 `src/components/ui` 的桶文件导入，不直接引 `radix-ui` 内部路径。
 - **不自造控件。** 键盘、焦点、ARIA 和弹出层行为交给 shadcn（Radix）；优先用现有组件组合，不手写 `role=` 控件。
-- **样式用 Tailwind。** 布局与控件样式写原子类；只有 CodeMirror 生成 DOM 的装饰与注释块允许写在 [editor.css](src/components/editor.css)。[index.css](src/index.css) 只保留 `@import 'tailwindcss'`、设计令牌与 `@layer base`。
+- **样式用 Tailwind。** 布局与控件样式写原子类；只有 CodeMirror 生成 DOM 的装饰与注释块允许写在 [editor.css](src/components/editor.css)。[index.css](src/index.css) 只保留 Tailwind 入口导入、设计令牌与 `@layer base`；全局 Tailwind 扩展指令放在 [tailwind-extensions.css](src/tailwind-extensions.css)。
 - **ui-sdk 只用于 diff 行行为层。** 只有 [diffRows.ts](src/components/diffRows.ts) 使用 `@ui-sdk/core` 的 `createRovingFocus` 实现行导航；标准控件仍从 `@/components/ui/*` 组合，不得再引入 ui-sdk，也不引入 `@ui-sdk/core/web.css`，样式继续用 Tailwind。
 
 ## 目录
