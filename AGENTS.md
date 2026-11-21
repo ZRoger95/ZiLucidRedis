@@ -65,20 +65,21 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 - **修改现有行为：** 同步更新所属 spec 的现状描述，以及 README 中受影响的用法说明。
 - **修 bug：** 能直接定位就直接修，补一个能复现的测试；不新建设计文档。
 - **提交信息：** 沿用现有前缀 `feat:` / `fix:` / `docs:` / `test:` / `refactor:`。
+- **Git 提交规范：** 提交信息遵循 Conventional Commits，并由 Commitlint 在 Husky `commit-msg` Hook 中校验；提交前由 Husky `pre-commit` Hook 运行 lint-staged，对暂存代码执行 ESLint 与 Prettier。必须通过正常的 `git commit` 触发 Hook，禁止 `--no-verify`、`HUSKY=0`、临时改写 `core.hooksPath` 或其他绕过/替代提交流程的方式；不要代用户创建提交或推送，除非任务明确要求。
 - **完成前：** 至少运行 `npm run check` 和 `npm run build`；只报告实际运行的命令和结果。
 
 ## 文档治理
 
 每个事实只有一个归属层级；其他位置链接过去，不复制。
 
-| 层级 | 职责 | 不放 |
-|---|---|---|
-| 根 `AGENTS.md`（本文件） | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则 | 产品用法、设计细节、任务清单 |
-| [README.md](README.md) | 面向用户的产品行为、使用方式、数据来源 | 实现细节、评审记录、未做的计划 |
-| `docs/engineering/` | 工程规范与门禁的现状：规则分组、取舍、例外清单 | 产品用法、任务清单 |
-| `docs/superpowers/specs/` | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案 | 逐步实现步骤 |
-| `docs/superpowers/plans/` | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
-| [types.ts](src/types.ts)、代码注释、测试 | 当前契约与行为可执行的事实 | 历史、计划、评审叙述 |
+| 层级                                     | 职责                                                                                                | 不放                           |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 根 `AGENTS.md`（本文件）                 | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单   |
+| [README.md](README.md)                   | 面向用户的产品行为、使用方式、数据来源                                                              | 实现细节、评审记录、未做的计划 |
+| `docs/engineering/`                      | 工程规范与门禁的现状：规则分组、取舍、例外清单                                                      | 产品用法、任务清单             |
+| `docs/superpowers/specs/`                | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                   |
+| `docs/superpowers/plans/`                | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
+| [types.ts](src/types.ts)、代码注释、测试 | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述           |
 
 写作规则：
 
