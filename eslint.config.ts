@@ -58,7 +58,6 @@ const baseRules: Linter.RulesRecord = {
   eqeqeq: ['error', 'always', { null: 'ignore' }],
   'no-console': ['error', { allow: ['warn', 'error'] }],
   'no-debugger': 'error',
-  'no-empty': ['error', { allowEmptyCatch: true }],
   'no-else-return': 'error',
   'no-implicit-coercion': 'error',
   'no-nested-ternary': 'error',

@@ -175,7 +175,9 @@ export default function App() {
     }
     try {
       saveState({ v: 1, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed });
-    } catch {}
+    } catch (error) {
+      console.error('保存本地状态失败', error);
+    }
   }, [dict, line, text, annotationMode, onlyDiff, showZh, bottomCollapsed]);
 
   useEffect(() => {

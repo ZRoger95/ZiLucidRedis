@@ -1,14 +1,33 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 
 import App from '../src/App';
 import { setPendingConf } from '../src/lib/handoff';
 import { STORAGE_KEY } from '../src/lib/persistence';
 
 afterEach(() => {
+  vi.restoreAllMocks();
   localStorage.clear();
+});
+
+test('本地状态保存失败时记录错误', async () => {
+  const error = new Error('storage unavailable');
+  vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw error;
+  });
+  const reportError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  render(
+    <MemoryRouter>
+      <App />
+    </MemoryRouter>,
+  );
+
+  await waitFor(() => {
+    expect(reportError).toHaveBeenCalledWith('保存本地状态失败', error);
+  });
 });
 
 test('renders the tool title', () => {
