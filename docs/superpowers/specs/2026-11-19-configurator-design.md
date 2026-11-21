@@ -27,7 +27,7 @@
 - 每条字典指令都能在所属区域被编辑；四个自由行区域提供专用编辑器。
 - 生成结果为「官方 conf 原文 + 用户改动」：没动过的行保持官方注释原样，动过的指令取消注释并写入新值。
 - 结束时支持预览、下载 `.conf`、带回体检页编辑器。
-- 每一步右侧用一张 hairline 线稿插图（纯装饰）。
+- 每步配一张 hairline 线稿插图（纯装饰），区域到插图的映射走登记表；呈现见 §5.8 指向的设计文档。
 
 ## 4. 非目标 / 反目标
 
@@ -67,16 +67,16 @@
 - 放弃 hash 路由：`#/configurator` 与 Vue Router 的 history 模式不对应，分享链接观感也差；代价是需要 404 兜底。
 - 放弃自研 `history.pushState` 小路由：只省一个依赖，却要自己处理 `popstate`、编程式导航与测试用的内存路由；React Router 的 `MemoryRouter` 让页面测试无需碰浏览器历史。
 
-页面骨架（最小宽度 1024px，三栏）：
+页面骨架（最小宽度 1024px，两栏）：
 
 ```
-┌ 版本 SELECT   ·  返回体检 ─────────────────────────────┐
-│ 步骤导航（左，可滚动） │ 当前区域表单（中） │ 插图与官方说明（右）│
-│ 01 版本               │ NETWORK 网络        │  [hairline 线稿]  │
-│ 02 INCLUDES  3 处改动 │ 端口      [6379 ]   │  官方原文说明…     │
-│ 03 MODULES            │ …                   │  本区已改 3 项     │
-│ …                     │                     │                   │
-├ 上一步   下一步/完成   ·   已改 N 项   ─────────────────┤
+┌ 生成配置  ·  当前版本 7.4  ·  返回体检 ──────────────┐
+│ 步骤导航（左，可滚动） │ 当前步骤（中）                │
+│ 01 选择版本            │ header：crumb · 标题 · 摘要   │
+│ 02 包含其他配置文件 3  │ 说明区：编号注释 + 警告        │
+│ 03 模块加载            │ 操作区：字段网格 / 自由行编辑器 │
+│ …                      │（字段密集步说明区走右侧常驻栏）│
+├ 上一步   下一步   ·   已改 N 项   ───────────────────┤
 ```
 
 步骤 01 是版本选择（复用 `RELEASES` 与 `formatVersionLabel`），最后两步是 `MISC`（存在指令时才出现）与完成页。
@@ -133,7 +133,7 @@ interface ConfiguratorDraft {
 | `special` | `Textarea`（多行，每行一条同指令） |
 | `sensitive: true` | `Input type="password"`，加「不落盘」提示 |
 
-每个字段展示：名称（等宽）、官方默认值、`range`、一句中文摘要（复用 `src/data/zh-notes.json`，没有则用官方注释首行）、「恢复默认」按钮。`modifiable: false` 的字段照常可编辑，但标注「需重启生效」。
+每个字段展示：名称（等宽）、官方默认值、`range`、中文摘要、「恢复默认」按钮。摘要的语言与取文规则、超长时的钳制与浮层，以及官方说明折叠块的整区取文，见 §5.8 指向的设计文档；`src/data/zh-notes.json` 仍是人工登记表。`modifiable: false` 的字段照常可编辑，但标注「需重启生效」。
 
 输入框用官方默认值做占位提示，不预填值：只有用户真正输入才写入草稿。这样「未改动」的语义与输出算法一致，也避免用户为了改一个数字先清空一长串默认值。清空输入等同恢复默认。
 
@@ -164,9 +164,10 @@ interface ConfiguratorDraft {
 ### 5.6 插图（hairline）
 
 - 依赖 `@lucasmarkes/hairline`（v0.5.1，ESM、零依赖），React 入口 `@lucasmarkes/hairline/react`；构建期打进产物，运行时不发请求，符合纯前端约束。
-- 每步右侧固定一张插图，映射写在 `configurator.json` 的 `figure` 字段；未登记的区域不渲染插图。
-- 参数只用 `intensity={0.4}`、`theme="light"`、`aria-hidden`，不开 `play`；`--hairline-plate` 设为右侧面板底色，避免遮挡错位。
-- hairline 是插图库，不是步骤条；步骤导航仍由现有 `Button` / `Tabs` / 原生列表组合。若插图在小宽度挤压表单，隐藏插图列优先于压缩表单。
+- 每步一张插图，区域到插图的映射写在 `configurator.json` 的 `figure` 字段，代码侧集中在 [figures.ts](../../../src/components/configurator/figures.ts)；未登记的区域不渲染插图。
+- 参数只用 `intensity={0.4}`、`theme="light"`、`aria-hidden`，不开 `play`。
+- hairline 是插图库，不是步骤条；步骤导航仍由现有 `Button` / `Tabs` / 原生列表组合。
+- 插图放在哪一步的什么位置、尺寸与底色，由 §5.8 指向的设计文档维护。
 
 ### 5.7 前置修复：6.2 字典缺口
 
@@ -180,10 +181,14 @@ interface ConfiguratorDraft {
 
 配套加一条测试：对每个版本，官方 conf 里所有生效指令行都必须能在字典里找到。这条断言会固定住本次修复，也能在未来上游新增指令时报警。
 
+### 5.8 步骤骨架与说明区（移交 2026-11-20 设计）
+
+每步的呈现骨架（header 三段式、mdxcn 说明区、字段密集步的 rail 变体与容器查询）、字段摘要的中文统一与钳制 Tooltip、`sectionComment` 的整区取文，都由 [2026-11-20 步骤骨架设计](2026-11-20-configurator-step-skeleton-design.md) 维护；实施计划见 [2026-11-20-configurator-step-skeleton.md](../plans/2026-11-20-configurator-step-skeleton.md)。本文其余章节只描述向导的数据与行为，不再记录呈现细节。
+
 ## 6. 约束与风险
 
 - **步骤数量**：8.2 有 26 个区域 + 版本页 + `MISC` + 完成页，共约 29 步。左侧导航必须可滚动并显示改动数，否则用户会失去位置感。
-- **单步体量**：`ADVANCED CONFIG` 一步 25–36 个字段。用两列网格 + 区域内的官方注释折叠面板消化，不为它单独做子步骤。
+- **单步体量**：`ADVANCED CONFIG` 一步 25–36 个字段。用两列网格消化，不为它单独做子步骤；说明栏与列宽的呈现见 §5.8 指向的设计文档。
 - **字典缺口**：除 6.2 的 7 条外，`scripts/build-dict.ts` 的 `MISC` 兜底仍会把「config.c 有、conf 没有」的指令标成 `MISC`（7.2 起 10–15 条）。这是预期行为，`MISC` 步骤就是给它们的。
 - **有效期**：官方 conf 的横幅标题里 `KERNEL transparent hugepage CONTROL` 这类大小写混排要原样保留，中文名只做副标题。
 - **发版影响**：新增 hairline 依赖与 textarea 组件会让产物变大；hairline 全部 33 张 gzip 约 64 kB，只 import 用到的张数。

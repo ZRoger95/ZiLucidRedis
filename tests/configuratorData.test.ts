@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
+import { REGION_INTROS } from '../src/components/configurator/regionIntros';
 import registry from '../src/data/configurator.json';
 
 interface DictShape {
@@ -44,5 +45,17 @@ test('每个 enum 指令都登记了至少两个候选值', () => {
   }
 
   const missing = [...names].filter((name) => (registry.enums[name as keyof typeof registry.enums] ?? []).length < 2);
+  expect(missing).toEqual([]);
+});
+
+test('每个区域步与「其他」步都登记了说明区内容', () => {
+  const ids = new Set<string>(['MISC']);
+  for (const dict of DICTS) {
+    for (const section of dict.sections) {
+      ids.add(section.id);
+    }
+  }
+
+  const missing = [...ids].filter((id) => !REGION_INTROS[id]);
   expect(missing).toEqual([]);
 });

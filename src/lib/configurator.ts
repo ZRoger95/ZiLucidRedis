@@ -201,14 +201,15 @@ export function sectionComment(officialText: string, sectionId: string): string[
   const rows: string[] = [];
   for (let index = start + 1; index < lines.length; index += 1) {
     const trimmed = lines[index].trim();
+    if (bannerTitle(trimmed) !== null) {
+      break;
+    }
     if (!trimmed) {
       rows.push('');
       continue;
     }
-    if (bannerTitle(trimmed) !== null || !trimmed.startsWith('#')) {
-      break;
-    }
-    rows.push(trimmed.replace(/^#\s?/, ''));
+    // 生效行原样保留：官方说明里「the following bind directive」这类指代需要它在场
+    rows.push(trimmed.startsWith('#') ? trimmed.replace(/^#\s?/, '') : trimmed);
   }
 
   while (rows.length > 0 && rows[0] === '') {

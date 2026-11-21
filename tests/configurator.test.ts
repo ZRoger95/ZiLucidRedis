@@ -170,6 +170,18 @@ test('sectionComment 返回区域横幅后的说明注释', () => {
   expect(comment.join('\n')).toContain('include');
 });
 
+test('sectionComment 不在生效行截断，取整区说明', () => {
+  const { official } = load('7.4');
+  const comment = sectionComment(official, 'NETWORK').join('\n');
+
+  expect(comment).toContain('bind 127.0.0.1 -::1');
+  expect(comment).toContain('only accepts local connections');
+  expect(comment).toContain('somaxconn');
+  expect(comment).toContain('SO_KEEPALIVE');
+  expect(comment).toContain('route table ID');
+  expect(comment).not.toContain('TLS/SSL');
+});
+
 test('可替换行跳过模板占位符', () => {
   const { dict, official } = load('7.4');
   const draft: ConfiguratorDraft = { ...emptyDraft('7.4'), values: { save: '900 1' } };

@@ -12,9 +12,8 @@ import { DEFAULT_VERSION } from '@/lib/dict';
 import { setPendingConf, takePendingLine } from '@/lib/handoff';
 import { replaceSecrets } from '@/lib/secrets';
 
-import { FigurePanel } from './FigurePanel';
 import { FinishStep } from './FinishStep';
-import { SectionStep } from './SectionStep';
+import { RegionStep } from './RegionStep';
 import { StepNav } from './StepNav';
 import { VersionStep } from './VersionStep';
 
@@ -91,6 +90,7 @@ export function ConfiguratorPage() {
     if (!step || !data) {
       return null;
     }
+    const ordinal = String(stepIndex + 1).padStart(2, '0');
     if (step.kind === 'version') {
       return <VersionStep line={line} onChange={changeLine} />;
     }
@@ -101,13 +101,16 @@ export function ConfiguratorPage() {
           text={generated}
           changed={changeCount(draft)}
           hasSecret={hasSecret}
+          ordinal={ordinal}
           onBack={() => setStepIndex((value) => value - 1)}
           onDownload={download}
           onHandoff={handoff}
         />
       );
     }
-    return <SectionStep step={step} official={data.official} draft={draft} onDraftChange={updateDraft} />;
+    return (
+      <RegionStep step={step} official={data.official} draft={draft} onDraftChange={updateDraft} ordinal={ordinal} />
+    );
   })();
 
   return (
@@ -141,7 +144,6 @@ export function ConfiguratorPage() {
           <section className="min-w-0 flex-1 overflow-auto bg-white px-8 py-6" aria-label="当前步骤">
             {stepBody}
           </section>
-          {step ? <FigurePanel id={step.id} /> : null}
         </div>
       ) : (
         <div className="flex flex-1 items-center justify-center text-muted-foreground">

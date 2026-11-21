@@ -1,9 +1,6 @@
 import * as figures from '@lucasmarkes/hairline/react';
-import { render } from '@testing-library/react';
-import { createElement } from 'react';
 import { expect, test } from 'vitest';
 
-import { FigurePanel } from '../src/components/configurator/FigurePanel';
 import registry from '../src/data/configurator.json';
 
 const ORIGINALS = new Set(Object.keys(figures));
@@ -19,10 +16,4 @@ test('每个区域都登记了存在的插图', () => {
 test('版本页与完成页的插图也登记了', () => {
   expect(registry.sections.__version__.figure).toBe('Laptop');
   expect(registry.sections.__finish__.figure).toBe('Terrain');
-});
-
-test('插图面板渲染对应区域的 SVG', () => {
-  const { container } = render(createElement(FigurePanel, { id: 'NETWORK' }));
-
-  expect(container.querySelector('svg')).not.toBeNull();
 });

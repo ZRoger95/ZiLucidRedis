@@ -39,13 +39,16 @@ async function switchVersion(label: RegExp): Promise<void> {
 
 test('向导加载后显示版本选择与区域导航', async () => {
   const scroll = vi.spyOn(Element.prototype, 'scrollIntoView');
-  render(
+  const { container } = render(
     <MemoryRouter>
       <ConfiguratorPage />
     </MemoryRouter>,
   );
 
   expect(await screen.findByRole('heading', { name: '选择版本' })).toBeInTheDocument();
+  expect(screen.getByText(/REDIS 版本线/)).toBeInTheDocument();
+  expect(screen.getByText('切换版本会清空当前草稿。')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
   const nav = screen.getByRole('navigation', { name: '配置步骤' });
   expect(within(nav).getByText('包含其他配置文件')).toBeInTheDocument();
   expect(within(nav).getByText('选择版本')).toBeInTheDocument();
@@ -55,7 +58,7 @@ test('向导加载后显示版本选择与区域导航', async () => {
 });
 
 test('下一步进入 INCLUDES 区域', async () => {
-  render(
+  const { container } = render(
     <MemoryRouter>
       <ConfiguratorPage />
     </MemoryRouter>,
@@ -64,11 +67,211 @@ test('下一步进入 INCLUDES 区域', async () => {
 
   await userEvent.click(screen.getByRole('button', { name: '下一步' }));
 
-  expect(screen.getByRole('heading', { name: 'INCLUDES' })).toBeInTheDocument();
-  expect(
-    screen.getByText('包含其他配置文件 · 在主配置靠前位置引入额外 conf；后加载的值会覆盖先前的'),
-  ).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '包含其他配置文件' })).toBeInTheDocument();
+  expect(screen.getByText(/· INCLUDES$/)).toBeInTheDocument();
+  expect(screen.getByText('在主配置靠前位置引入额外 conf；后加载的值会覆盖先前的')).toBeInTheDocument();
+  expect(screen.getByText(/INCLUDE 示例/)).toBeInTheDocument();
   expect(screen.getByRole('heading', { name: 'include 路径' })).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('所有步骤都用新骨架，不渲染右栏插图', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  let guard = 0;
+  while (!(screen.getByRole('button', { name: '下一步' }) as HTMLButtonElement).disabled && guard < 40) {
+    await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+    expect(container.querySelector('aside')).toBeNull();
+    guard += 1;
+  }
+
+  expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
+  expect(guard).toBeLessThan(40);
+});
+
+test('ADVANCED CONFIG 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(25);
+
+  expect(screen.getByRole('heading', { name: '高级参数' })).toBeInTheDocument();
+  expect(screen.getByText(/· ADVANCED CONFIG$/)).toBeInTheDocument();
+  expect(screen.getByText(/调优示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('hash-max-listpack-entries')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('ACTIVE DEFRAGMENTATION 步字段与说明栏并存', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(26);
+
+  expect(screen.getByRole('heading', { name: '主动碎片整理' })).toBeInTheDocument();
+  expect(screen.getByText(/碎片整理示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('activedefrag')).toBeInTheDocument();
+});
+
+test('其他步说明 config.c 有、官方模板未收录的指令', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(27);
+
+  expect(screen.getByRole('heading', { name: '其他' })).toBeInTheDocument();
+  expect(screen.getByText(/本区指令举例/)).toBeInTheDocument();
+  expect(screen.getByText(/多为实验性或调试用途/)).toBeInTheDocument();
+});
+
+test('完成页展示序号、改动统计与落地检查', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await nextTimes(3);
+  await userEvent.type(screen.getByLabelText('port'), '6380');
+  await goToFinish();
+
+  expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
+  expect(screen.getByText(/~\/configurator · 29 · 完成$/)).toBeInTheDocument();
+  expect(screen.getByText('版本 7.4 · 共改 1 项 · 文件名 redis-7.4.conf')).toBeInTheDocument();
+  expect(screen.getByText(/落地检查/)).toBeInTheDocument();
+});
+
+test('SECURITY 步展示示例注释与敏感字段、自由行', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(9);
+
+  expect(screen.getByRole('heading', { name: '安全' })).toBeInTheDocument();
+  expect(screen.getByText(/SECURITY 示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('requirepass')).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'ACL 用户规则' })).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('MEMORY MANAGEMENT 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(11);
+
+  expect(screen.getByRole('heading', { name: '内存管理' })).toBeInTheDocument();
+  expect(screen.getByText(/内存示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('maxmemory')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('APPEND ONLY MODE 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(16);
+
+  expect(screen.getByRole('heading', { name: 'AOF 持久化' })).toBeInTheDocument();
+  expect(screen.getByText(/AOF 示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('appendfsync')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('SLOW LOG 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(21);
+
+  expect(screen.getByRole('heading', { name: '慢日志' })).toBeInTheDocument();
+  expect(screen.getByText(/慢日志示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('slowlog-max-len')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('TLS/SSL 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(4);
+
+  expect(screen.getByRole('heading', { name: '传输加密' })).toBeInTheDocument();
+  expect(screen.getByText(/· TLS\/SSL$/)).toBeInTheDocument();
+  expect(screen.getByText(/TLS 示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('tls-port')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('NETWORK 步字段与说明栏并存', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(3);
+
+  expect(screen.getByRole('heading', { name: '网络' })).toBeInTheDocument();
+  expect(screen.getByText(/· NETWORK$/)).toBeInTheDocument();
+  expect(screen.getByText(/NETWORK 示例/)).toBeInTheDocument();
+  expect(screen.getByLabelText('port')).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
+});
+
+test('MODULES 步展示示例注释与 loadmodule 编辑器', async () => {
+  const { container } = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await nextTimes(2);
+
+  expect(screen.getByRole('heading', { name: '模块加载' })).toBeInTheDocument();
+  expect(screen.getByText(/· MODULES$/)).toBeInTheDocument();
+  expect(screen.getByText(/LOADMODULE 示例/)).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: 'loadmodule 路径' })).toBeInTheDocument();
+  expect(container.querySelector('aside')).toBeNull();
 });
 
 test('区域步展示可编辑字段', async () => {
@@ -83,7 +286,7 @@ test('区域步展示可编辑字段', async () => {
     await userEvent.click(screen.getByRole('button', { name: '下一步' }));
   }
 
-  expect(screen.getByRole('heading', { name: 'NETWORK' })).toBeInTheDocument();
+  expect(screen.getByRole('heading', { name: '网络' })).toBeInTheDocument();
   expect(screen.getByLabelText('port')).toHaveValue('');
 });
 

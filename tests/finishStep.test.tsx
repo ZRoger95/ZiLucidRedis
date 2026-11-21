@@ -9,6 +9,7 @@ const props = {
   text: 'port 6380\nsave 900 1\n',
   changed: 2,
   hasSecret: false,
+  ordinal: '29',
   onBack: vi.fn(),
   onDownload: vi.fn(),
   onHandoff: vi.fn(),
@@ -18,8 +19,17 @@ test('展示改动数与生成结果预览', () => {
   render(<FinishStep {...props} />);
 
   expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
-  expect(screen.getByText('共改 2 项')).toBeInTheDocument();
-  expect(screen.getByText(/port 6380/)).toBeInTheDocument();
+  expect(screen.getByText(/~\/configurator · 29 · 完成$/)).toBeInTheDocument();
+  expect(screen.getByText('版本 7.4 · 共改 2 项 · 文件名 redis-7.4.conf')).toBeInTheDocument();
+  expect(screen.getByLabelText('生成结果预览')).toHaveTextContent('port 6380');
+});
+
+test('说明区讲清预览文件的用法与占位符', () => {
+  render(<FinishStep {...props} />);
+
+  expect(screen.getByText(/落地检查/)).toBeInTheDocument();
+  expect(screen.getByText(/redis-server redis-7\.4\.conf/)).toBeInTheDocument();
+  expect(screen.getByText(/\${env_\*}/)).toBeInTheDocument();
 });
 
 test('含敏感值时提示明文风险', () => {

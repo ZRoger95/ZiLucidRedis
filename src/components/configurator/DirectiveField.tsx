@@ -4,10 +4,33 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import registry from '@/data/configurator.json';
 import zhNotes from '@/data/zh-notes.json';
 
 const notes = zhNotes as Record<string, string>;
+
+// 最窄双列约 356px、12px 字号下两行约容纳 56 个加权字符（CJK 计 1，拉丁计 0.55）
+const CLAMP_CAPACITY = 56;
+
+function noteWeight(text: string): number {
+  let weight = 0;
+  for (const char of text) {
+    weight += /[\u3000-\u9fff\uff00-\uffef]/.test(char) ? 1 : 0.55;
+  }
+  return weight;
+}
+
+function noteOf(doc: DirectiveDoc): string {
+  const curated = notes[doc.name];
+  if (curated) {
+    return curated;
+  }
+  return doc.comment
+    .map((line) => line.trim())
+    .filter((line) => line !== '' && !/^Examples?:$/.test(line))
+    .join(' ');
+}
 
 interface DirectiveFieldProps {
   doc: DirectiveDoc;
@@ -19,7 +42,8 @@ interface DirectiveFieldProps {
 export function DirectiveField({ doc, value, changed, onChange }: DirectiveFieldProps) {
   const id = `field-${doc.name}`;
   const options = (registry.enums as Record<string, string[]>)[doc.name] ?? [];
-  const note = notes[doc.name] ?? doc.comment[0] ?? '';
+  const note = noteOf(doc);
+  const clamped = noteWeight(note) > CLAMP_CAPACITY;
 
   const control = (() => {
     if (doc.type === 'bool') {
@@ -70,21 +94,42 @@ export function DirectiveField({ doc, value, changed, onChange }: DirectiveField
 
   return (
     <div className="grid gap-1.5 border-b border-dashed border-line/70 py-2.5">
-      <div className="flex items-baseline gap-2">
-        <label htmlFor={id} className="font-mono text-[13px] font-medium text-ink">
+      <div className="flex flex-wrap items-baseline gap-2">
+        <label htmlFor={id} className="font-mono text-[13px] font-medium whitespace-nowrap text-ink">
           {doc.name}
         </label>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-[11px] whitespace-nowrap text-muted-foreground">
           默认 {doc.defaultValue === '' ? '（空）' : (doc.defaultValue ?? '—')}
         </span>
-        {doc.range ? <span className="text-[11px] text-muted-foreground">范围 {doc.range}</span> : null}
-        {doc.modifiable ? null : <span className="text-[11px] text-[#9a3412]">需重启生效</span>}
+        {doc.range ? (
+          <span className="text-[11px] whitespace-nowrap text-muted-foreground">范围 {doc.range}</span>
+        ) : null}
+        {doc.modifiable ? null : <span className="text-[11px] whitespace-nowrap text-[#9a3412]">需重启生效</span>}
         <span className="flex-1" />
         <Button type="button" variant="ghost" size="xs" disabled={!changed} onClick={() => onChange(null)}>
           恢复默认
         </Button>
       </div>
-      {note ? <p className="m-0 text-[12px] leading-5 text-muted-foreground">{note}</p> : null}
+      {(() => {
+        if (!note) {
+          return null;
+        }
+        if (clamped) {
+          return (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p tabIndex={0} className="m-0 cursor-help text-[12px] leading-5 text-muted-foreground line-clamp-2">
+                  {note}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[24rem] leading-5 whitespace-normal">
+                {note}
+              </TooltipContent>
+            </Tooltip>
+          );
+        }
+        return <p className="m-0 text-[12px] leading-5 text-muted-foreground">{note}</p>;
+      })()}
       {control}
       {doc.sensitive ? <p className="m-0 text-[11px] text-[#9a3412]">敏感值不保存，刷新后需重新填写。</p> : null}
     </div>

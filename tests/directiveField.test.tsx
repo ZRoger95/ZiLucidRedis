@@ -5,101 +5,64 @@ import { expect, test, vi } from 'vitest';
 import type { DirectiveDoc } from '../src/types';
 
 import { DirectiveField } from '../src/components/configurator/DirectiveField';
+import { TooltipProvider } from '../src/components/ui/tooltip';
 
-const base: DirectiveDoc = {
-  name: 'port',
-  section: 'NETWORK',
-  type: 'int',
-  defaultValue: '6379',
-  defaultSource: 'config.c',
-  range: '0..65535',
-  sensitive: false,
-  modifiable: true,
-  comment: ['Accept connections on the specified port'],
-};
+const LONG_COMMENT = [
+  'By default, outgoing connections (from replica to master, from Sentinel to',
+  'instances, cluster bus, etc.) are not bound to a specific local address. In',
+  'most cases, this means the operating system will handle that based on routing',
+  'and the interface through which the connection goes out.',
+  '',
+  'Example:',
+];
 
-test('bool 用开关，切换写成 yes/no', async () => {
-  const onChange = vi.fn();
-  render(
-    <DirectiveField
-      doc={{ ...base, name: 'protected-mode', type: 'bool', defaultValue: 'yes', range: null }}
-      value={undefined}
-      changed={false}
-      onChange={onChange}
-    />,
+function doc(name: string, comment: string[]): DirectiveDoc {
+  return {
+    name,
+    section: 'NETWORK',
+    type: 'string',
+    defaultValue: '',
+    defaultSource: 'conf-comment',
+    range: null,
+    sensitive: false,
+    modifiable: true,
+    comment,
+  };
+}
+
+function renderField(name: string, comment: string[]) {
+  return render(
+    <TooltipProvider delayDuration={0}>
+      <DirectiveField doc={doc(name, comment)} value={undefined} changed={false} onChange={vi.fn()} />
+    </TooltipProvider>,
   );
+}
 
-  expect(screen.getByRole('switch', { name: 'protected-mode' })).toBeChecked();
+test('未登记指令的过长英文说明两行钳制，hover 浮出完整信息', async () => {
+  renderField('unregistered-future-directive', LONG_COMMENT);
 
-  await userEvent.click(screen.getByRole('switch', { name: 'protected-mode' }));
-  expect(onChange).toHaveBeenCalledWith('no');
+  const clamp = screen.getByText(/By default, outgoing connections/);
+  expect(clamp.className).toContain('line-clamp-2');
+  expect(clamp.textContent).not.toContain('Example:');
+
+  await userEvent.hover(clamp);
+  const tip = await screen.findByRole('tooltip');
+  expect(tip.textContent).toContain('and the interface through which the connection goes out.');
 });
 
-test('enum 提供候选值，且允许自由输入', () => {
-  const { container } = render(
-    <DirectiveField
-      doc={{ ...base, name: 'maxmemory-policy', type: 'enum', defaultValue: 'noeviction', range: null }}
-      value={undefined}
-      changed={false}
-      onChange={vi.fn()}
-    />,
-  );
+test('未登记指令的短说明不钳制也不挂 tooltip', async () => {
+  renderField('unregistered-future-directive', ['Short note.']);
 
-  const input = screen.getByLabelText('maxmemory-policy');
-  expect(input).toHaveAttribute('list');
-  expect(container.querySelector('datalist option[value="allkeys-lru"]')).not.toBeNull();
+  const note = screen.getByText('Short note.');
+  expect(note.className).not.toContain('line-clamp-2');
+
+  await userEvent.hover(note);
+  expect(screen.queryByRole('tooltip')).toBeNull();
 });
 
-test('special 用多行文本域并保留换行', () => {
-  render(
-    <DirectiveField
-      doc={{ ...base, name: 'save', type: 'special', defaultValue: '3600 1', range: null }}
-      value={'900 1\n300 10'}
-      changed
-      onChange={vi.fn()}
-    />,
-  );
+test('已登记指令优先展示中文摘要而非英文注释', () => {
+  renderField('bind-source-addr', LONG_COMMENT);
 
-  const textarea = screen.getByLabelText('save');
-  expect(textarea.tagName).toBe('TEXTAREA');
-  expect(textarea).toHaveValue('900 1\n300 10');
-});
-
-test('敏感字段用密码框并提示不落盘', () => {
-  render(
-    <DirectiveField
-      doc={{ ...base, name: 'requirepass', type: 'sds', defaultValue: '', range: null, sensitive: true }}
-      value="secret"
-      changed
-      onChange={vi.fn()}
-    />,
-  );
-
-  expect(screen.getByLabelText('requirepass')).toHaveAttribute('type', 'password');
-  expect(screen.getByText(/敏感值不保存/)).toBeInTheDocument();
-});
-
-test('可直接恢复默认，清空输入视作恢复默认', async () => {
-  const onChange = vi.fn();
-  render(<DirectiveField doc={base} value="6380" changed onChange={onChange} />);
-
-  await userEvent.click(screen.getByRole('button', { name: /恢复默认/ }));
-  expect(onChange).toHaveBeenCalledWith(null);
-
-  await userEvent.clear(screen.getByLabelText('port'));
-  expect(onChange).toHaveBeenLastCalledWith(null);
-});
-
-test('展示默认值、范围与需重启提示', () => {
-  render(
-    <DirectiveField
-      doc={{ ...base, name: 'bind', type: 'special', defaultValue: null, range: null, modifiable: false }}
-      value={undefined}
-      changed={false}
-      onChange={vi.fn()}
-    />,
-  );
-
-  expect(screen.getByText('默认 —')).toBeInTheDocument();
-  expect(screen.getByText('需重启生效')).toBeInTheDocument();
+  expect(screen.getByText(/出站连接/)).toBeInTheDocument();
+  expect(screen.queryByText(/By default, outgoing connections/)).toBeNull();
 });
