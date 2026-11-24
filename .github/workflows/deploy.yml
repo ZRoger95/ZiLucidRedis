@@ -26,6 +26,16 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run smoke
+      - uses: actions/upload-artifact@v5
+        if: failure()
+        with:
+          name: smoke-artifacts
+          include-hidden-files: true
+          path: |
+            .screenshots/smoke/
+            .screenshots/smoke-results/
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
