@@ -15,7 +15,7 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 - **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器和渲染期派生；只有与 React 之外系统同步的文件才能进入 [eslint.config.ts](eslint.config.ts) 的允许清单。清单与替代方案见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
 - **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
 - **页面地址只允许一层。** 在 `base: './'` 下 `/configurator/`、`/configurator/xxx` 这类更深的地址会把资源解析到 `/configurator/assets/…` 而 404 白屏；GitHub Pages 没有 rewrite，只能靠 `404.html` 副本兜底单层路径。要加嵌套路由先改 `base` 并复核部署，取舍见 [生成向导设计](docs/superpowers/specs/2026-11-19-configurator-design.md) 的「待处理」。
-- **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。
+- **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。能表达成 Lint/类型约束的纠正优先做成确定性检查，而不是往文档加自然语言规则；反复被误用的 API 改签名让误用编译不过。安全与往返不变量由 `tests/*.property.test.ts` 的性质测试覆盖，生成器在 [tests/arbitraries.ts](tests/arbitraries.ts)。
 
 ## UI 与 shadcn
 

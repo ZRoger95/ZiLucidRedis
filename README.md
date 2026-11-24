@@ -58,7 +58,10 @@ npm test           # Vitest
 npm run typecheck
 npm run build      # 产物在 dist/
 npm run preview    # 预览构建产物
+npm run smoke      # 浏览器冒烟，截图与导出物在 .screenshots/smoke/
 ```
+
+冒烟首次运行前需 `npx playwright install chromium`；链路设计与选择器地图见 [运行时验证层设计](docs/superpowers/specs/2026-11-24-runtime-verification-design.md) 与 [功能地图](docs/engineering/feature-map.md)。
 
 浏览器的模块脚本不允许在 `file://` 下加载，所以构建产物需要静态服务器托管（`npm run preview`、Nginx、对象存储、GitHub Pages 均可）。
 

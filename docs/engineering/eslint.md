@@ -108,6 +108,7 @@ npm run build         # lint + typecheck + vite build
 - 本地修复用 `npm run lint:fix` 和 `npm run format`。
 - 不提交没有说明的 `eslint-disable`；如果确实需要长期例外，优先改 `eslint.config.ts` 的允许清单，而不是在业务代码里逐行关闭。
 - CI 或发布流程必须至少执行 `npm run check` 和 `npm run build`。
+- Vitest 用 `vmThreads` 池复用 jsdom 环境（见 `vite.config.ts`）：threads 池每文件新建环境，高负载下会偶发 5s 超时。
 
 ## 为什么没有 typescript-eslint
 
@@ -122,6 +123,7 @@ npm run build         # lint + typecheck + vite build
 ## 维护
 
 - 新增规则先补一个能复现问题的用例，再决定 error 还是 warn；门禁要求零告警，所以新增规则默认是 error。
+- 纠正固化为确定性检查的流程见 `AGENTS.md`「先写测试再改行为」条目：优先 lint/类型约束与性质测试，而非自然语言规则。
 - 规则与 `eslint.config.ts` 不一致时，以配置文件为准，并同步更新本文的分组说明。
 - 生成目录（`dist/`、`data/upstream/`、`src/data/dict/`、`src/data/official/`）不参与 lint 和格式化。
 
