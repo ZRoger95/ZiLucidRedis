@@ -45,3 +45,44 @@ test('detects placeholders for the export menu', () => {
   expect(hasPlaceholder('masterauth ${env_masterauth}\n')).toBe(true);
   expect(hasPlaceholder('maxmemory 0\n')).toBe(false);
 });
+
+test('CRLF 行尾的敏感指令同样被替换且可还原', () => {
+  const input = 'masterauth "s3cr3t"\r\nrequirepass plain\r\n';
+  const result = replaceSecrets(input);
+  expect(result.found).toBe(2);
+  expect(result.text).toBe('masterauth ${env_masterauth}\r\nrequirepass ${env_requirepass}\r\n');
+  expect(restoreSecrets(result.text, result.vault)).toBe(input);
+});
+
+test('字面占位符与真实密码混排时还原不错位', () => {
+  const input = 'requirepass ${env_requirepass}\nrequirepass Realpass1\n';
+  const result = replaceSecrets(input);
+  expect(result.found).toBe(1);
+  expect(restoreSecrets(result.text, result.vault)).toBe(input);
+});
+
+test('user 行占位符与真实密码混排时还原不错位', () => {
+  const input = 'user guest on ${env_user-pass} ~*\nuser alice on >Realpass2 +@all\n';
+  const result = replaceSecrets(input);
+  expect(result.found).toBe(1);
+  expect(restoreSecrets(result.text, result.vault)).toBe(input);
+});
+
+test('引号包裹的占位符往返不被加套引号', () => {
+  for (const input of [
+    'requirepass "${env_requirepass}"\n',
+    "requirepass '${env_requirepass}'\n",
+    'user guest on >"${env_user-pass}" ~*\n',
+  ]) {
+    const result = replaceSecrets(input);
+    expect(result.found).toBe(0);
+    expect(restoreSecrets(result.text, result.vault)).toBe(input);
+  }
+});
+
+test('占位符 env 名与指令名不一致时还原仍不错位', () => {
+  const input = 'requirepass ${env_masterauth}\nmasterauth Realpass9\n';
+  const result = replaceSecrets(input);
+  expect(result.found).toBe(1);
+  expect(restoreSecrets(result.text, result.vault)).toBe(input);
+});

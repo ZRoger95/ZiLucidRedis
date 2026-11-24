@@ -34,3 +34,10 @@ test('invalid or absent state returns null', () => {
   localStorage.setItem('zilucid:state', '{oops');
   expect(loadState()).toBeNull();
 });
+
+test('引号包裹的占位符不被误判为明文', () => {
+  expect(() => saveState({ ...base, text: 'requirepass "${env_requirepass}"\n' })).not.toThrow();
+  expect(() => saveState({ ...base, text: "requirepass '${env_requirepass}'\n" })).not.toThrow();
+  expect(() => saveState({ ...base, text: 'user guest on >"${env_user-pass}" ~*\n' })).not.toThrow();
+  expect(() => saveState({ ...base, text: 'requirepass "real"\n' })).toThrow();
+});

@@ -15,7 +15,7 @@ interface Target {
 }
 
 function shapeLine(raw: string): LineShape | null {
-  const match = /^(\s*)([A-Za-z][A-Za-z0-9-]*)(\s+)(.*)$/.exec(raw);
+  const match = /^(\s*)([A-Za-z][A-Za-z0-9-]*)(\s+)([^\n]*)$/.exec(raw);
   if (!match) {
     return null;
   }
@@ -45,7 +45,15 @@ function passwordTargets(rest: string): Target[] {
     const start = match.index + match[1].length;
     targets.push({ token: match[2], start, end: start + match[2].length });
   }
-  return targets;
+  for (const match of rest.matchAll(/\$\{env_user-pass\}/g)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (targets.some((target) => start >= target.start && end <= target.end)) {
+      continue;
+    }
+    targets.push({ token: match[0], start, end });
+  }
+  return targets.sort((a, b) => a.start - b.start);
 }
 
 export function replaceSecrets(text: string): { text: string; vault: Map<string, string>; found: number } {
@@ -65,18 +73,31 @@ export function replaceSecrets(text: string): { text: string; vault: Map<string,
     }
 
     const targets = isUser ? passwordTargets(shape.rest) : [firstToken(shape.rest)].filter((item) => item !== null);
-    if (targets.length === 0 || targets.every((target) => PLACEHOLDER_RE.test(target.token))) {
+    if (targets.length === 0) {
       return raw;
     }
 
     const key = isUser ? 'user-pass' : shape.name;
+    let replaced = false;
     const replacements = targets.map((target) => {
+      const existing = PLACEHOLDER_RE.exec(target.token);
+      if (existing) {
+        const envName = existing[0].slice(6, -1);
+        const index = (counters.get(envName) ?? 0) + 1;
+        counters.set(envName, index);
+        vault.set(`${envName}#${index}`, existing[0]);
+        return { ...target, placeholder: target.token };
+      }
       const index = (counters.get(key) ?? 0) + 1;
       counters.set(key, index);
       vault.set(`${key}#${index}`, target.token);
+      replaced = true;
       found += 1;
       return { ...target, placeholder: `\${env_${key}}` };
     });
+    if (!replaced) {
+      return raw;
+    }
 
     let rest = shape.rest;
     for (const target of [...replacements].reverse()) {
