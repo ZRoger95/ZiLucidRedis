@@ -22,7 +22,7 @@
 非目标：
 
 - 不把冒烟并入 `npm run check`（浏览器依赖与耗时）；CI 集成已落地，见 [CI 冒烟集成 spec](2026-11-24-ci-smoke-design.md)。
-- 不覆盖向导逐步填写全流程（首版只到入口与版本步）；待向导行为稳定后立项，写完自动被 CI 继承（同一 smoke suite），无需二次集成。
+- 首版不覆盖向导逐步填写全流程（只到入口与版本步）；该项已由 [向导全流程冒烟](2026-11-25-configurator-smoke-design.md) 落地（同一 smoke suite，自动被 CI 继承，无需二次集成）。
 - 不做视觉回归比对与性能基准；视觉回归的触发条件是 UI 进入频繁改版期或出现真实视觉事故。
 - 不为测试向产品代码加 `data-testid`；不改产品行为与文案。
 - 不引入运行时依赖。
@@ -31,7 +31,7 @@
 
 确认顺序：CI 冒烟集成 → 向导全流程冒烟 → 外环自动化（触发条件见 [性质测试 spec](2026-11-23-property-testing-design.md)）→ 视觉回归。每一步是下一步的前置：CI 把本地自觉变成发布必过门禁，也是外环的前提；向导冒烟扩覆盖面且自动进 CI。外环中「只报告型定时模糊」（nightly 跑更多轮/新 seed、只报告不合并）可提前到 CI 冒烟落地后顺手做；自动合并仍排最后。
 
-CI 现状：已落地，见 [CI 冒烟集成 spec](2026-11-24-ci-smoke-design.md)。`ci.yml` 在 push master / PR 时跑 `check → build → smoke`；`deploy.yml` 在 build 之后、上传 Pages 产物之前插入冒烟，失败不部署。下一项：向导全流程冒烟。
+CI 现状：已落地，见 [CI 冒烟集成 spec](2026-11-24-ci-smoke-design.md)。`ci.yml` 在 push master / PR 时跑 `check → build → smoke`；`deploy.yml` 在 build 之后、上传 Pages 产物之前插入冒烟，失败不部署。向导全流程冒烟现状：已落地，见 [向导全流程冒烟 spec](2026-11-25-configurator-smoke-design.md)，主链路与硬加载/刷新两条用例已进同一 smoke suite。下一项：外环自动化。
 
 ## 方案
 
