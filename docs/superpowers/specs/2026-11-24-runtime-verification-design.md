@@ -31,7 +31,7 @@
 
 确认顺序：CI 冒烟集成 → 向导全流程冒烟 → 外环自动化（触发条件见 [性质测试 spec](2026-11-23-property-testing-design.md)）→ 视觉回归。每一步是下一步的前置：CI 把本地自觉变成发布必过门禁，也是外环的前提；向导冒烟扩覆盖面且自动进 CI。外环中「只报告型定时模糊」（nightly 跑更多轮/新 seed、只报告不合并）可提前到 CI 冒烟落地后顺手做；自动合并仍排最后。
 
-CI 现状：已落地，见 [CI 冒烟集成 spec](2026-11-24-ci-smoke-design.md)。`ci.yml` 在 push master / PR 时跑 `check → build → smoke`；`deploy.yml` 在 build 之后、上传 Pages 产物之前插入冒烟，失败不部署。向导全流程冒烟现状：已落地，见 [向导全流程冒烟 spec](2026-11-25-configurator-smoke-design.md)，主链路与硬加载/刷新两条用例已进同一 smoke suite。下一项：外环自动化。
+CI 现状：已落地，见 [CI 冒烟集成 spec](2026-11-24-ci-smoke-design.md)。`ci.yml` 在 push master / PR 时跑 `check → build → smoke`；`deploy.yml` 在 build 之后、上传 Pages 产物之前插入冒烟，失败不部署。向导全流程冒烟现状：已落地，见 [向导全流程冒烟 spec](2026-11-25-configurator-smoke-design.md)，主链路与硬加载/刷新两条用例已进同一 smoke suite。外环首期（只报告型定时模糊）现状：已落地，见 [外环定时模糊 spec](2026-11-25-outer-loop-fuzz-design.md)，每周定时放大轮数跑现有四组不变量，失败只产报告。下一项：自动合并（需误报率与回滚率的长期证据）与视觉回归。
 
 ## 方案
 

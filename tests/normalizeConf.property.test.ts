@@ -7,6 +7,7 @@ import { normalizeConfig } from '../src/lib/normalizeConf';
 import { indexOfficialLines } from '../src/lib/official';
 import { parseConf } from '../src/lib/parseConf';
 import { confWithSecretsArb, mutatedConfArb } from './arbitraries';
+import { fuzzRuns } from './fuzz-params';
 
 const officialText = readFileSync(path.resolve(process.cwd(), 'src/data/official/7.4.conf'), 'utf8');
 
@@ -32,6 +33,6 @@ test('normalizeConfig 幂等且第二遍不再丢注释', () => {
       expect(twice.kept).toBe(once.kept);
       expect(twice.unknown).toEqual(once.unknown);
     }),
-    { numRuns: 150 },
+    { numRuns: fuzzRuns(150) },
   );
 });

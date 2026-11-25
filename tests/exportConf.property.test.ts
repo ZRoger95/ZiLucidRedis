@@ -5,6 +5,7 @@ import { exportOriginal, exportWithSecrets } from '../src/lib/exportConf';
 import { parseConf } from '../src/lib/parseConf';
 import { replaceSecrets } from '../src/lib/secrets';
 import { confWithSecretsArb, mutatedConfArb } from './arbitraries';
+import { fuzzRuns } from './fuzz-params';
 
 const anyTextArb = fc.oneof(
   fc.string(),
@@ -25,7 +26,7 @@ test('exportOriginal 幂等', () => {
     fc.property(anyTextArb, (text) => {
       expect(exportOriginal(exportOriginal(text))).toBe(exportOriginal(text));
     }),
-    { numRuns: 200 },
+    { numRuns: fuzzRuns(200) },
   );
 });
 
@@ -37,7 +38,7 @@ test('exportOriginal 输出无 CR、无尾部空行、以单个换行结尾', ()
       expect(output.endsWith('\n')).toBe(true);
       expect(output.endsWith('\n\n')).toBe(false);
     }),
-    { numRuns: 200 },
+    { numRuns: fuzzRuns(200) },
   );
 });
 
@@ -47,6 +48,6 @@ test('exportWithSecrets 能语义还原替换后的文本', () => {
       const result = replaceSecrets(text);
       expect(semanticShape(exportWithSecrets(result.text, result.vault))).toBe(semanticShape(text));
     }),
-    { numRuns: 300 },
+    { numRuns: fuzzRuns(300) },
   );
 });
