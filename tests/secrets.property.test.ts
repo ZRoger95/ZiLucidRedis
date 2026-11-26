@@ -4,6 +4,7 @@ import { expect, test } from 'vitest';
 import { parseConf } from '../src/lib/parseConf';
 import { hasPlaceholder, replaceSecrets, restoreSecrets } from '../src/lib/secrets';
 import { canonicalConfArb, confWithSecretsArb, secretBodyArb } from './arbitraries';
+import { fuzzRuns } from './fuzz-params';
 
 const SENSITIVE_NAMES = ['masterauth', 'requirepass', 'tls-client-key-file-pass', 'tls-key-file-pass'];
 
@@ -22,7 +23,7 @@ test('输出不含任何植入明文，也不含 vault 中的真实密码', () =
         expect(result.text).not.toContain(secret);
       }
     }),
-    { numRuns: 500 },
+    { numRuns: fuzzRuns(500) },
   );
 });
 
@@ -31,7 +32,7 @@ test('幂等：对输出再次替换不会发现新密码', () => {
     fc.property(confWithSecretsArb, ({ text }) => {
       expect(replaceSecrets(replaceSecrets(text).text).found).toBe(0);
     }),
-    { numRuns: 200 },
+    { numRuns: fuzzRuns(200) },
   );
 });
 
@@ -43,7 +44,7 @@ test('发现密码时输出必含占位符', () => {
         expect(hasPlaceholder(result.text)).toBe(true);
       }
     }),
-    { numRuns: 200 },
+    { numRuns: fuzzRuns(200) },
   );
 });
 
@@ -53,7 +54,7 @@ test('规范形态输入满足字节级往返', () => {
       const result = replaceSecrets(text);
       expect(restoreSecrets(result.text, result.vault)).toBe(text);
     }),
-    { numRuns: 500 },
+    { numRuns: fuzzRuns(500) },
   );
 });
 
@@ -63,7 +64,7 @@ test('任意形态输入满足语义级往返', () => {
       const result = replaceSecrets(text);
       expect(semanticShape(restoreSecrets(result.text, result.vault))).toBe(semanticShape(text));
     }),
-    { numRuns: 300 },
+    { numRuns: fuzzRuns(300) },
   );
 });
 
@@ -75,6 +76,6 @@ test('字面占位符与真实密码混排时还原不错位', () => {
       expect(result.found).toBe(1);
       expect(restoreSecrets(result.text, result.vault)).toBe(input);
     }),
-    { numRuns: 100 },
+    { numRuns: fuzzRuns(100) },
   );
 });

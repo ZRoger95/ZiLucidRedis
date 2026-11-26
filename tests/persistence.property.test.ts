@@ -6,6 +6,7 @@ import type { PersistedState } from '../src/types';
 import { loadState, saveState, STORAGE_KEY } from '../src/lib/persistence';
 import { replaceSecrets } from '../src/lib/secrets';
 import { confWithSecretsArb } from './arbitraries';
+import { fuzzRuns } from './fuzz-params';
 
 beforeEach(() => localStorage.clear());
 
@@ -26,7 +27,7 @@ test('replaceSecrets 的输出总能通过持久化守卫', () => {
     fc.property(confWithSecretsArb, ({ text }) => {
       expect(() => saveState(stateFor(replaceSecrets(text).text))).not.toThrow();
     }),
-    { numRuns: 300 },
+    { numRuns: fuzzRuns(300) },
   );
 });
 
@@ -43,7 +44,7 @@ test('持久化产物不含任何植入明文', () => {
         }
       }
     }),
-    { numRuns: 300 },
+    { numRuns: fuzzRuns(300) },
   );
 });
 
@@ -54,7 +55,7 @@ test('持久化往返保持文本不变', () => {
       saveState(stateFor(safe));
       expect(loadState()?.text).toBe(safe);
     }),
-    { numRuns: 200 },
+    { numRuns: fuzzRuns(200) },
   );
 });
 

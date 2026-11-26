@@ -126,6 +126,7 @@ export default defineConfig([
     'coverage/**',
     'data/upstream/**',
     '.screenshots/**',
+    '.fuzz/**',
     '.trae-html-share-packages/**',
     '.superpowers/**',
     '.agents/**',

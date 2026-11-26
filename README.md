@@ -59,9 +59,12 @@ npm run typecheck
 npm run build      # 产物在 dist/
 npm run preview    # 预览构建产物
 npm run smoke      # 浏览器冒烟，截图与导出物在 .screenshots/smoke/
+npm run fuzz       # 外环模糊：放大轮数跑性质测试，报告在 .fuzz/report.md
 ```
 
 冒烟首次运行前需 `npx playwright install chromium`；链路设计与选择器地图见 [运行时验证层设计](docs/superpowers/specs/2026-11-24-runtime-verification-design.md) 与 [功能地图](docs/engineering/feature-map.md)。
+
+`npm run fuzz` 默认放大 20 倍轮数并随机 seed，`FUZZ_SEED` / `FUZZ_MULTIPLIER` 可固定重放；GitHub Actions 每周日北京时间凌晨 3 点定时跑，失败只产报告不阻塞合并与部署，见 [外环定时模糊设计](docs/superpowers/specs/2026-11-25-outer-loop-fuzz-design.md)。
 
 浏览器的模块脚本不允许在 `file://` 下加载，所以构建产物需要静态服务器托管（`npm run preview`、Nginx、对象存储、GitHub Pages 均可）。
 
@@ -69,11 +72,11 @@ npm run smoke      # 浏览器冒烟，截图与导出物在 .screenshots/smoke/
 
 三个官方来源，构建期下载、解析、提交进仓库，运行时不请求任何外部网络：
 
-| 来源 | 用途 |
-|---|---|
-| GitHub Releases（正式版，带发布日期） | 每条 minor 线的最新 patch tag 与发布日期 |
-| `<tag>/src/config.c` 的 `create*Config(...)` 定义 | 指令名、类型、默认值、是否敏感 |
-| `<tag>/redis.conf` | 分节、官方注释原文、示例值 |
+| 来源                                              | 用途                                     |
+| ------------------------------------------------- | ---------------------------------------- |
+| GitHub Releases（正式版，带发布日期）             | 每条 minor 线的最新 patch tag 与发布日期 |
+| `<tag>/src/config.c` 的 `create*Config(...)` 定义 | 指令名、类型、默认值、是否敏感           |
+| `<tag>/redis.conf`                                | 分节、官方注释原文、示例值               |
 
 更新字典：
 
