@@ -41,6 +41,19 @@ test('running twice does not double-replace', () => {
   expect(replaceSecrets(once).found).toBe(0);
 });
 
+test('sentinel monitor 行不做敏感替换', () => {
+  const result = replaceSecrets('sentinel monitor mymaster 10.0.0.5 6379 2\n');
+  expect(result.found).toBe(0);
+  expect(result.text).toBe('sentinel monitor mymaster 10.0.0.5 6379 2\n');
+});
+
+test('sentinel auth-pass 的密码被替换并可还原', () => {
+  const result = replaceSecrets('sentinel auth-pass mymaster hunter2\n');
+  expect(result.text).toBe('sentinel auth-pass mymaster ${env_auth-pass}\n');
+  expect(result.found).toBe(1);
+  expect(restoreSecrets(result.text, result.vault)).toBe('sentinel auth-pass mymaster hunter2\n');
+});
+
 test('detects placeholders for the export menu', () => {
   expect(hasPlaceholder('masterauth ${env_masterauth}\n')).toBe(true);
   expect(hasPlaceholder('maxmemory 0\n')).toBe(false);

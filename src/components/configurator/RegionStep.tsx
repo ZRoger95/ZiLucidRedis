@@ -32,6 +32,15 @@ export function RegionStep({ step, official, draft, onDraftChange, ordinal }: Re
     onDraftChange({ values });
   };
 
+  const originOf = (name: string): 'scenario' | 'modified' | undefined => {
+    const preset = draft.scenario?.applied[name];
+    const current = draft.values[name];
+    if (preset === undefined || current === undefined) {
+      return undefined;
+    }
+    return current === preset ? 'scenario' : 'modified';
+  };
+
   const fieldHeavy = step.directives.length > 0;
 
   const intro = (
@@ -59,6 +68,7 @@ export function RegionStep({ step, official, draft, onDraftChange, ordinal }: Re
               value={draft.values[doc.name]}
               changed={draft.values[doc.name] !== undefined}
               onChange={(value) => setValue(doc.name, value)}
+              origin={originOf(doc.name)}
             />
           ))}
         </div>

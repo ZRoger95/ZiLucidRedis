@@ -8,7 +8,7 @@ ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `r
 
 - **纯前端，运行时零外部请求。** 不引入后端；构建产物必须能由静态服务器托管，并用相对资源路径（`base: './'`）以便整体部署到任意目录或子路径。新增数据一律在构建期生成并提交。
 - **明文密码不落盘。** 敏感指令在导入时即替换为 `${env_<指令名>}`；原值只存在于内存；`localStorage`、默认导出和任何默认值都不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换逻辑在 [secrets.ts](src/lib/secrets.ts)。
-- **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`。
+- **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`、`src/data/scenarios.json`、`src/data/sentinel-rules.json`。
 - **TypeScript strict。** 不新增 `any`；共享类型放 [types.ts](src/types.ts)。未使用变量由 `tsc` 的 `noUnusedLocals` / `noUnusedParameters` 把关。
 - **源码不加普通注释。** AI Agent 不得在 `src/` 手写源码中新增解释性注释或 JSDoc；需求、原因和设计约束写入对应文档。过时注释可能误导后续 Agent，因此由 ESLint 与 CSS 检查门禁阻止普通注释。仅保留工具必需的指令注释（如 ESLint 指令、TypeScript 三斜线引用）；生成的 Redis 配置注释属于产品数据，不受此规则限制。
 - **Lint 与格式门禁。** ESLint 管正确性和团队习惯，Prettier 管格式；`npm run lint` 必须零告警，`eslint-disable` 必须写原因。规则与取舍见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。

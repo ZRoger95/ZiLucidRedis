@@ -1,4 +1,4 @@
-import type { ConfiguratorDraft, ConfiguratorStep, DictFile, DirectiveDoc, FreeLineKind } from '../types';
+import type { ConfiguratorDraft, ConfiguratorStep, DictFile, DirectiveDoc, FreeLineKind, ScenarioId } from '../types';
 
 import { SECTION_FREE_LINES } from './freeLines';
 
@@ -61,10 +61,35 @@ function rowsFor(name: string, value: string): string[] {
     .map((row) => `${name} ${row}`);
 }
 
-export function buildSteps(dict: DictFile): ConfiguratorStep[] {
+const SCENARIO_STEPS_BY_ID: Record<ScenarioId, Array<{ id: string; title: string }>> = {
+  'single-standalone': [
+    { id: '__scenario_profile__', title: '部署画像' },
+    { id: '__scenario_resource__', title: '资源' },
+    { id: '__scenario_persistence__', title: '持久化' },
+    { id: '__scenario_access__', title: '访问面' },
+  ],
+  'replica-sentinel': [
+    { id: '__repl_resource__', title: '资源' },
+    { id: '__repl_persistence__', title: '持久化' },
+    { id: '__repl_network__', title: '网络' },
+  ],
+  cluster: [
+    { id: '__cluster_resource__', title: '资源' },
+    { id: '__cluster_persistence__', title: '持久化' },
+    { id: '__cluster_network__', title: '网络与认证' },
+  ],
+};
+
+export function buildSteps(dict: DictFile, opts?: { scenario?: boolean; scenarioId?: ScenarioId }): ConfiguratorStep[] {
   const steps: ConfiguratorStep[] = [
     { id: '__version__', kind: 'version', title: '选择版本', directives: [], freeLines: [] },
   ];
+  if (opts?.scenario) {
+    const stepsForScenario = SCENARIO_STEPS_BY_ID[opts.scenarioId ?? 'single-standalone'];
+    for (const item of stepsForScenario) {
+      steps.push({ id: item.id, kind: 'scenario', title: item.title, directives: [], freeLines: [] });
+    }
+  }
   const grouped = new Map<string, DirectiveDoc[]>();
 
   for (const directive of dict.directives) {

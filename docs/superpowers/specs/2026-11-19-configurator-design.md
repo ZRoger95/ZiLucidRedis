@@ -33,8 +33,8 @@
 
 非目标（本次不做）：
 
-- 推荐配置、场景预设（缓存 / 会话 / 持久化数据库）、参数联动校验与「一键推荐」。
-- 哨兵、集群拓扑编排、多实例生成。
+- 推荐配置、参数联动校验与「一键推荐」；场景预设已由 [单机单实例场景预设设计](2026-11-26-configurator-scenario-single-design.md) 实现首个场景，其余场景族仍不做。
+- 哨兵主从场景已由 [一主二从三哨兵场景设计](2026-11-26-configurator-replication-sentinel-design.md) 实现，切片集群已由 [三主三从切片集群场景设计](2026-11-27-configurator-cluster-design.md) 实现；其余多实例生成仍不做。
 - 连接真实 Redis 校验配置，或执行 `redis-server --test-memory` 之类的外部验证。
 - 真实路径路由 `/configurator`、路径级 404 兜底。
 - 把敏感值持久化到任何存储。
@@ -89,9 +89,9 @@
 type FreeLineKind = 'include' | 'loadmodule' | 'user' | 'renameCommand';
 
 interface ConfiguratorStep {
-  id: string;            // 区域 id，MISC 为 'MISC'，版本页为 '__version__'
+  id: string; // 区域 id，MISC 为 'MISC'，版本页为 '__version__'
   kind: 'version' | 'section' | 'extra' | 'finish';
-  title: string;         // 区域标题（英文原样）
+  title: string; // 区域标题（英文原样）
   directives: DirectiveDoc[];
   freeLines: FreeLineKind[];
 }
@@ -99,7 +99,7 @@ interface ConfiguratorStep {
 interface ConfiguratorDraft {
   v: 1;
   line: string;
-  values: Record<string, string>;                    // 只记录改动过的指令
+  values: Record<string, string>; // 只记录改动过的指令
   include: string[];
   loadmodule: string[];
   user: string[];
@@ -124,14 +124,14 @@ interface ConfiguratorDraft {
 
 ### 5.3 控件映射
 
-| 字典 `type` | 控件 |
-|---|---|
-| `bool` | `Switch`，on/off 写 `yes`/`no` |
-| `enum` | `Input` + 原生 `datalist`（候选来自登记表） |
+| 字典 `type`                     | 控件                                                                           |
+| ------------------------------- | ------------------------------------------------------------------------------ |
+| `bool`                          | `Switch`，on/off 写 `yes`/`no`                                                 |
+| `enum`                          | `Input` + 原生 `datalist`（候选来自登记表）                                    |
 | `int` / `uint` / `sizet` 等数值 | `Input` 文本 + `range` 提示（值可能是 `1mb`、`100<<20`，不能用 `type=number`） |
-| `string` / `sds` | `Input` |
-| `special` | `Textarea`（多行，每行一条同指令） |
-| `sensitive: true` | `Input type="password"`，加「不落盘」提示 |
+| `string` / `sds`                | `Input`                                                                        |
+| `special`                       | `Textarea`（多行，每行一条同指令）                                             |
+| `sensitive: true`               | `Input type="password"`，加「不落盘」提示                                      |
 
 每个字段展示：名称（等宽）、官方默认值、`range`、中文摘要、「恢复默认」按钮。摘要的语言与取文规则、超长时的钳制与浮层，以及官方说明折叠块的整区取文，见 §5.8 指向的设计文档；`src/data/zh-notes.json` 仍是人工登记表。`modifiable: false` 的字段照常可编辑，但标注「需重启生效」。
 

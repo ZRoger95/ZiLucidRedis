@@ -66,3 +66,21 @@ test('已登记指令优先展示中文摘要而非英文注释', () => {
   expect(screen.getByText(/出站连接/)).toBeInTheDocument();
   expect(screen.queryByText(/By default, outgoing connections/)).toBeNull();
 });
+
+test('origin 标记来自场景与已手动修改，不传则不显示', () => {
+  const field = (origin?: 'scenario' | 'modified') => (
+    <TooltipProvider delayDuration={0}>
+      <DirectiveField doc={doc('maxmemory', [])} value="3gb" changed onChange={vi.fn()} origin={origin} />
+    </TooltipProvider>
+  );
+  const { rerender } = render(field('scenario'));
+  expect(screen.getByText('来自场景')).toBeInTheDocument();
+
+  rerender(field('modified'));
+  expect(screen.getByText('已手动修改')).toBeInTheDocument();
+  expect(screen.queryByText('来自场景')).toBeNull();
+
+  rerender(field(undefined));
+  expect(screen.queryByText('来自场景')).toBeNull();
+  expect(screen.queryByText('已手动修改')).toBeNull();
+});

@@ -56,6 +56,20 @@ function passwordTargets(rest: string): Target[] {
   return targets.sort((a, b) => a.start - b.start);
 }
 
+function sentinelPasswordTarget(rest: string): Target | null {
+  const nameMatch = /^\s*auth-pass\s+\S+\s+/.exec(rest);
+  if (!nameMatch) {
+    return null;
+  }
+  const passwordStart = nameMatch[0].length;
+  const token = rest.slice(passwordStart).trim();
+  if (token === '') {
+    return null;
+  }
+  const start = rest.indexOf(token, passwordStart);
+  return { token, start, end: start + token.length };
+}
+
 export function replaceSecrets(text: string): { text: string; vault: Map<string, string>; found: number } {
   const vault = new Map<string, string>();
   const counters = new Map<string, number>();
@@ -68,16 +82,30 @@ export function replaceSecrets(text: string): { text: string; vault: Map<string,
     }
 
     const isUser = shape.name === 'user';
-    if (!SENSITIVE_NAMES.has(shape.name) && !isUser) {
+    const isSentinelAuthPass = shape.name === 'sentinel' && /^auth-pass\b/.test(shape.rest);
+    if (!SENSITIVE_NAMES.has(shape.name) && !isUser && !isSentinelAuthPass) {
       return raw;
     }
 
-    const targets = isUser ? passwordTargets(shape.rest) : [firstToken(shape.rest)].filter((item) => item !== null);
+    let targets: Target[];
+    if (isUser) {
+      targets = passwordTargets(shape.rest);
+    } else if (isSentinelAuthPass) {
+      const target = sentinelPasswordTarget(shape.rest);
+      targets = target ? [target] : [];
+    } else {
+      targets = [firstToken(shape.rest)].filter((item): item is Target => item !== null);
+    }
     if (targets.length === 0) {
       return raw;
     }
 
-    const key = isUser ? 'user-pass' : shape.name;
+    let key = shape.name;
+    if (isUser) {
+      key = 'user-pass';
+    } else if (isSentinelAuthPass) {
+      key = 'auth-pass';
+    }
     let replaced = false;
     const replacements = targets.map((target) => {
       const existing = PLACEHOLDER_RE.exec(target.token);

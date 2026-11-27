@@ -1,15 +1,29 @@
+import type { ScenarioId } from '@/types';
+
 import { Callout } from '@/components/callout';
 import { type FlowRow, GraphFlow } from '@/components/graph-flow';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import registry from '@/data/configurator.json';
 import { formatVersionLabel, RELEASES } from '@/lib/dict';
+import { CLUSTER_ID, REPLICA_SENTINEL_ID, SCENARIO_ID } from '@/lib/scenario';
 
 import { StepHeader } from './StepHeader';
 
 interface VersionStepProps {
   line: string;
   onChange: (line: string) => void;
+  scenarioActive: boolean;
+  activeScenarioId?: ScenarioId;
+  onStartScenario: (id: ScenarioId) => void;
+  onItemized: () => void;
 }
+
+const SCENARIO_ENTRIES: Array<{ id: ScenarioId; label: string }> = [
+  { id: SCENARIO_ID, label: '单机单实例' },
+  { id: REPLICA_SENTINEL_ID, label: '一主二从三哨兵' },
+  { id: CLUSTER_ID, label: '三主三从集群' },
+];
 
 const items = [...RELEASES].reverse().map((release) => ({
   value: release.line,
@@ -18,7 +32,14 @@ const items = [...RELEASES].reverse().map((release) => ({
 
 const meta = registry.sections.__version__;
 
-export function VersionStep({ line, onChange }: VersionStepProps) {
+export function VersionStep({
+  line,
+  onChange,
+  scenarioActive,
+  activeScenarioId,
+  onStartScenario,
+  onItemized,
+}: VersionStepProps) {
   const selected = RELEASES.find((release) => release.line === line);
   const flowRows: FlowRow[] = [RELEASES.slice(0, 5), RELEASES.slice(5)].map((group) => ({
     nodes: group.map((release) => ({
@@ -64,6 +85,24 @@ export function VersionStep({ line, onChange }: VersionStepProps) {
           </SelectContent>
         </Select>
       </span>
+
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {SCENARIO_ENTRIES.map((entry) => (
+            <Button
+              key={entry.id}
+              variant={scenarioActive && activeScenarioId === entry.id ? 'default' : 'outline'}
+              onClick={() => onStartScenario(entry.id)}
+            >
+              {scenarioActive && activeScenarioId === entry.id ? '继续场景问卷' : entry.label}
+            </Button>
+          ))}
+          <Button variant="outline" onClick={onItemized}>
+            逐项配置
+          </Button>
+        </div>
+        <p className="m-0 text-[12px] text-muted-foreground">选择场景回答对应问卷生成配置，区域步仍可逐项复查。</p>
+      </div>
     </div>
   );
 }

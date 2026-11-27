@@ -1,0 +1,36 @@
+{
+  "masterName": "mymaster",
+  "quorum": 2,
+  "defaults": {
+    "downAfterMs": 30000,
+    "failoverTimeoutMs": 180000,
+    "parallelSyncs": 1
+  },
+  "rules": [
+    {
+      "id": "monitor",
+      "sensitive": false,
+      "note": "监控指定主库：地址、端口与法定人数 quorum；从库由哨兵自动发现，无需登记。"
+    },
+    {
+      "id": "auth-pass",
+      "sensitive": true,
+      "note": "哨兵连接主从实例所用密码；主从密码必须一致，与实例 requirepass 相同。"
+    },
+    {
+      "id": "down-after-milliseconds",
+      "sensitive": false,
+      "note": "实例连续不可达多久判定主观下线（sdown），默认 30 秒。"
+    },
+    {
+      "id": "failover-timeout",
+      "sensitive": false,
+      "note": "故障转移超时与重试间隔，默认 3 分钟（180000 毫秒）。"
+    },
+    {
+      "id": "parallel-syncs",
+      "sensitive": false,
+      "note": "切主后同时重新同步到新主库的从库数；取 1 避免多个从库同时不可达。"
+    }
+  ]
+}

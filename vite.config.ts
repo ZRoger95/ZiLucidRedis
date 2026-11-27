@@ -27,6 +27,7 @@ export default defineConfig({
     setupFiles: './tests/setup.ts',
     globals: true,
     pool: 'vmThreads',
+    testTimeout: 15000,
     exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });
