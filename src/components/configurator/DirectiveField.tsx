@@ -36,9 +36,10 @@ interface DirectiveFieldProps {
   value: string | undefined;
   changed: boolean;
   onChange: (value: string | null) => void;
+  origin?: 'scenario' | 'modified';
 }
 
-export function DirectiveField({ doc, value, changed, onChange }: DirectiveFieldProps) {
+export function DirectiveField({ doc, value, changed, onChange, origin }: DirectiveFieldProps) {
   const id = `field-${doc.name}`;
   const options = (registry.enums as Record<string, string[]>)[doc.name] ?? [];
   const note = noteOf(doc);
@@ -104,6 +105,17 @@ export function DirectiveField({ doc, value, changed, onChange }: DirectiveField
           <span className="text-[11px] whitespace-nowrap text-muted-foreground">范围 {doc.range}</span>
         ) : null}
         {doc.modifiable ? null : <span className="text-[11px] whitespace-nowrap text-[#9a3412]">需重启生效</span>}
+        {origin ? (
+          <span
+            className={
+              origin === 'scenario'
+                ? 'text-[11px] whitespace-nowrap text-[#4338ca]'
+                : 'text-[11px] whitespace-nowrap text-[#9a3412]'
+            }
+          >
+            {origin === 'scenario' ? '来自场景' : '已手动修改'}
+          </span>
+        ) : null}
         <span className="flex-1" />
         <Button type="button" variant="ghost" size="xs" disabled={!changed} onClick={() => onChange(null)}>
           恢复默认

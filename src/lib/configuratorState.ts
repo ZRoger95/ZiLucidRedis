@@ -17,13 +17,17 @@ export function draftForStorage(draft: ConfiguratorDraft, dict: DictFile): Confi
   const sensitive = new Set(
     dict.directives.filter((directive) => directive.sensitive).map((directive) => directive.name),
   );
-  const values: Record<string, string> = {};
-  for (const [name, value] of Object.entries(draft.values)) {
-    if (!sensitive.has(name)) {
-      values[name] = value;
-    }
-  }
-  return { ...draft, values, user: [] };
+  const stripValues = (values: Record<string, string>): Record<string, string> =>
+    Object.fromEntries(Object.entries(values).filter(([name]) => !sensitive.has(name) && name !== 'auth-pass'));
+  const scenario = draft.scenario
+    ? {
+        ...draft.scenario,
+        answers: { ...draft.scenario.answers, password: undefined },
+        applied: stripValues(draft.scenario.applied),
+        nodes: draft.scenario.nodes?.map((node) => ({ ...node, values: stripValues(node.values) })),
+      }
+    : undefined;
+  return { ...draft, values: stripValues(draft.values), user: [], scenario };
 }
 
 export function saveDraft(draft: ConfiguratorDraft, dict: DictFile): void {

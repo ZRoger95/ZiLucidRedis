@@ -1,0 +1,304 @@
+{
+  "single-standalone": {
+    "id": "single-standalone",
+    "name": "单机单实例",
+    "summary": "一台 VPS 跑一个 Redis 实例：独占整机，或与其他服务混部",
+    "tiers": [
+      { "id": "1c1g", "label": "1 核 1G", "ramMb": 1024 },
+      { "id": "2c2g", "label": "2 核 2G", "ramMb": 2048 },
+      { "id": "2c4g", "label": "2 核 4G", "ramMb": 4096 },
+      { "id": "4c8g", "label": "4 核 8G", "ramMb": 8192 },
+      { "id": "8c16g", "label": "8 核 16G", "ramMb": 16384 }
+    ],
+    "persistence": [
+      {
+        "id": "off",
+        "label": "不开持久化",
+        "summary": "重启后数据清空，适合纯缓存",
+        "help": "关闭 RDB 快照（save \"\"）与 AOF（appendonly no）。数据全部在内存，进程重启即清空，换来最低延迟与磁盘占用。见官方 SNAPSHOTTING 与 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "rdb",
+        "label": "仅 RDB",
+        "summary": "定时快照，崩溃丢最近几分钟",
+        "help": "RDB 按 save 快照点（默认 3600 1 / 300 100 / 60 10000）把全量数据写盘。重启快、文件紧凑，但两次快照之间的写入会丢失。见官方 SNAPSHOTTING 区注释。"
+      },
+      {
+        "id": "aof",
+        "label": "仅 AOF",
+        "summary": "记录每条写命令，崩溃约丢 1 秒",
+        "help": "AOF 追加记录写命令，appendfsync everysec 每秒刷盘，崩溃约丢最后 1 秒的写入；同时关闭 RDB 快照（save \"\"）。见官方 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "mixed",
+        "label": "混用 RDB + AOF",
+        "summary": "AOF 保数据安全，RDB 保快速重启",
+        "help": "AOF 负责崩溃恢复（约丢 1 秒），RDB 快照用于快速重启与冷备份，是官方推荐的生产组合。见官方 APPEND ONLY MODE 区注释。"
+      }
+    ],
+    "access": [
+      {
+        "id": "local",
+        "label": "仅本机",
+        "summary": "应用与 Redis 同机，bind 127.0.0.1 -::1，无需密码"
+      },
+      {
+        "id": "intranet",
+        "label": "内网访问",
+        "summary": "其他机器经内网连接，需绑定内网 IP 并设密码"
+      },
+      {
+        "id": "public",
+        "label": "公网直连",
+        "summary": "暴露到公网，风险高，强烈建议改用内网或隧道"
+      }
+    ],
+    "reasons": {
+      "supervised": "交给 systemd 托管，开机自启与崩溃重启由系统服务管理（官方 GENERAL 区 supervised 说明）",
+      "logfile": "日志写入固定文件便于排查；路径需存在且 redis 运行用户可写",
+      "dir": "RDB 与 AOF 的落盘目录；路径需存在且 redis 运行用户可写，磁盘剩余空间要够数据集的 2–3 倍",
+      "protected-mode": "保护模式开启：未设密码且未绑定地址时拒绝外部连接（官方 NETWORK 区说明）",
+      "bind": "只监听所需网卡，缩小暴露面（官方 NETWORK 区 bind 说明）",
+      "maxmemory": "显式内存上限，接近系统内存时报错而非被 OOM 杀死；官方建议留约 25% 余量给系统与碎片",
+      "maxmemory-policy": "内存满时的行为：纯缓存允许淘汰旧 key；开了持久化的数据宁可写入报错也不悄悄丢",
+      "appendonly": "AOF 记录每条写命令，appendfsync everysec 时崩溃约丢 1 秒（官方 APPEND ONLY MODE 区说明）",
+      "save": "RDB 快照点；save \"\" 表示关闭快照（官方 SNAPSHOTTING 区说明）",
+      "appendfsync": "everysec 每秒刷盘，平衡性能与数据安全（官方 APPEND ONLY MODE 区说明）",
+      "requirepass": "客户端连接需认证；密码只存内存，不落盘"
+    },
+    "checklist": [
+      {
+        "title": "创建数据与日志目录",
+        "command": "sudo mkdir -p /var/lib/redis /var/log/redis && sudo chown redis:redis /var/lib/redis /var/log/redis",
+        "why": "预设的 dir 与 logfile 路径需存在且 redis 运行用户可写"
+      },
+      {
+        "title": "允许内存过量提交",
+        "command": "sudo sysctl vm.overcommit_memory=1",
+        "why": "后台快照 fork 需要过量提交，否则 bgsave 可能失败（官方 administration 建议）"
+      },
+      {
+        "title": "关闭透明大页",
+        "command": "echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled",
+        "why": "THP 会放大 Redis 内存占用与延迟（官方 administration 建议）"
+      },
+      {
+        "title": "提高连接队列上限",
+        "command": "sudo sysctl net.core.somaxconn=1024",
+        "why": "tcp-backlog 受 somaxconn 约束，高并发连接需要更大队列"
+      },
+      {
+        "title": "提高文件描述符上限",
+        "command": "ulimit -n 65535",
+        "why": "maxclients 受 nofile 约束；systemd 托管时在 service 里设 LimitNOFILE=65535"
+      },
+      {
+        "title": "配置 swap",
+        "command": "sudo fallocate -l 4G /swapfile && sudo mkswap /swapfile && sudo swapon /swapfile",
+        "why": "swap 大小建议与内存等量；无 swap 时内存耗尽会直接 OOM 杀进程，有 swap 可先观察到延迟尖峰再处置（官方 administration 建议）"
+      }
+    ]
+  },
+  "replica-sentinel": {
+    "id": "replica-sentinel",
+    "name": "一主二从三哨兵",
+    "summary": "1 主库 2 从库 + 3 哨兵自动故障转移，生成 3 份 redis 配置与 3 份哨兵配置",
+    "tiers": [
+      { "id": "1c1g", "label": "1 核 1G", "ramMb": 1024 },
+      { "id": "2c2g", "label": "2 核 2G", "ramMb": 2048 },
+      { "id": "2c4g", "label": "2 核 4G", "ramMb": 4096 },
+      { "id": "4c8g", "label": "4 核 8G", "ramMb": 8192 },
+      { "id": "8c16g", "label": "8 核 16G", "ramMb": 16384 }
+    ],
+    "persistence": [
+      {
+        "id": "off",
+        "label": "不开持久化",
+        "summary": "重启后数据清空，适合纯缓存",
+        "help": "关闭 RDB 快照（save \"\"）与 AOF（appendonly no）。数据全部在内存，进程重启即清空，换来最低延迟与磁盘占用。见官方 SNAPSHOTTING 与 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "rdb",
+        "label": "仅 RDB",
+        "summary": "定时快照，崩溃丢最近几分钟",
+        "help": "RDB 按 save 快照点（默认 3600 1 / 300 100 / 60 10000）把全量数据写盘。重启快、文件紧凑，但两次快照之间的写入会丢失。见官方 SNAPSHOTTING 区注释。"
+      },
+      {
+        "id": "aof",
+        "label": "仅 AOF",
+        "summary": "记录每条写命令，崩溃约丢 1 秒",
+        "help": "AOF 追加记录写命令，appendfsync everysec 每秒刷盘，崩溃约丢最后 1 秒的写入；同时关闭 RDB 快照（save \"\"）。见官方 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "mixed",
+        "label": "混用 RDB + AOF",
+        "summary": "AOF 保数据安全，RDB 保快速重启",
+        "help": "AOF 负责崩溃恢复（约丢 1 秒），RDB 快照用于快速重启与冷备份，是官方推荐的生产组合。见官方 APPEND ONLY MODE 区注释。"
+      }
+    ],
+    "access": [
+      {
+        "id": "intranet",
+        "label": "内网访问",
+        "summary": "节点经内网互通，绑定主库地址并设密码"
+      },
+      {
+        "id": "public",
+        "label": "公网直连",
+        "summary": "暴露到公网，风险高，强烈建议改用内网或隧道"
+      }
+    ],
+    "reasons": {
+      "supervised": "交给 systemd 托管，开机自启与崩溃重启由系统服务管理（官方 GENERAL 区 supervised 说明）",
+      "logfile": "日志写入固定文件便于排查；路径需存在且 redis 运行用户可写",
+      "dir": "RDB 与 AOF 的落盘目录；路径需存在且 redis 运行用户可写，磁盘剩余空间要够数据集的 2–3 倍",
+      "protected-mode": "保护模式开启：未设密码且未绑定地址时拒绝外部连接（官方 NETWORK 区说明）",
+      "bind": "只监听所需网卡，缩小暴露面（官方 NETWORK 区 bind 说明）",
+      "maxmemory": "显式内存上限，接近系统内存时报错而非被 OOM 杀死；官方建议留约 25% 余量给系统与碎片",
+      "maxmemory-policy": "内存满时的行为：纯缓存允许淘汰旧 key；开了持久化的数据宁可写入报错也不悄悄丢",
+      "appendonly": "AOF 记录每条写命令，appendfsync everysec 时崩溃约丢 1 秒（官方 APPEND ONLY MODE 区说明）",
+      "save": "RDB 快照点；save \"\" 表示关闭快照（官方 SNAPSHOTTING 区说明）",
+      "appendfsync": "everysec 每秒刷盘，平衡性能与数据安全（官方 APPEND ONLY MODE 区说明）",
+      "requirepass": "客户端连接需认证；密码只存内存，不落盘",
+      "masterauth": "从库认证主库所用密码；故障转移角色互换后各节点都保留，避免事后改配置",
+      "replicaof": "指定主库地址与端口，从库自动复制主库数据（官方 REPLICATION 区说明）",
+      "replica-read-only": "从库只读，避免误写从库后被主库同步覆盖（官方 REPLICATION 区说明）"
+    },
+    "checklist": [
+      {
+        "title": "创建数据与日志目录",
+        "command": "sudo mkdir -p /var/lib/redis /var/log/redis && sudo chown redis:redis /var/lib/redis /var/log/redis",
+        "why": "预设的 dir 与 logfile 路径需存在且 redis 运行用户可写"
+      },
+      {
+        "title": "允许内存过量提交",
+        "command": "sudo sysctl vm.overcommit_memory=1",
+        "why": "后台快照 fork 需要过量提交，否则 bgsave 可能失败（官方 administration 建议）"
+      },
+      {
+        "title": "关闭透明大页",
+        "command": "echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled",
+        "why": "THP 会放大 Redis 内存占用与延迟（官方 administration 建议）"
+      },
+      {
+        "title": "三哨兵跨机器部署",
+        "command": "将 3 个哨兵分别部署到与数据节点错开的不同机器",
+        "why": "同机部署时机房或机器故障会同时损失数据节点与哨兵，失去高可用意义；3 哨兵 quorum 2 才能在单节点宕机后凑齐多数派"
+      },
+      {
+        "title": "保证哨兵配置文件可写",
+        "command": "sudo chown redis:redis /etc/redis/sentinel*.conf && sudo chmod 640 /etc/redis/sentinel*.conf",
+        "why": "哨兵故障转移或发现新哨兵后会回写自己的配置文件，初始文件必须对运行用户可写"
+      },
+      {
+        "title": "放行节点端口",
+        "command": "防火墙放行 6379 / 6380 / 6381 与 26379–26381，仅对可信内网开放",
+        "why": "主从复制、哨兵监控与客户端访问都需要对应端口互通，不要把端口暴露到公网"
+      },
+      {
+        "title": "NAT 或容器环境补 announce-ip",
+        "command": "在 sentinel.conf 取消注释 sentinel announce-ip <本机IP> 与 sentinel announce-port <端口>",
+        "why": "网络地址转换或容器部署时自动探测的地址不可达，需显式宣告哨兵对外地址"
+      }
+    ]
+  },
+  "cluster": {
+    "id": "cluster",
+    "name": "三主三从集群",
+    "summary": "3 个主库各带 1 个从库，16384 个槽均分三组，生成 6 份集群模式配置",
+    "tiers": [
+      { "id": "1c1g", "label": "1 核 1G", "ramMb": 1024 },
+      { "id": "2c2g", "label": "2 核 2G", "ramMb": 2048 },
+      { "id": "2c4g", "label": "2 核 4G", "ramMb": 4096 },
+      { "id": "4c8g", "label": "4 核 8G", "ramMb": 8192 },
+      { "id": "8c16g", "label": "8 核 16G", "ramMb": 16384 }
+    ],
+    "persistence": [
+      {
+        "id": "off",
+        "label": "不开持久化",
+        "summary": "重启后数据清空，适合纯缓存",
+        "help": "关闭 RDB 快照（save \"\"）与 AOF（appendonly no）。数据全部在内存，进程重启即清空，换来最低延迟与磁盘占用。见官方 SNAPSHOTTING 与 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "rdb",
+        "label": "仅 RDB",
+        "summary": "定时快照，崩溃丢最近几分钟",
+        "help": "RDB 按 save 快照点（默认 3600 1 / 300 100 / 60 10000）把全量数据写盘。重启快、文件紧凑，但两次快照之间的写入会丢失。见官方 SNAPSHOTTING 区注释。"
+      },
+      {
+        "id": "aof",
+        "label": "仅 AOF",
+        "summary": "记录每条写命令，崩溃约丢 1 秒",
+        "help": "AOF 追加记录写命令，appendfsync everysec 每秒刷盘，崩溃约丢最后 1 秒的写入；同时关闭 RDB 快照（save \"\"）。见官方 APPEND ONLY MODE 区注释。"
+      },
+      {
+        "id": "mixed",
+        "label": "混用 RDB + AOF",
+        "summary": "AOF 保数据安全，RDB 保快速重启",
+        "help": "AOF 负责崩溃恢复（约丢 1 秒），RDB 快照用于快速重启与冷备份，是官方推荐的生产组合。见官方 APPEND ONLY MODE 区注释。"
+      }
+    ],
+    "access": [
+      {
+        "id": "intranet",
+        "label": "内网访问",
+        "summary": "节点经内网互通，绑定节点内网 IP 并设密码"
+      },
+      {
+        "id": "public",
+        "label": "公网直连",
+        "summary": "暴露到公网，风险高，强烈建议改用内网或隧道"
+      }
+    ],
+    "reasons": {
+      "supervised": "交给 systemd 托管，开机自启与崩溃重启由系统服务管理（官方 GENERAL 区 supervised 说明）",
+      "logfile": "日志写入固定文件便于排查；路径需存在且 redis 运行用户可写",
+      "dir": "RDB 与 AOF 的落盘目录；每节点独立目录，避免集群配置文件与数据互相覆盖",
+      "protected-mode": "保护模式开启：未设密码且未绑定地址时拒绝外部连接（官方 NETWORK 区说明）",
+      "bind": "只监听所需网卡，缩小暴露面；集群节点间必须能经此地址互通（官方 NETWORK 区 bind 说明）",
+      "maxmemory": "显式内存上限，接近系统内存时报错而非被 OOM 杀死；官方建议留约 25% 余量给系统与碎片",
+      "maxmemory-policy": "内存满时的行为：纯缓存允许淘汰旧 key；开了持久化的数据宁可写入报错也不悄悄丢",
+      "appendonly": "AOF 记录每条写命令，appendfsync everysec 时崩溃约丢 1 秒（官方 APPEND ONLY MODE 区说明）",
+      "save": "RDB 快照点；save \"\" 表示关闭快照（官方 SNAPSHOTTING 区说明）",
+      "appendfsync": "everysec 每秒刷盘，平衡性能与数据安全（官方 APPEND ONLY MODE 区说明）",
+      "requirepass": "客户端与节点间都需认证；集群所有节点必须同密码，密码只存内存，不落盘",
+      "masterauth": "节点间复制与故障转移时用它认证对方主库；与 requirepass 一致才不会握手失败",
+      "cluster-enabled": "只有以集群模式启动的实例才能加入集群、参与槽位与故障转移（官方 REDIS CLUSTER 区说明）",
+      "cluster-config-file": "节点自动维护的集群状态文件，每节点必须唯一；不要手改，由节点自己写",
+      "cluster-require-full-coverage": "设为 no：一组主从整体不可用时其余槽位仍可读写；代价是客户端可能读到部分键缺失"
+    },
+    "checklist": [
+      {
+        "title": "创建各节点数据与日志目录",
+        "command": "sudo mkdir -p /var/lib/redis/{7000..7005} /var/log/redis && sudo chown -R redis:redis /var/lib/redis /var/log/redis",
+        "why": "预设的 dir 按端口分目录（避免集群配置文件互相覆盖），路径需存在且 redis 运行用户可写"
+      },
+      {
+        "title": "允许内存过量提交",
+        "command": "sudo sysctl vm.overcommit_memory=1",
+        "why": "后台快照 fork 需要过量提交，否则 bgsave 可能失败（官方 administration 建议）"
+      },
+      {
+        "title": "关闭透明大页",
+        "command": "echo never | sudo tee /sys/kernel/mm/transparent_hugepage/enabled",
+        "why": "THP 会放大 Redis 内存占用与延迟（官方 administration 建议）"
+      },
+      {
+        "title": "放行节点端口与总线端口",
+        "command": "防火墙放行 7000–7005 与 17000–17005，仅对可信内网开放",
+        "why": "集群总线端口 = 业务端口 + 10000，节点间靠它交换心跳与槽信息；只放行业务端口会导致节点互相认为下线"
+      },
+      {
+        "title": "跨机部署替换地址",
+        "command": "把每份文件的 bind 改成本机内网地址，必要时补 cluster-announce-ip <本机IP>",
+        "why": "问卷只收集一个节点地址；跨机部署时同一地址会让节点互相不可达，必须逐份替换；同机多实例可保持同一地址"
+      },
+      {
+        "title": "复核集群状态",
+        "command": "redis-cli -c -p 7000 cluster info && redis-cli -c -p 7000 cluster nodes",
+        "why": "确认 cluster_state:ok、16384 个槽全部覆盖、3 主各挂 1 从"
+      }
+    ]
+  }
+}

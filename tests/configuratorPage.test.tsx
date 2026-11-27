@@ -448,3 +448,475 @@ test('含明文密码时下载前需要确认', async () => {
   confirm.mockRestore();
   click.mockRestore();
 });
+
+async function startScenario(): Promise<void> {
+  await userEvent.click(screen.getByRole('button', { name: '单机单实例' }));
+}
+
+async function dedicatedMixedToFinish(): Promise<void> {
+  await startScenario();
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '2 核 4G' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '混用 RDB + AOF' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+}
+
+test('场景入口与问卷导航', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  expect(screen.getByRole('button', { name: '逐项配置' })).toBeInTheDocument();
+
+  await startScenario();
+
+  expect(screen.getByRole('heading', { name: '部署画像' })).toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  for (const name of ['02部署画像', '03资源', '04持久化', '05访问面']) {
+    expect(within(nav).getByRole('button', { name })).toBeInTheDocument();
+  }
+  expect(screen.getByText('重新回答会覆盖预设项的修改')).toBeInTheDocument();
+});
+
+test('选项整卡在同一个 label 内，点击描述也能选中', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startScenario();
+
+  const summary = screen.getByText('机器上还有别的服务，需要给出 Redis 的内存预算');
+  const card = summary.closest('label');
+  expect(card).not.toBeNull();
+  expect(card).toContainElement(screen.getByRole('radio', { name: '与其他服务混部' }));
+
+  await userEvent.click(summary);
+  expect(screen.getByRole('radio', { name: '与其他服务混部' })).toHaveAttribute('aria-checked', 'true');
+});
+
+test('独占混用路径直达完成页并写入预设', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await dedicatedMixedToFinish();
+
+  expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
+  const preview = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(preview).toContain('maxmemory 3gb');
+  expect(preview).toContain('appendonly yes');
+  expect(preview).toContain('bind 127.0.0.1 -::1');
+});
+
+test('混部预算落到 maxmemory', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+
+  const preview = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(preview).toContain('maxmemory 1536mb');
+});
+
+test('混部预算接受 GB 小数并落到 maxmemory', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  const budget = screen.getByLabelText('内存预算');
+  await userEvent.type(budget, '3.5');
+  expect(budget).toHaveValue('3.5');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+
+  const preview = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(preview).toContain('maxmemory 2688mb');
+});
+
+test('混部预算拒绝尾随垃圾并提示', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  const budget = screen.getByLabelText('内存预算');
+  await userEvent.type(budget, '2abc');
+  expect(budget).toHaveValue('2abc');
+  expect(screen.getByText(/请输入数字/)).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '下一步' })).toBeDisabled();
+
+  await userEvent.clear(budget);
+  expect(screen.queryByText(/请输入数字/)).toBeNull();
+  await userEvent.type(budget, '2.5');
+  expect(screen.getByRole('button', { name: '下一步' })).toBeEnabled();
+});
+
+test('内网访问必填 IP 与密码才能生成', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startScenario();
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '2 核 4G' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '内网访问' }));
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+
+  await userEvent.type(screen.getByLabelText('内网 IP'), '10.0.0.5');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeEnabled();
+
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+  const preview = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(preview).toContain('requirepass s3cret');
+  expect(preview).toContain('bind 10.0.0.5 127.0.0.1 -::1');
+});
+
+test('重答问卷覆盖预设项', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await dedicatedMixedToFinish();
+
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  await userEvent.click(within(nav).getByRole('button', { name: '04持久化' }));
+  await userEvent.click(screen.getByRole('radio', { name: '不开持久化' }));
+  await userEvent.click(within(nav).getByRole('button', { name: '05访问面' }));
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+
+  const preview = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(preview).toContain('appendonly no');
+  expect(preview).toContain('save ""');
+  expect(preview).toContain('maxmemory-policy allkeys-lru');
+});
+
+test('已有场景草稿时入口显示继续', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await dedicatedMixedToFinish();
+
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  await userEvent.click(within(nav).getByRole('button', { name: '01选择版本' }));
+  expect(screen.getByRole('button', { name: '继续场景问卷' })).toBeInTheDocument();
+});
+
+test('刷新后密码丢失完成页警告且下载确认追加提示', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  const first = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await startScenario();
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '2 核 4G' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '内网访问' }));
+  await userEvent.type(screen.getByLabelText('内网 IP'), '10.0.0.5');
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+  first.unmount();
+
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  await userEvent.click(within(nav).getByRole('button', { name: /完成/ }));
+
+  expect(screen.getByText('密码未填，当前配置将无认证')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: '下载 conf' }));
+  expect(confirm).toHaveBeenCalled();
+  expect(String(confirm.mock.calls[0][0])).toContain('密码未填');
+  confirm.mockRestore();
+});
+
+test('集群刷新后密码丢失完成页警告且下载确认追加提示', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  const first = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await startClusterScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '混用 RDB + AOF' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('节点内网 IP'), '10.0.0.5');
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
+  first.unmount();
+
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  await userEvent.click(within(nav).getByRole('button', { name: /完成/ }));
+
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
+  expect(screen.getByText('密码未填，当前配置将无认证')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: '下载 conf' }));
+  expect(confirm).toHaveBeenCalled();
+  expect(String(confirm.mock.calls[0][0])).toContain('密码未填');
+  confirm.mockRestore();
+});
+
+test('哨兵刷新后密码丢失完成页警告且下载确认追加提示', async () => {
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  const first = render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  await startReplScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '混用 RDB + AOF' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('主库地址'), '10.0.0.5');
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
+  first.unmount();
+
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  await userEvent.click(within(nav).getByRole('button', { name: /完成/ }));
+
+  expect(screen.getByText('密码未填，当前配置将无认证')).toBeInTheDocument();
+  await userEvent.click(screen.getByRole('button', { name: '下载 conf' }));
+  expect(confirm).toHaveBeenCalled();
+  expect(String(confirm.mock.calls[0][0])).toContain('密码未填');
+  confirm.mockRestore();
+});
+
+async function startReplScenario(): Promise<void> {
+  await userEvent.click(screen.getByRole('button', { name: '一主二从三哨兵' }));
+}
+
+async function startClusterScenario(): Promise<void> {
+  await userEvent.click(screen.getByRole('button', { name: '三主三从集群' }));
+}
+
+async function clusterToNetwork(): Promise<void> {
+  await startClusterScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '混用 RDB + AOF' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+}
+
+test('三个场景入口与 cluster 三步问卷导航', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  expect(screen.getByRole('button', { name: '单机单实例' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '一主二从三哨兵' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '三主三从集群' })).toBeInTheDocument();
+
+  await startClusterScenario();
+
+  expect(screen.getByRole('heading', { name: '资源' })).toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  expect(within(nav).getByRole('button', { name: /02资源/ })).toBeInTheDocument();
+  expect(within(nav).getByRole('button', { name: /03持久化/ })).toBeInTheDocument();
+  expect(within(nav).getByRole('button', { name: /04网络与认证/ })).toBeInTheDocument();
+});
+
+test('cluster 节点地址与密码为空时不能生成', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await clusterToNetwork();
+
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+  await userEvent.type(screen.getByLabelText('节点内网 IP'), '10.0.0.5');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeEnabled();
+});
+
+test('cluster 三步问卷直达完成页并生成六份文件', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await clusterToNetwork();
+  await userEvent.type(screen.getByLabelText('节点内网 IP'), '10.0.0.5');
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+
+  expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
+
+  const master = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(master).toContain('port 7000');
+  expect(master).toContain('cluster-enabled yes');
+  expect(master).toContain('cluster-require-full-coverage no');
+  expect(master).toContain('dir /var/lib/redis/7000');
+  expect(master).toContain('cluster-config-file nodes-7000.conf');
+  expect(master).toContain('bind 10.0.0.5 127.0.0.1 -::1');
+  expect(master).toContain('requirepass s3cret');
+  expect(master).toContain('masterauth s3cret');
+  expect(master).not.toMatch(/^replicaof /m);
+
+  await userEvent.click(screen.getByRole('tab', { name: '从库 3' }));
+  const replica = screen.getByLabelText('生成结果预览').textContent ?? '';
+  expect(replica).toContain('port 7005');
+  expect(replica).toContain('cluster-config-file nodes-7005.conf');
+  expect(replica).not.toMatch(/^replicaof /m);
+
+  expect(screen.getByText('初始化集群：分配槽并建立主从')).toBeInTheDocument();
+  expect(
+    screen.getByText(/redis-cli -a 's3cret' --cluster create 10\.0\.0\.5:7000 .*10\.0\.0\.5:7005 --cluster-replicas 1/),
+  ).toBeInTheDocument();
+  expect(screen.queryByRole('button', { name: '带回体检页' })).not.toBeInTheDocument();
+});
+
+test('两个场景入口与 replica-sentinel 三步问卷导航', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+  expect(screen.getByRole('button', { name: '单机单实例' })).toBeInTheDocument();
+  expect(screen.getByRole('button', { name: '一主二从三哨兵' })).toBeInTheDocument();
+
+  await startReplScenario();
+
+  expect(screen.getByRole('heading', { name: '资源' })).toBeInTheDocument();
+  const nav = screen.getByRole('navigation', { name: '配置步骤' });
+  expect(within(nav).getByRole('button', { name: /02资源/ })).toBeInTheDocument();
+  expect(within(nav).getByRole('button', { name: /03持久化/ })).toBeInTheDocument();
+  expect(within(nav).getByRole('button', { name: /04网络/ })).toBeInTheDocument();
+});
+
+test('replica-sentinel 三步问卷直达完成页', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startReplScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('radio', { name: '混用 RDB + AOF' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('主库地址'), '10.0.0.5');
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  await userEvent.click(screen.getByRole('button', { name: '生成配置' }));
+
+  expect(screen.getByRole('heading', { name: '完成' })).toBeInTheDocument();
+  expect(screen.getAllByRole('tab')).toHaveLength(6);
+  expect(screen.getByText('三哨兵跨机器部署')).toBeInTheDocument();
+
+  await userEvent.click(screen.getByRole('tab', { name: '从库 1' }));
+  expect(screen.getByLabelText('生成结果预览')).toHaveTextContent('replicaof 10.0.0.5 6379');
+  await userEvent.click(screen.getByRole('tab', { name: '哨兵 1' }));
+  expect(screen.getByLabelText('生成结果预览')).toHaveTextContent('sentinel monitor mymaster 10.0.0.5 6379 2');
+});
+
+test('replica-sentinel 网络步必填主库地址与密码', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  await startReplScenario();
+  await userEvent.click(screen.getByRole('radio', { name: '与其他服务混部' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.type(screen.getByLabelText('内存预算'), '2');
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+  await userEvent.click(screen.getByRole('button', { name: '下一步' }));
+
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+  await userEvent.type(screen.getByLabelText('主库地址'), '10.0.0.5');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeDisabled();
+  await userEvent.type(screen.getByLabelText('连接密码'), 's3cret');
+  expect(screen.getByRole('button', { name: '生成配置' })).toBeEnabled();
+});

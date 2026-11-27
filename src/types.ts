@@ -93,9 +93,140 @@ export interface ConfiguratorRegistry {
   enums: Record<string, string[]>;
 }
 
+export type ScenarioAccess = 'local' | 'intranet' | 'public';
+
+export type ScenarioPersistence = 'off' | 'rdb' | 'aof' | 'mixed';
+
+export type ScenarioProfile = 'dedicated' | 'shared';
+
+export type ScenarioId = 'cluster' | 'replica-sentinel' | 'single-standalone';
+
+export type ScenarioNodeRole =
+  | 'master'
+  | 'node1'
+  | 'node2'
+  | 'node3'
+  | 'node4'
+  | 'node5'
+  | 'node6'
+  | 'replica1'
+  | 'replica2'
+  | 'sentinel1'
+  | 'sentinel2'
+  | 'sentinel3';
+
+export interface ScenarioAnswers {
+  profile: ScenarioProfile;
+  tier?: string;
+  budgetMb?: number;
+  persistence: ScenarioPersistence;
+  access: ScenarioAccess;
+  bindIp?: string;
+  password?: string;
+}
+
+export interface ReplicaSentinelAnswers {
+  profile: ScenarioProfile;
+  tier?: string;
+  budgetMb?: number;
+  persistence: ScenarioPersistence;
+  access: 'intranet' | 'public';
+  masterHost?: string;
+  password?: string;
+}
+
+export interface ClusterAnswers {
+  profile: ScenarioProfile;
+  tier?: string;
+  budgetMb?: number;
+  persistence: ScenarioPersistence;
+  access: 'intranet' | 'public';
+  nodeIp?: string;
+  password?: string;
+}
+
+export interface ScenarioNodeFile {
+  role: ScenarioNodeRole;
+  kind: 'redis' | 'sentinel';
+  fileName: string;
+  title: string;
+  values: Record<string, string>;
+}
+
+export interface ScenarioFileView {
+  role: ScenarioNodeRole;
+  title: string;
+  fileName: string;
+  text: string;
+}
+
+export interface ScenarioState {
+  id: ScenarioId;
+  answers: ClusterAnswers | ReplicaSentinelAnswers | ScenarioAnswers;
+  applied: Record<string, string>;
+  nodes?: ScenarioNodeFile[];
+}
+
+export type BudgetParse = { state: 'empty' } | { state: 'invalid' } | { mb: number; state: 'ok' };
+
+export interface ScenarioTier {
+  id: string;
+  label: string;
+  ramMb: number;
+}
+
+export interface ScenarioOption {
+  id: string;
+  label: string;
+  summary: string;
+  help?: string;
+}
+
+export interface ScenarioChecklistItem {
+  title: string;
+  command: string;
+  why: string;
+}
+
+export interface ScenarioRegistry {
+  id: string;
+  name: string;
+  summary: string;
+  tiers: ScenarioTier[];
+  persistence: ScenarioOption[];
+  access: ScenarioOption[];
+  reasons: Record<string, string>;
+  checklist: ScenarioChecklistItem[];
+}
+
+export interface SentinelRule {
+  id: string;
+  sensitive: boolean;
+  note: string;
+}
+
+export interface SentinelRulesRegistry {
+  masterName: string;
+  quorum: number;
+  defaults: { downAfterMs: number; failoverTimeoutMs: number; parallelSyncs: number };
+  rules: SentinelRule[];
+}
+
+export interface ScenarioReviewItem {
+  name: string;
+  value: string | null;
+  reason: string;
+  state: 'applied' | 'modified' | 'reset';
+}
+
+export interface ScenarioReviewGroup {
+  sectionId: string;
+  items: ScenarioReviewItem[];
+}
+
 export interface ConfiguratorStep {
   id: string;
-  kind: 'version' | 'section' | 'extra' | 'finish';
+  kind: 'version' | 'scenario' | 'section' | 'extra' | 'finish';
   title: string;
   directives: DirectiveDoc[];
   freeLines: FreeLineKind[];
@@ -109,6 +240,7 @@ export interface ConfiguratorDraft {
   loadmodule: string[];
   user: string[];
   renameCommand: Array<{ command: string; target: string }>;
+  scenario?: ScenarioState;
 }
 
 export interface JumpTarget {

@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
+
+// vmThreads 并发加载大字典时，默认 1s 异步等待会抖动
+configure({ asyncUtilTimeout: 5000 });
 
 class ObserverStub {
   observe() {}

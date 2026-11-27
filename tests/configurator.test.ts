@@ -1,9 +1,10 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { expect, test } from 'vitest';
 
-import type { ConfiguratorDraft, DictFile } from '../src/types';
+import type { ClusterAnswers, ConfiguratorDraft, DictFile } from '../src/types';
 
 import { buildSteps, changeCount, emptyDraft, renderConfig, sectionComment } from '../src/lib/configurator';
+import { applyCluster, emptyClusterAnswers } from '../src/lib/scenario';
 
 const VERSIONS = readdirSync('src/data/dict')
   .filter((file) => file.endsWith('.json') && file !== 'meta.json')
@@ -191,4 +192,85 @@ test('可替换行跳过模板占位符', () => {
   expect(output).toContain('# save <seconds> <changes>');
   expect(activeLines(output, 'save')).toEqual(['save 900 1']);
   expect(occurrences.length).toBeGreaterThan(1);
+});
+
+test('scenario 选项在版本步后插入四个问卷步', () => {
+  const { dict } = load('7.4');
+  const plain = buildSteps(dict);
+  const withScenario = buildSteps(dict, { scenario: true });
+
+  expect(withScenario.length).toBe(plain.length + 4);
+  const inserted = withScenario.slice(1, 5);
+  expect(inserted.map((step) => step.id)).toEqual([
+    '__scenario_profile__',
+    '__scenario_resource__',
+    '__scenario_persistence__',
+    '__scenario_access__',
+  ]);
+  expect(inserted.every((step) => step.kind === 'scenario')).toBe(true);
+  expect(withScenario[0].kind).toBe('version');
+  expect(withScenario.slice(5)).toEqual(plain.slice(1));
+});
+
+test('不传 scenario 选项时步骤与现状一致', () => {
+  const { dict } = load('7.4');
+  expect(buildSteps(dict, { scenario: false })).toEqual(buildSteps(dict));
+  expect(buildSteps(dict).some((step) => step.kind === 'scenario')).toBe(false);
+});
+
+test('replica-sentinel 场景插入三个问卷步', () => {
+  const { dict } = load('7.4');
+  const plain = buildSteps(dict);
+  const replSteps = buildSteps(dict, { scenario: true, scenarioId: 'replica-sentinel' });
+
+  expect(replSteps.length).toBe(plain.length + 3);
+  const inserted = replSteps.slice(1, 4);
+  expect(inserted.map((step) => step.id)).toEqual(['__repl_resource__', '__repl_persistence__', '__repl_network__']);
+  expect(inserted.every((step) => step.kind === 'scenario')).toBe(true);
+  expect(replSteps.slice(4)).toEqual(plain.slice(1));
+});
+
+test('cluster 场景插入三个问卷步', () => {
+  const { dict } = load('7.4');
+  const plain = buildSteps(dict);
+  const clusterSteps = buildSteps(dict, { scenario: true, scenarioId: 'cluster' });
+
+  expect(clusterSteps.length).toBe(plain.length + 3);
+  const inserted = clusterSteps.slice(1, 4);
+  expect(inserted.map((step) => step.id)).toEqual([
+    '__cluster_resource__',
+    '__cluster_persistence__',
+    '__cluster_network__',
+  ]);
+  expect(inserted.every((step) => step.kind === 'scenario')).toBe(true);
+  expect(clusterSteps.slice(4)).toEqual(plain.slice(1));
+});
+
+test('6.2 集群节点文件按字典滤掉 cluster-config-file，7.4 正常写回', () => {
+  const answers: ClusterAnswers = {
+    ...emptyClusterAnswers(),
+    nodeIp: '10.0.0.5',
+    password: 's3cret',
+    persistence: 'mixed',
+    tier: '2c4g',
+  };
+
+  const renderNode = (version: string): string => {
+    const { dict, official } = load(version);
+    const { common, nodes } = applyCluster(answers, dict);
+    const draft: ConfiguratorDraft = {
+      ...emptyDraft(version),
+      values: { ...common, ...nodes[0].values },
+      scenario: { id: 'cluster', answers, applied: common, nodes },
+    };
+    return renderConfig(official, dict, draft);
+  };
+
+  const legacy = renderNode('6.2');
+  expect(activeLines(legacy, 'cluster-config-file')).toEqual([]);
+  expect(activeLines(legacy, 'port')).toEqual(['port 7000']);
+  expect(activeLines(legacy, 'dir')).toEqual(['dir /var/lib/redis/7000']);
+
+  const modern = renderNode('7.4');
+  expect(activeLines(modern, 'cluster-config-file')).toEqual(['cluster-config-file nodes-7000.conf']);
 });

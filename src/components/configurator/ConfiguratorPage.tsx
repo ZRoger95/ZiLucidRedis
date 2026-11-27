@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import type { ConfiguratorDraft, ConfiguratorStep } from '@/types';
+import type {
+  ClusterAnswers,
+  ConfiguratorDraft,
+  ConfiguratorStep,
+  ReplicaSentinelAnswers,
+  ScenarioAnswers,
+  ScenarioChecklistItem,
+  ScenarioFileView,
+  ScenarioId,
+  ScenarioState,
+} from '@/types';
 
 import { RepoLink } from '@/components/RepoLink';
 import { Button } from '@/components/ui/button';
@@ -10,10 +20,29 @@ import { buildSteps, changeCount, emptyDraft, renderConfig } from '@/lib/configu
 import { clearDraft, loadDraft, loadDraftLine, saveDraft, saveDraftLine } from '@/lib/configuratorState';
 import { DEFAULT_VERSION } from '@/lib/dict';
 import { setPendingConf, takePendingLine } from '@/lib/handoff';
+import {
+  applyCluster,
+  applyReplication,
+  applyScenario,
+  CLUSTER_ID,
+  clusterChecklist,
+  clusterStepReady,
+  emptyClusterAnswers,
+  emptyReplicationAnswers,
+  emptyScenarioAnswers,
+  renderSentinelConfig,
+  REPLICA_SENTINEL_ID,
+  replicationStepReady,
+  SCENARIO_ID,
+  scenarioChecklist,
+  scenarioReview,
+  scenarioStepReady,
+} from '@/lib/scenario';
 import { replaceSecrets } from '@/lib/secrets';
 
 import { FinishStep } from './FinishStep';
 import { RegionStep } from './RegionStep';
+import { ScenarioStep } from './ScenarioStep';
 import { StepNav } from './StepNav';
 import { VersionStep } from './VersionStep';
 
@@ -30,6 +59,36 @@ function stepCount(step: ConfiguratorStep, draft: ConfiguratorDraft): number {
   return values + freeLineCount(step, draft);
 }
 
+function createScenarioState(id: ScenarioId): ScenarioState {
+  if (id === REPLICA_SENTINEL_ID) {
+    return { id: REPLICA_SENTINEL_ID, answers: emptyReplicationAnswers(), applied: {}, nodes: [] };
+  }
+  if (id === CLUSTER_ID) {
+    return { id: CLUSTER_ID, answers: emptyClusterAnswers(), applied: {}, nodes: [] };
+  }
+  return { id: SCENARIO_ID, answers: emptyScenarioAnswers(), applied: {} };
+}
+
+function generateStepIdFor(id: ScenarioId | undefined): string {
+  if (id === REPLICA_SENTINEL_ID) {
+    return '__repl_network__';
+  }
+  if (id === CLUSTER_ID) {
+    return '__cluster_network__';
+  }
+  return '__scenario_access__';
+}
+
+function checklistFor(scenario: ConfiguratorDraft['scenario']): ScenarioChecklistItem[] | undefined {
+  if (!scenario) {
+    return undefined;
+  }
+  if (scenario.id === CLUSTER_ID) {
+    return clusterChecklist(scenario.answers as ClusterAnswers);
+  }
+  return scenarioChecklist(scenario.id);
+}
+
 export function ConfiguratorPage() {
   const navigate = useNavigate();
   const [line, setLine] = useState(() => takePendingLine() ?? loadDraftLine() ?? DEFAULT_VERSION);
@@ -37,7 +96,12 @@ export function ConfiguratorPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const { data, error } = useVersionData(line);
 
-  const steps = useMemo(() => (data ? buildSteps(data.dict) : []), [data]);
+  const scenarioMode = draft.scenario !== undefined;
+  const scenarioId = draft.scenario?.id;
+  const steps = useMemo(
+    () => (data ? buildSteps(data.dict, { scenario: scenarioMode, scenarioId }) : []),
+    [data, scenarioMode, scenarioId],
+  );
   const counts = useMemo(() => steps.map((step) => stepCount(step, draft)), [steps, draft]);
   const step = steps[stepIndex];
   const generated = useMemo(() => (data ? renderConfig(data.official, data.dict, draft) : ''), [data, draft]);
@@ -67,15 +131,130 @@ export function ConfiguratorPage() {
     setStepIndex(0);
   };
 
-  const download = () => {
-    if (hasSecret && !window.confirm('导出的文件将包含明文密码，确认继续？')) {
+  const startScenario = (id: ScenarioId) => {
+    if (!draft.scenario) {
+      updateDraft({ scenario: createScenarioState(id) });
+    }
+    setStepIndex(1);
+  };
+
+  const answerChange = (patch: Partial<ClusterAnswers | ScenarioAnswers | ReplicaSentinelAnswers>) => {
+    if (!draft.scenario) {
       return;
     }
-    const blob = new Blob([generated], { type: 'text/plain;charset=utf-8' });
+    updateDraft({ scenario: { ...draft.scenario, answers: { ...draft.scenario.answers, ...patch } } });
+  };
+
+  const generate = () => {
+    if (!data || !draft.scenario) {
+      return;
+    }
+    const scenario = draft.scenario;
+    const merged = { ...draft.values };
+    for (const name of Object.keys(scenario.applied)) {
+      delete merged[name];
+    }
+    if (scenario.id === REPLICA_SENTINEL_ID) {
+      const { common, nodes } = applyReplication(scenario.answers as ReplicaSentinelAnswers, data.dict);
+      updateDraft({ values: { ...merged, ...common }, scenario: { ...scenario, applied: common, nodes } });
+    } else if (scenario.id === CLUSTER_ID) {
+      const { common, nodes } = applyCluster(scenario.answers as ClusterAnswers, data.dict);
+      updateDraft({ values: { ...merged, ...common }, scenario: { ...scenario, applied: common, nodes } });
+    } else {
+      const { values } = applyScenario(scenario.answers as ScenarioAnswers, data.dict);
+      updateDraft({ values: { ...merged, ...values }, scenario: { ...scenario, applied: values } });
+    }
+    setStepIndex(steps.length - 1);
+  };
+
+  const isReplScenario = scenarioId === REPLICA_SENTINEL_ID;
+  const isClusterScenario = scenarioId === CLUSTER_ID;
+  const isScenarioStep = step?.kind === 'scenario';
+  const generateStepId = generateStepIdFor(scenarioId);
+  const passwordMissing =
+    scenarioMode &&
+    draft.scenario !== undefined &&
+    draft.scenario.answers.access !== 'local' &&
+    draft.values.requirepass === undefined;
+  const review = useMemo(
+    () => (data && scenarioMode ? scenarioReview(draft, data.dict) : []),
+    [data, draft, scenarioMode],
+  );
+  const checklist = checklistFor(draft.scenario);
+  const files = useMemo<ScenarioFileView[] | undefined>(() => {
+    if (!data || !scenarioMode || !draft.scenario) {
+      return;
+    }
+    const nodes = draft.scenario.nodes ?? [];
+    if (nodes.length === 0) {
+      return;
+    }
+    const answers = draft.scenario.answers as ReplicaSentinelAnswers;
+    const redisFiles: ScenarioFileView[] = nodes
+      .filter((node) => node.kind === 'redis')
+      .map((node) => ({
+        role: node.role,
+        title: node.title,
+        fileName: node.fileName,
+        text: renderConfig(data.official, data.dict, {
+          ...draft,
+          values: { ...draft.values, ...node.values },
+        }),
+      }));
+    const sentinelFiles: ScenarioFileView[] =
+      draft.scenario.id === REPLICA_SENTINEL_ID
+        ? nodes
+            .filter((node) => node.kind === 'sentinel')
+            .map((node, index) => ({
+              role: node.role,
+              title: node.title,
+              fileName: node.fileName,
+              text: renderSentinelConfig(answers, index),
+            }))
+        : [];
+    return [...redisFiles, ...sentinelFiles];
+  }, [data, draft, scenarioMode]);
+  const stepReady = (): boolean => {
+    if (!draft.scenario) {
+      return true;
+    }
+    if (isClusterScenario) {
+      return clusterStepReady(step?.id ?? '', draft.scenario.answers as ClusterAnswers);
+    }
+    return isReplScenario
+      ? replicationStepReady(step?.id ?? '', draft.scenario.answers as ReplicaSentinelAnswers)
+      : scenarioStepReady(step?.id ?? '', draft.scenario.answers as ScenarioAnswers);
+  };
+  const nextDisabled = stepIndex >= steps.length - 1 || (isScenarioStep && !stepReady());
+  const onNext = () => {
+    if (step?.id === generateStepId) {
+      generate();
+      return;
+    }
+    setStepIndex((value) => value + 1);
+  };
+
+  const firstSectionIndex = Math.max(
+    1,
+    steps.findIndex((item) => item.kind === 'section' || item.kind === 'extra'),
+  );
+
+  const download = (file?: ScenarioFileView) => {
+    const warnings: string[] = [];
+    if (hasSecret) {
+      warnings.push('导出的文件将包含明文密码');
+    }
+    if (passwordMissing) {
+      warnings.push('密码未填，当前配置将无认证');
+    }
+    if (warnings.length > 0 && !window.confirm(`${warnings.join('；')}，确认继续？`)) {
+      return;
+    }
+    const blob = new Blob([file?.text ?? generated], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `redis-${line}.conf`;
+    anchor.download = file?.fileName ?? `redis-${line}.conf`;
     anchor.click();
     URL.revokeObjectURL(url);
   };
@@ -92,7 +271,26 @@ export function ConfiguratorPage() {
     }
     const ordinal = String(stepIndex + 1).padStart(2, '0');
     if (step.kind === 'version') {
-      return <VersionStep line={line} onChange={changeLine} />;
+      return (
+        <VersionStep
+          line={line}
+          onChange={changeLine}
+          scenarioActive={scenarioMode}
+          activeScenarioId={scenarioId}
+          onStartScenario={startScenario}
+          onItemized={() => setStepIndex(firstSectionIndex)}
+        />
+      );
+    }
+    if (step.kind === 'scenario') {
+      return (
+        <ScenarioStep
+          stepId={step.id}
+          scenarioId={draft.scenario?.id ?? SCENARIO_ID}
+          answers={draft.scenario?.answers ?? emptyScenarioAnswers()}
+          onChange={answerChange}
+        />
+      );
     }
     if (step.kind === 'finish') {
       return (
@@ -105,6 +303,11 @@ export function ConfiguratorPage() {
           onBack={() => setStepIndex((value) => value - 1)}
           onDownload={download}
           onHandoff={handoff}
+          review={scenarioMode ? review : undefined}
+          checklist={checklist}
+          passwordMissing={passwordMissing}
+          files={files}
+          onJumpSection={(sectionId) => setStepIndex(steps.findIndex((item) => item.id === sectionId))}
         />
       );
     }
@@ -155,12 +358,8 @@ export function ConfiguratorPage() {
         <Button variant="outline" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => value - 1)}>
           上一步
         </Button>
-        <Button
-          variant="outline"
-          disabled={stepIndex >= steps.length - 1}
-          onClick={() => setStepIndex((value) => value + 1)}
-        >
-          下一步
+        <Button variant="outline" disabled={nextDisabled} onClick={onNext}>
+          {step?.id === generateStepId ? '生成配置' : '下一步'}
         </Button>
         <span className="flex-1" />
         <span className="text-[13px] text-muted-foreground">已改 {changeCount(draft)} 项</span>
