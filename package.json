@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "smoke": "playwright test",
     "fuzz": "node --experimental-strip-types scripts/run-fuzz.ts",
+    "pr:merge": "node --experimental-strip-types scripts/pr-merge.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0 && node --experimental-strip-types scripts/check-css-comments.ts",
