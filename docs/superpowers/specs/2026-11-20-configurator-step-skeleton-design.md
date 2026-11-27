@@ -64,6 +64,7 @@
 
 - **竖排**（无字段的自由行步，如 INCLUDES / MODULES）：header → 说明区 → 操作区，说明在前不打扰任何输入。
 - **rail**（有字段的区域步、「其他」步）：header 通栏，`xl` 以上「字段网格 | 20rem 说明栏」两列，说明栏 `sticky` 跟随滚动；`xl` 以下说明栏落到字段下方，字段优先。字段区容器加宽到 `max-w-6xl` 补偿说明栏占位。
+- 页面级正文居中、顶栏基线对齐与底栏左右分区由 [2026-11-27 配置向导页面布局调整设计](2026-11-27-configurator-layout-design.md) 维护；步骤内部仍沿用本节的两类布局。
 - 字段网格双列由**容器查询**驱动（字段区 `@container` + `@[50rem]:grid-cols-2`）：视口断点不知道说明栏占了多少宽度，按视口开双列会把列压到断词。
 - [DirectiveField.tsx](../../../src/components/configurator/DirectiveField.tsx) 的字段头行为 `flex-wrap` + 各段 `whitespace-nowrap`：放不下时整段换行，不拦腰断指令名。该修复对所有步骤生效。
 

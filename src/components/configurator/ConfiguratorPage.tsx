@@ -319,11 +319,12 @@ export function ConfiguratorPage() {
   return (
     <main className="flex h-full min-w-[1024px] flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b border-line bg-panel px-3.5 py-2.5">
-        <h1 className="mr-3 text-[15px] font-semibold tracking-[0.02em]">生成配置</h1>
-
-        <span className="text-[13px] text-muted-foreground">当前版本 {line}</span>
+        <div className="flex items-baseline gap-2">
+          <h1 className="text-[15px] font-semibold leading-5 tracking-[0.02em]">生成配置</h1>
+          <span className="text-[13px] leading-5 text-muted-foreground">当前版本 {line}</span>
+        </div>
         <span className="flex-1" />
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 self-center">
           <Button variant="outline" onClick={() => navigate('/')}>
             返回体检
           </Button>
@@ -355,14 +356,16 @@ export function ConfiguratorPage() {
       )}
 
       <footer className="flex items-center gap-2 border-t border-line bg-panel px-3.5 py-2">
-        <Button variant="outline" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => value - 1)}>
-          上一步
-        </Button>
-        <Button variant="outline" disabled={nextDisabled} onClick={onNext}>
-          {step?.id === generateStepId ? '生成配置' : '下一步'}
-        </Button>
-        <span className="flex-1" />
         <span className="text-[13px] text-muted-foreground">已改 {changeCount(draft)} 项</span>
+        <span className="flex-1" />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" disabled={stepIndex === 0} onClick={() => setStepIndex((value) => value - 1)}>
+            上一步
+          </Button>
+          <Button variant="outline" disabled={nextDisabled} onClick={onNext}>
+            {step?.id === generateStepId ? '生成配置' : '下一步'}
+          </Button>
+        </div>
       </footer>
     </main>
   );

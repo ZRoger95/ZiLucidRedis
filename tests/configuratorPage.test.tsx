@@ -57,6 +57,19 @@ test('向导加载后显示版本选择与区域导航', async () => {
   scroll.mockRestore();
 });
 
+test('底栏先显示改动统计，再显示步骤操作', async () => {
+  render(
+    <MemoryRouter>
+      <ConfiguratorPage />
+    </MemoryRouter>,
+  );
+  await screen.findByRole('heading', { name: '选择版本' });
+
+  const count = screen.getByText('已改 0 项');
+  const previous = screen.getByRole('button', { name: '上一步' });
+  expect(count.compareDocumentPosition(previous) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
 test('下一步进入 INCLUDES 区域', async () => {
   const { container } = render(
     <MemoryRouter>

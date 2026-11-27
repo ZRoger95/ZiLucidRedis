@@ -49,7 +49,7 @@ export function VersionStep({
   }));
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <StepHeader
         crumb={`~/configurator · 01 · ${RELEASES.length} 个版本`}
         title={meta.name}
