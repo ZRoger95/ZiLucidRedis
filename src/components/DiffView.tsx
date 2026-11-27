@@ -227,6 +227,12 @@ export function DiffView({
       (onRowActivate ?? onJump)(lineNo);
     }
   };
+  const agentItems = items.flatMap((item) => {
+    if (item.type !== 'row' || !item.row.left?.lines[0]?.lineNo) {
+      return [];
+    }
+    return [{ value: item.row.key, label: item.row.name }];
+  });
 
   return (
     <section className="flex h-full min-h-0 flex-col bg-white" aria-label="配置对比">
@@ -254,7 +260,12 @@ export function DiffView({
           {hasContent ? '当前配置与官方默认值一致' : '先在左侧载入或粘贴配置'}
         </p>
       ) : (
-        <DiffRows className="min-h-0 flex-1 overflow-auto" onActivate={activateRow} onEscape={onEscape}>
+        <DiffRows
+          className="min-h-0 flex-1 overflow-auto"
+          agentItems={agentItems}
+          onActivate={activateRow}
+          onEscape={onEscape}
+        >
           {items.map((item) =>
             item.type === 'collapse' ? (
               <button
