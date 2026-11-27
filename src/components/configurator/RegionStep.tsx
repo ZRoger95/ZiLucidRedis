@@ -85,7 +85,7 @@ export function RegionStep({ step, official, draft, onDraftChange, ordinal }: Re
   );
 
   return (
-    <div className={fieldHeavy ? 'max-w-6xl space-y-6' : 'max-w-3xl space-y-6'}>
+    <div className={fieldHeavy ? 'mx-auto w-full max-w-6xl space-y-6' : 'mx-auto w-full max-w-3xl space-y-6'}>
       <StepHeader
         crumb={`~/configurator · ${ordinal} · ${step.title}`}
         title={meta ? meta.name : step.title}

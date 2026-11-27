@@ -494,7 +494,7 @@ export function ScenarioStep({ stepId, scenarioId, answers, onChange }: Scenario
   })();
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="mx-auto w-full max-w-3xl space-y-6">
       <StepHeader crumb={`~/configurator · 问卷 · ${meta.title}`} title={meta.title} summary={meta.summary} />
       <Callout type="note" title="提示">
         <p>重新回答会覆盖预设项的修改</p>
