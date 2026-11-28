@@ -1,6 +1,6 @@
 # PR 合并入口 Implementation Plan
 
-状态：已实现
+状态：已实现（2026-11-28 合并等待改为 GitHub auto-merge 薄封装，标题与正文改用默认 squash 消息，见 [spec](../specs/2026-11-27-pr-merge-entry-design.md)）
 
 **Goal:** 提供一个本地合并入口 `npm run pr:merge -- <PR号>`，先等该 PR 的检查全部通过，再以 squash 合并，并保证合并提交标题为 `<PR 标题> (#<PR号>)`、正文为该 PR 的提交清单。
 

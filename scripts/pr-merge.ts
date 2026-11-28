@@ -1,18 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
-import {
-  type CheckBucket,
-  type CheckEntry,
-  parseArgs,
-  type PrCommit,
-  squashBody,
-  squashSubject,
-  summarizeChecks,
-} from './lib/pr-merge.ts';
+import { parseArgs } from './lib/pr-merge.ts';
 
-export { parseArgs, squashBody, squashSubject, summarizeChecks } from './lib/pr-merge.ts';
-export type { CheckBucket, CheckEntry, PrCommit } from './lib/pr-merge.ts';
+export { parseArgs } from './lib/pr-merge.ts';
 
 export interface GhResult {
   status: number;
@@ -31,17 +22,15 @@ export interface RunOptions {
   timeoutMs: number;
 }
 
-interface ViewPayload {
-  state: string;
-  title: string;
+interface PrView {
   baseRefName: string;
-  statusCheckRollup: CheckEntry[] | null;
-  commits: PrCommit[] | null;
+  mergeOid: string;
+  state: string;
 }
 
 const USAGE = '用法：npm run pr:merge -- <PR号>';
 const MIN_GH_VERSION = [2, 20, 0] as const;
-const VIEW_FIELDS = 'state,title,baseRefName,statusCheckRollup,commits';
+const VIEW_FIELDS = 'state,baseRefName,mergeCommit';
 
 function compareVersion(current: readonly number[], minimum: readonly number[]): number {
   for (let index = 0; index < minimum.length; index += 1) {
@@ -72,51 +61,21 @@ function readString(record: Record<string, unknown>, key: string): string {
   return typeof value === 'string' ? value : '';
 }
 
-function readChecks(value: unknown): CheckEntry[] | null {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-  return value.map((entry) => {
-    if (!isRecord(entry)) {
-      return {};
-    }
-    const conclusion = entry.conclusion;
-    const state = entry.state;
-    return {
-      conclusion: typeof conclusion === 'string' || conclusion === null ? conclusion : undefined,
-      state: typeof state === 'string' || state === null ? state : undefined,
-    };
-  });
-}
-
-function readCommits(value: unknown): PrCommit[] | null {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-  return value.map((entry) => ({
-    headline: isRecord(entry) && typeof entry.messageHeadline === 'string' ? entry.messageHeadline : '',
-  }));
-}
-
-function asViewPayload(text: string): ViewPayload | null {
+function asPrView(text: string): PrView | null {
   const parsed = parseJson(text);
   if (!isRecord(parsed)) {
     return null;
   }
+  const mergeCommit = parsed.mergeCommit;
   return {
     baseRefName: readString(parsed, 'baseRefName'),
-    commits: readCommits(parsed.commits),
+    mergeOid: isRecord(mergeCommit) ? readString(mergeCommit, 'oid') : '',
     state: readString(parsed, 'state'),
-    statusCheckRollup: readChecks(parsed.statusCheckRollup),
-    title: readString(parsed, 'title'),
   };
 }
 
-function bucketLabel(bucket: CheckBucket): string {
-  if (bucket === 'pass') {
-    return '全部通过';
-  }
-  return bucket === 'fail' ? '有检查未通过' : '仍在运行';
+function mergedLine(prNumber: number, oid: string): string {
+  return oid === '' ? `已合并 PR #${prNumber}` : `已合并 PR #${prNumber}：${oid}`;
 }
 
 export async function runPrMerge(argv: readonly string[], options: RunOptions): Promise<number> {
@@ -154,21 +113,22 @@ export async function runPrMerge(argv: readonly string[], options: RunOptions): 
     return 1;
   }
 
-  const fetchView = (fields: string): GhResult => gh(['pr', 'view', String(prNumber), '--json', fields]);
+  const view = (): GhResult => gh(['pr', 'view', String(prNumber), '--json', VIEW_FIELDS]);
 
-  const first = fetchView(VIEW_FIELDS);
+  const first = view();
   if (first.status !== 0) {
     log(first.stderr.trim() === '' ? `读取 PR #${prNumber} 失败` : first.stderr.trim());
     return 1;
   }
-  const initial = asViewPayload(first.stdout);
+  const initial = asPrView(first.stdout);
   if (initial === null) {
     log(`无法解析 PR #${prNumber} 的响应`);
     return 1;
   }
 
   if (initial.state === 'MERGED') {
-    log(`PR #${prNumber} 已是 MERGED，无需操作`);
+    log(mergedLine(prNumber, initial.mergeOid));
+    log('后续：git switch master && git pull --ff-only');
     return 0;
   }
   if (initial.state !== 'OPEN') {
@@ -180,51 +140,43 @@ export async function runPrMerge(argv: readonly string[], options: RunOptions): 
     return 1;
   }
 
-  log(`PR #${prNumber}  ${initial.title}`);
+  const merged = gh(['pr', 'merge', String(prNumber), '--squash', '--auto']);
+  if (merged.status !== 0) {
+    log(merged.stderr.trim() === '' ? '启用自动合并失败' : merged.stderr.trim());
+    return 1;
+  }
+  log('已启用自动合并，等待检查通过与 GitHub 完成合并…');
 
-  let rollup = initial.statusCheckRollup;
-  let bucket = summarizeChecks(rollup);
-  log(`检查状态：${bucketLabel(bucket)}`);
+  let current = initial;
   const deadline = now() + timeoutMs;
-  while (bucket === 'pending') {
+  while (current.state === 'OPEN') {
     if (now() >= deadline) {
-      log(`等待检查超过 ${Math.round(timeoutMs / 60000)} 分钟，已中止，PR 保持 OPEN`);
+      log(
+        `等待超过 ${Math.round(timeoutMs / 60000)} 分钟，PR 仍为 OPEN；自动合并保持启用，检查通过后会继续，失败则修复后再推`,
+      );
       return 1;
     }
     await sleep(pollIntervalMs);
-    const again = fetchView('statusCheckRollup');
-    if (again.status !== 0) {
-      log(again.stderr.trim() === '' ? '读取检查状态失败' : again.stderr.trim());
+    const next = view();
+    if (next.status !== 0) {
+      log(next.stderr.trim() === '' ? '读取 PR 状态失败' : next.stderr.trim());
       return 1;
     }
-    const next = asViewPayload(again.stdout);
-    rollup = next === null ? null : next.statusCheckRollup;
-    const nextBucket = summarizeChecks(rollup);
-    if (nextBucket !== bucket) {
-      log(`检查状态：${bucketLabel(nextBucket)}`);
+    const nextView = asPrView(next.stdout);
+    if (nextView === null) {
+      log(`无法解析 PR #${prNumber} 的响应`);
+      return 1;
     }
-    bucket = nextBucket;
+    current = nextView;
   }
 
-  if (bucket === 'fail') {
-    log('有检查未通过，已中止，PR 保持 OPEN，未合并');
-    return 1;
+  if (current.state === 'MERGED') {
+    log(mergedLine(prNumber, current.mergeOid));
+    log('后续：git switch master && git pull --ff-only');
+    return 0;
   }
-
-  const subject = squashSubject(initial.title, prNumber);
-  const body = squashBody(initial.commits ?? []);
-  log(`合并标题：${subject}`);
-  const merged = gh(['pr', 'merge', String(prNumber), '--squash', '--subject', subject, '--body', body]);
-  if (merged.status !== 0) {
-    log(merged.stderr.trim() === '' ? '合并失败' : merged.stderr.trim());
-    return 1;
-  }
-
-  const done = gh(['pr', 'view', String(prNumber), '--json', 'mergeCommit', '--jq', '.mergeCommit.oid']);
-  const oid = done.status === 0 ? done.stdout.trim() : '';
-  log(oid === '' ? `已合并 PR #${prNumber}` : `已合并 PR #${prNumber}：${oid}`);
-  log('后续：git switch master && git pull --ff-only');
-  return 0;
+  log(`PR #${prNumber} 状态为 ${current.state}，未合并`);
+  return 1;
 }
 
 function defaultRunner(args: string[]): GhResult {
