@@ -1,6 +1,6 @@
 # AGENTS.md
 
-ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `redis.conf`，逐项对照官方默认值，标出被改过、不认识、已废弃和危险的配置，可编辑并导出新 conf。产品行为与用法见 [README.md](README.md)；本文件是每次会话都需要的工程规则，不重复 README。
+ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `redis.conf`，逐项对照官方默认值，标出被改过、不认识、已废弃和危险的配置，可编辑并导出新 conf。产品概览见 [README.md](README.md)，详细用法见 [docs/usage.md](docs/usage.md) 与 [docs/configurator.md](docs/configurator.md)；本文件是每次会话都需要的工程规则，不重复这些文档。
 
 本文件是唯一的 agent 规则入口。不要把规则复制到子目录，也不要新增子目录级 `AGENTS.md`。
 
@@ -36,7 +36,7 @@ src/data/        人工登记表，以及按版本生成的字典与官方 conf
 data/            版本白名单与上游抓取结果（versions.json、upstream/）
 scripts/         构建期抓取与字典生成（Node 原生 TypeScript，ESM）
 tests/           单测与构建脚本测试；fixtures/ 放样例
-docs/            工程规范、设计文档与实施计划
+docs/            用户手册、工程规范、设计文档与实施计划
 ```
 
 ## 命令
@@ -63,7 +63,7 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 ## 改动流程
 
 - **新增能力：** 先在 `docs/superpowers/specs/` 写设计（现状、目标、非目标、已选方案和被放弃的方案），再在 `docs/superpowers/plans/` 写任务计划，然后实现；实现完成后把 spec 的状态改为「已实现」，并在计划文件头标 `状态：已实现`（步骤不必逐条勾选）。
-- **修改现有行为：** 同步更新所属 spec 的现状描述，以及 README 中受影响的用法说明。
+- **修改现有行为：** 同步更新所属 spec 的现状描述，以及受影响的用户文档（[README.md](README.md)、[docs/usage.md](docs/usage.md)、[docs/configurator.md](docs/configurator.md)）。
 - **修 bug：** 能直接定位就直接修，补一个能复现的测试；不新建设计文档。
 - **提交信息：** 沿用现有前缀 `feat:` / `fix:` / `docs:` / `test:` / `refactor:`。
 - **Git 提交规范：** 提交信息遵循 Conventional Commits，并由 Commitlint 在 Husky `commit-msg` Hook 中校验；提交前由 Husky `pre-commit` Hook 运行 lint-staged，对暂存代码执行 ESLint 与 Prettier。必须通过正常的 `git commit` 触发 Hook，禁止 `--no-verify`、`HUSKY=0`、临时改写 `core.hooksPath` 或其他绕过/替代提交流程的方式；不要代用户创建提交或推送，除非任务明确要求。
@@ -73,14 +73,15 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 
 每个事实只有一个归属层级；其他位置链接过去，不复制。
 
-| 层级                           | 职责                                                                                                | 不放                           |
-| ------------------------------ | --------------------------------------------------------------------------------------------------- | ------------------------------ |
-| 根 `AGENTS.md`（本文件）       | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单   |
-| [README.md](README.md)         | 面向用户的产品行为、使用方式、数据来源                                                              | 实现细节、评审记录、未做的计划 |
-| `docs/engineering/`            | 工程规范与门禁的现状：规则分组、取舍、例外清单                                                      | 产品用法、任务清单             |
-| `docs/superpowers/specs/`      | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                   |
-| `docs/superpowers/plans/`      | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准） |
-| [types.ts](src/types.ts)、测试 | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述           |
+| 层级                                                                         | 职责                                                                                                | 不放                                     |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 根 `AGENTS.md`（本文件）                                                     | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单             |
+| [README.md](README.md)                                                       | 仓库入口：一句话介绍、线上地址、界面截图、快速开始、文档索引                                        | 详细用法、实现细节、评审记录、未做的计划 |
+| [docs/usage.md](docs/usage.md)、[docs/configurator.md](docs/configurator.md) | 面向用户的详细用法：体检、对比、导出、密码占位、生成向导                                            | 工程规则、实现细节、任务清单             |
+| `docs/engineering/`                                                          | 工程规范与门禁、本地开发与验证、数据管线的现状                                                      | 产品用法、任务清单                       |
+| `docs/superpowers/specs/`                                                    | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                             |
+| `docs/superpowers/plans/`                                                    | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准）           |
+| [types.ts](src/types.ts)、测试                                               | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述                     |
 
 写作规则：
 
