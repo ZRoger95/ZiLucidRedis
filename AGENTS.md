@@ -67,6 +67,7 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 - **修 bug：** 能直接定位就直接修，补一个能复现的测试；不新建设计文档。
 - **提交信息：** 沿用现有前缀 `feat:` / `fix:` / `docs:` / `test:` / `refactor:`。
 - **Git 提交规范：** 提交信息遵循 Conventional Commits，并由 Commitlint 在 Husky `commit-msg` Hook 中校验；提交前由 Husky `pre-commit` Hook 运行 lint-staged，对暂存代码执行 ESLint 与 Prettier。必须通过正常的 `git commit` 触发 Hook，禁止 `--no-verify`、`HUSKY=0`、临时改写 `core.hooksPath` 或其他绕过/替代提交流程的方式；不要代用户创建提交或推送，除非任务明确要求。
+- **PR 正文：** 按 [.github/pull_request_template.md](.github/pull_request_template.md) 的四段填写；CI 校验四个标题齐全且「验证」非空，正文用于评审与交接，合并提交仍用默认 squash 消息。
 - **合并入口：** PR 统一用 `npm run pr:merge -- <PR号>` 合并。脚本只接受 PR 号，内部执行 `gh pr merge --squash --auto` 并等待 GitHub 完成合并，不接受 `--subject`、`--body` 等参数。
 - **完成前：** 至少运行 `npm run check` 和 `npm run build`；只报告实际运行的命令和结果。
 

@@ -2,7 +2,7 @@
 
 日期：2026-11-24
 状态：已实现
-范围：把 `npm run smoke` 接入 GitHub Actions：新增日常 CI workflow（push / PR 触发），并在发布 workflow 中插入冒烟门禁。不改变冒烟用例断言与产品行为。
+范围：把 `npm run smoke` 接入 GitHub Actions：新增日常 CI workflow（push / PR 触发），并在发布 workflow 中插入冒烟门禁；同一 `check` job 还包含 PR 正文门禁。不改变冒烟用例断言与产品行为。
 
 ## 意图：为什么做
 
@@ -23,6 +23,7 @@
 - `deploy.yml` build job 在 `npm run check` 之后、上传 Pages 产物之前插入同样的装浏览器 + `npm run smoke` 两步；触发时机与部署职责不变。冒烟失败则 build job 失败，deploy job 不执行。
 - 两条 workflow 跑同一套 `npm run smoke`，不引入第二套测试逻辑。
 - `playwright.config.ts` 做 CI 适配（见「方案」），本地 `npm run smoke` 行为不变。
+- `check` job 在 pull_request 事件中校验 PR 正文：四个二级标题齐全、顺序与模板一致且「验证」非空，失败阻断合并；规则见 [PR 正文门禁设计](2026-11-28-pr-body-gate-design.md)。
 - 冒烟失败时上传 `.screenshots/smoke/`（截图与导出文件）及 trace 目录（`.screenshots/smoke-results/`）为 workflow artifact，`if: failure()`；CI 失败可以下载证据定位，延续「看证据验收」。
 - 验证方式：开分支提 PR 触发 ci.yml 验证整条链路（含故意破坏一处断言确认红叉与 artifact 产出），不依赖真实 Release。
 
@@ -33,7 +34,7 @@
 - 不做 CI 重试（retries 保持 0，红就是真红）；出现真实 flake 证据后另行讨论，与外环「误报率证据先行」口径一致。
 - 不改冒烟用例断言、产品代码与文案；`e2e/` 仍不进 `npm run check`。
 - 不在本次做向导全流程冒烟、nightly 模糊与视觉回归；顺序见运行时验证 spec 的「缓行项优先级」。
-- 不设置 PR 合并的 required status check（分支保护规则属于仓库设置，是否启用由维护者另行决定）。
+- 不描述分支保护配置：required status check 由仓库 ruleset 维护，见 [PR 合并入口 spec](2026-11-27-pr-merge-entry-design.md)。
 
 ## 方案
 

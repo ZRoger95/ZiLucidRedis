@@ -17,6 +17,8 @@ npm run fuzz       # 外环模糊：放大轮数跑性质测试，报告在 .fuz
 
 `npm run fuzz` 默认放大 20 倍轮数并随机 seed，`FUZZ_SEED` / `FUZZ_MULTIPLIER` 可固定重放；GitHub Actions 每周日北京时间凌晨 3 点定时跑，失败只产报告不阻塞合并与部署，见[外环定时模糊设计](../superpowers/specs/2026-11-25-outer-loop-fuzz-design.md)。
 
+CI 的 `check` job 还会校验 PR 正文：四个二级标题齐全、顺序与模板一致且「## 验证」非空，失败即红；正文经 `PR_BODY` 环境变量传入，模板见 [.github/pull_request_template.md](../../.github/pull_request_template.md)，设计见 [PR 正文门禁设计](../superpowers/specs/2026-11-28-pr-body-gate-design.md)。
+
 ## 静态托管
 
 浏览器的模块脚本不允许在 `file://` 下加载，所以构建产物需要静态服务器托管（`npm run preview`、Nginx、对象存储、GitHub Pages 均可）。`base: './'` 让产物可以部署到任意目录或子路径，但页面地址只能有一层：`/configurator` 可用，`/configurator/xxx` 会更深的地址解析资源而 404 白屏；GitHub Pages 没有 rewrite，只能靠 `404.html` 副本兜底单层路径。
