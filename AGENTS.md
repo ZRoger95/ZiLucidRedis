@@ -2,20 +2,18 @@
 
 ZiLucidRedis 是一个纯前端的 Redis 配置体检工具：贴入或上传 `redis.conf`，逐项对照官方默认值，标出被改过、不认识、已废弃和危险的配置，可编辑并导出新 conf。产品概览见 [README.md](README.md)，详细用法见 [docs/usage.md](docs/usage.md) 与 [docs/configurator.md](docs/configurator.md)；本文件是每次会话都需要的工程规则，不重复这些文档。
 
-本文件是唯一的 agent 规则入口。不要把规则复制到子目录，也不要新增子目录级 `AGENTS.md`。
-
 ## 底线约束
 
-- **纯前端，运行时零外部请求。** 不引入后端；构建产物必须能由静态服务器托管，并用相对资源路径（`base: './'`）以便整体部署到任意目录或子路径。新增数据一律在构建期生成并提交。
-- **明文密码不落盘。** 敏感指令在导入时即替换为 `${env_<指令名>}`；原值只存在于内存；`localStorage`、默认导出和任何默认值都不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换逻辑在 [secrets.ts](src/lib/secrets.ts)。
-- **生成数据不手改。** `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本生成；人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`、`src/data/scenarios.json`、`src/data/sentinel-rules.json`。
-- **TypeScript strict。** 不新增 `any`；共享类型放 [types.ts](src/types.ts)。未使用变量由 `tsc` 的 `noUnusedLocals` / `noUnusedParameters` 把关。
-- **源码不加普通注释。** AI Agent 不得在 `src/` 手写源码中新增解释性注释或 JSDoc；需求、原因和设计约束写入对应文档。过时注释可能误导后续 Agent，因此由 ESLint 与 CSS 检查门禁阻止普通注释。仅保留工具必需的指令注释（如 ESLint 指令、TypeScript 三斜线引用）；生成的 Redis 配置注释属于产品数据，不受此规则限制。
-- **Lint 与格式门禁。** ESLint 管正确性和团队习惯，Prettier 管格式；`npm run lint` 必须零告警，`eslint-disable` 必须写原因。规则与取舍见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
-- **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器和渲染期派生；只有与 React 之外系统同步的文件才能进入 [eslint.config.ts](eslint.config.ts) 的允许清单。清单与替代方案见 [docs/engineering/eslint.md](docs/engineering/eslint.md)。
-- **界面文案中文。** 新增 UI 文案使用中文；界面按最小宽度 1024px 的桌面端设计，不做移动端适配。
-- **页面地址只允许一层。** 在 `base: './'` 下 `/configurator/`、`/configurator/xxx` 这类更深的地址会把资源解析到 `/configurator/assets/…` 而 404 白屏；GitHub Pages 没有 rewrite，只能靠 `404.html` 副本兜底单层路径。要加嵌套路由先改 `base` 并复核部署，取舍见 [生成向导设计](docs/superpowers/specs/2026-11-19-configurator-design.md) 的「待处理」。
-- **先写测试再改行为。** `src/lib/` 是纯函数，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。能表达成 Lint/类型约束的纠正优先做成确定性检查，而不是往文档加自然语言规则；反复被误用的 API 改签名让误用编译不过。安全与往返不变量由 `tests/*.property.test.ts` 的性质测试覆盖，生成器在 [tests/arbitraries.ts](tests/arbitraries.ts)。
+- **纯前端，运行时零外部请求。** 不引入后端；构建产物由静态服务器托管，使用相对资源路径（`base: './'`）；新增数据只在构建期生成并提交。
+- **明文密码不落盘。** 敏感指令导入时替换为 `${env_<指令名>}`，原值只存在内存；`localStorage`、默认导出和默认值不得含明文。守卫在 [persistence.ts](src/lib/persistence.ts)，替换在 [secrets.ts](src/lib/secrets.ts)。
+- **生成数据不手改。** 生成物由脚本产出，要改数据先改登记表或脚本；清单与流程见 [数据管线](docs/engineering/data-pipeline.md)。
+- **TypeScript strict。** 不新增 `any`，共享类型放 [types.ts](src/types.ts)；未使用变量由 `tsc` 把关。
+- **源码不加普通注释。** 不在 `src/` 新增解释性注释或 JSDoc，需求与原因写入文档；ESLint 与 CSS 检查会阻止普通注释，工具指令注释与生成的 Redis 注释除外。见 [源码注释设计](docs/superpowers/specs/2026-11-21-source-comments-design.md)。
+- **Lint 与格式门禁。** `npm run lint` 零告警，`eslint-disable` 写明原因；规则与取舍见 [eslint.md](docs/engineering/eslint.md)。
+- **禁止直接使用 useEffect / useLayoutEffect。** 优先事件处理器与渲染期派生；例外只进 [eslint.config.ts](eslint.config.ts) 允许清单，替代方案见 [eslint.md](docs/engineering/eslint.md)。
+- **界面文案中文。** 新增 UI 文案用中文；按最小宽度 1024px 的桌面端设计，不做移动端。
+- **页面地址只允许一层。** 更深地址会 404 白屏；要加嵌套路由先改 `base` 并复核部署，见 [静态托管](docs/engineering/development.md#静态托管) 与 [生成向导设计](docs/superpowers/specs/2026-11-19-configurator-design.md) 的「待处理」。
+- **先写测试再改行为。** `src/lib/` 纯函数必须有 Vitest 单测，边界先补能复现的测试；能用 lint/类型约束表达的优先做成确定性检查；安全与往返不变量由 `tests/*.property.test.ts` 覆盖。见 [开发与验证](docs/engineering/development.md)。
 
 ## UI 与 shadcn
 
@@ -48,7 +46,7 @@ npm run lint        # ESLint，零告警
 npm run lint:fix
 npm run format      # Prettier 写入
 npm run format:check
-npm run check       # lint + format:check + typecheck + test
+npm run check       # lint + format:check + typecheck + test + 文档预算
 npm test            # Vitest（jsdom）
 npm run typecheck
 npm run build       # lint + tsc --noEmit + vite build，产物在 dist/
@@ -73,29 +71,11 @@ node scripts/build-dict.ts       # 生成字典、官方 conf、releases.json、
 
 ## 文档治理
 
-每个事实只有一个归属层级；其他位置链接过去，不复制。
-
-| 层级                                                                         | 职责                                                                                                | 不放                                     |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 根 `AGENTS.md`（本文件）                                                     | 常驻工程规则：底线约束、目录、命令、改动流程、文档规则                                              | 产品用法、设计细节、任务清单             |
-| [README.md](README.md)                                                       | 仓库入口：一句话介绍、线上地址、界面截图、快速开始、文档索引                                        | 详细用法、实现细节、评审记录、未做的计划 |
-| [docs/usage.md](docs/usage.md)、[docs/configurator.md](docs/configurator.md) | 面向用户的详细用法：体检、对比、导出、密码占位、生成向导                                            | 工程规则、实现细节、任务清单             |
-| `docs/engineering/`                                                          | 工程规范与门禁、本地开发与验证、数据管线的现状                                                      | 产品用法、任务清单                       |
-| `docs/superpowers/specs/`                                                    | 一份设计的现状与取舍：日期、状态、目标、非目标、已选方案                                            | 逐步实现步骤                             |
-| `docs/superpowers/plans/`                                                    | 一份执行时的原始计划：Goal、Architecture、Global Constraints、任务与 checkbox；完成后在文件头标状态 | 当前行为（以 spec 的现状为准）           |
-| [types.ts](src/types.ts)、测试                                               | 当前契约与行为可执行的事实                                                                          | 历史、计划、评审叙述                     |
-
-写作规则：
-
-- **描述当前状态。** 历史留在 git；未做的内容留在 spec 的「非目标」或 plan 里，不写进 README。
-- **一个事实只写一次。** 发现重复规则时保留一处，其余改为链接。
-- **不手抄生成内容。** 配置项清单、版本表、测试清单以生成物或测试为准。
-- **不写实现流水账和评审对话。** 只保留结论、约束、失败模式和验证方式。
-- **设计必须带取舍。** spec 的「已选方案」要列出被放弃的方案和原因。
-- **状态只用三种：** `待评审` / `已实现` / `已废弃`。实现完成时改状态，不补写实现过程；废弃时保留原因。
-- **计划是执行记录。** 完成后只在计划文件头标 `状态：已实现`，不回头勾选或改写正文；计划里被后续改动覆盖的做法（脚本后缀、路由方案、触发方式）在状态行注明已被什么替换。当前行为以所属 spec 的现状章节为准。
-- **文档与代码同一次改动更新。** 行为变更要么更新所属 spec，要么明确属于无需设计记录的 bug 修复。
+- 事实一处：根 AGENTS.md 只放每次会话必读规则；用法、工程细节、spec/plan 各归其层，不新增子目录 `AGENTS.md`。
+- spec 写当前状态与取舍（`待评审` / `已实现` / `已废弃`），plan 是执行记录，完成后在文件头标状态。
+- 设计必须带取舍，不写实现流水账；生成的配置清单、版本表以生成物或测试为准。
+- 完整归属表、写作规则与本文件维护规则见 [docs/engineering/documentation.md](docs/engineering/documentation.md)。
 
 ## 维护本文件
 
-本文件只保留每次会话都需要的规则；能放到具体文档的细节，放到那里并链接。新增规则时优先改现有条目，不追加同义规则。规则应与代码或脚本可核对；发现规则与现状不符时，先修正事实，再改规则。
+- **体量上限：** 本文件由 `scripts/check-doc-budget.ts` 限制，上限见脚本；新增规则先改现有条目，超限先删减或迁移，确需上调时在 PR 备注说明理由，删减后同步下调上限。
