@@ -14,7 +14,7 @@
 ## 2. 现状
 
 - `master` 的 ruleset「Protect master CI」要求 `check` 状态检查与 PR，检查未通过无法合并；允许的合并方式已收窄为只有 squash。
-- 仓库已开启 Allow auto-merge；squash 默认标题为「提交标题或 PR 标题」，正文为提交列表；GitHub 在默认标题后自动补 `(#<PR号>)`，PR #2、#3 已验证；PR #5 因覆盖 `--subject` 丢失。
+- 仓库已开启 Allow auto-merge 与合并后自动删除 head 分支；squash 默认标题为「提交标题或 PR 标题」，正文按 GitHub 默认消息生成（单提交取该提交正文，多提交为提交列表）；GitHub 在默认标题后自动补 `(#<PR号>)`，PR #2、#3、#10 已验证；PR #5 因覆盖 `--subject` 丢失。
 - `npm run pr:merge -- <PR号>` 是唯一合并入口：只接受一个 PR 号；校验 PR 为 OPEN、base 为 `master` 后执行 `gh pr merge <PR号> --squash --auto`，再轮询 PR 状态直到 MERGED / CLOSED / 超时。不接受 `--subject`、`--body` 等任何其他参数。
 - 纯逻辑在 [scripts/lib/pr-merge.ts](../../../scripts/lib/pr-merge.ts)，命令编排在 [scripts/pr-merge.ts](../../../scripts/pr-merge.ts)，单测在 [tests/prMerge.test.ts](../../../tests/prMerge.test.ts)。
 
@@ -22,14 +22,14 @@
 
 - 一个入口，agent 无法通过参数覆盖标题与正文。
 - 不在脚本里重造检查等待：等检查由 GitHub auto-merge 基于必过检查完成。
-- 合并标题为 GitHub 默认 squash 标题（自带 `(#N)`），正文为默认提交列表。
+- 合并标题为 GitHub 默认 squash 标题（自带 `(#N)`），正文与 GitHub 默认消息一致（单提交取提交正文，多提交为提交列表）。
 - 异常可读、无副作用：未登录、`gh` 版本低、PR 不存在、非 OPEN、base 非 `master`、启用自动合并失败、轮询失败、超时都以非 0 退出，且脚本自身不直接调用合并。
 - 已合并的 PR 重复执行时幂等退出 0。
 
 ## 4. 非目标
 
 - 不解析检查状态，不拼标题与正文，不做 flake 判定，不自动修复。
-- 不删除分支，不提供 `--admin`，不提供跳过检查的开关。
+- 脚本不删除分支（由仓库「合并后自动删除 head 分支」负责），不提供 `--admin`，不提供跳过检查的开关。
 - 不改 PR 标题或描述，不做合并后的拦截式校验。
 - 不实现 GitHub HTTP 客户端，全部远端操作走 `gh`。
 
@@ -81,7 +81,7 @@ npm run pr:merge -- <PR号>
 ## 9. 风险
 
 - 检查失败时脚本要等满超时才会退出，因为不再解析检查状态；提示里说明修复后推送可继续。
-- 默认标题的 `(#N)` 依赖 GitHub 行为：PR #2、#3 已在网页默认消息上验证；`gh` 默认消息路径在后续真实合并中验证。
+- 默认标题的 `(#N)` 依赖 GitHub 行为：PR #2、#3 在网页默认消息上验证，PR #10 经 `gh` 默认消息路径验证；单提交 PR 的正文是该提交正文，不是 `* 提交清单`。
 - auto-merge 被关闭或规则不允许时，`gh pr merge --auto` 的原始错误会透传。
 - 脚本挡不住手敲 `gh pr merge --subject`，但仓库唯一入口与 AGENTS.md 都指向本脚本；不再提供可误用的参数面。
 
@@ -90,4 +90,4 @@ npm run pr:merge -- <PR号>
 - `parseArgs`：缺省、非正整数、多余参数（含 `--subject`）均报错；合法输入返回 PR 号。
 - 编排单测：已合并幂等；非 OPEN、base 非 master 不合并；启用自动合并的参数精确为 `['pr','merge','<N>','--squash','--auto']`；轮询到 MERGED 退出 0；轮询到 CLOSED、轮询读取失败、超时退出 1。
 - `npm run check`、`npm run build` 通过。
-- 真实合并一次，确认 `master` 上 squash 标题带 `(#<PR号>)`、正文为提交列表。
+- 真实合并一次，确认 `master` 上 squash 标题带 `(#<PR号>)`、正文与 GitHub 默认消息一致（单提交取提交正文）。
