@@ -19,6 +19,12 @@ npm run fuzz       # 外环模糊：放大轮数跑性质测试，报告在 .fuz
 
 CI 的 `check` job 还会校验 PR 正文：四个二级标题齐全、顺序与模板一致且「## 验证」非空，失败即红；正文经 `PR_BODY` 环境变量传入，模板见 [.github/pull_request_template.md](../../.github/pull_request_template.md)，设计见 [PR 正文门禁设计](../superpowers/specs/2026-11-28-pr-body-gate-design.md)。
 
+## 测试
+
+- `src/lib/` 是纯函数层，必须有 Vitest 单测；解析、密码、导出、diff 的边界先补能复现的测试。
+- 能表达成 Lint/类型约束的纠正优先做成确定性检查，而不是往文档加自然语言规则；反复被误用的 API 改签名让误用编译不过。
+- 安全与往返不变量由 `tests/*.property.test.ts` 覆盖，生成器在 [tests/arbitraries.ts](../../tests/arbitraries.ts)。
+
 ## 静态托管
 
 浏览器的模块脚本不允许在 `file://` 下加载，所以构建产物需要静态服务器托管（`npm run preview`、Nginx、对象存储、GitHub Pages 均可）。`base: './'` 让产物可以部署到任意目录或子路径，但页面地址只能有一层：`/configurator` 可用，`/configurator/xxx` 会更深的地址解析资源而 404 白屏；GitHub Pages 没有 rewrite，只能靠 `404.html` 副本兜底单层路径。

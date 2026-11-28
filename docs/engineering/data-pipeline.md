@@ -19,4 +19,4 @@ node scripts/build-dict.ts       # 生成 src/data/dict/<line>.json、releases.j
 
 构建断言失败时会列出需要人工确认的指令：确实没有默认值的写进 `src/data/no-default.json`，解析不到的写进 `src/data/defaults-override.json`。跨版本改名写在 `src/data/renames.json`。
 
-生成的字典、官方 conf 与版本表不要手改，全部由上述脚本产出；需要人工维护的登记表清单见 [AGENTS.md](../../AGENTS.md) 的「生成数据不手改」。
+生成的 `src/data/dict/*.json`、`src/data/official/*.conf`、`src/data/releases.json`、`src/data/dict/meta.json` 由脚本产出，不要手改。人工维护的是 `data/versions.json`、`src/data/no-default.json`、`src/data/defaults-override.json`、`src/data/renames.json`、`src/data/aliases.ts`、`src/data/zh-notes.json`、`src/data/risk-rules.json`、`src/data/extra-directives.json`、`src/data/configurator.json`、`src/data/scenarios.json`、`src/data/sentinel-rules.json`。

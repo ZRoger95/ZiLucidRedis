@@ -33,5 +33,6 @@ npm run build      # 构建产物在 dist/
 | [体检页使用](docs/usage.md)                             | 导入、版本、搜索、体检结果、配置对比、导出与密码占位 |
 | [生成配置向导](docs/configurator.md)                    | 单机单实例、一主二从三哨兵、三主三从集群与逐项配置   |
 | [本地开发与验证](docs/engineering/development.md)       | 开发命令、冒烟、模糊、静态托管与线上发布             |
+| [文档归属与写作规范](docs/engineering/documentation.md) | 事实分层、spec/plan 状态、写作规则与 AGENTS.md 维护  |
 | [数据来源与字典更新](docs/engineering/data-pipeline.md) | 官方 conf 与 config.c 抓取、字典生成、人工登记表     |
 | [功能地图](docs/engineering/feature-map.md)             | 每个功能的入口、选择器与验证方式                     |

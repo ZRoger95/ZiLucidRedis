@@ -6,11 +6,11 @@
 
 ## 分工
 
-| 工具 | 负责 | 不负责 |
-|---|---|---|
-| ESLint | 正确性、团队习惯、架构边界 | 缩进、换行、引号 |
-| Prettier | 代码格式 | 逻辑与习惯 |
-| `tsc` | 类型、未使用变量（`noUnusedLocals` / `noUnusedParameters`） | 代码风格 |
+| 工具     | 负责                                                        | 不负责           |
+| -------- | ----------------------------------------------------------- | ---------------- |
+| ESLint   | 正确性、团队习惯、架构边界                                  | 缩进、换行、引号 |
+| Prettier | 代码格式                                                    | 逻辑与习惯       |
+| `tsc`    | 类型、未使用变量（`noUnusedLocals` / `noUnusedParameters`） | 代码风格         |
 
 ESLint 9 起已把格式规则移出核心，React 官方与 Prettier 官方也都建议“ESLint 管质量，Prettier 管格式”。因此本项目不启用 `@stylistic`，也不在 ESLint 里配置换行宽度。
 
@@ -18,15 +18,15 @@ ESLint 9 起已把格式规则移出核心，React 官方与 Prettier 官方也�
 
 选型参考了以下公开配置和规范，只保留与这个项目相关的部分：
 
-| 来源 | 采用 | 未采用 |
-|---|---|---|
-| `eslint:recommended` | 核心正确性规则 | — |
-| React `eslint-plugin-react-hooks` 的 `recommended` | `rules-of-hooks`、`exhaustive-deps`，以及 React Compiler 的 `set-state-in-effect`、`refs`、`purity`、`immutability` 等规则 | — |
-| Next.js `eslint-config-next/core-web-vitals` | “React + Hooks 规则默认开启，Web Vitals 相关规则升级为 error”的思路 | Next.js 专用规则 |
-| Airbnb JavaScript Style Guide / `eslint-config-airbnb-typescript` | `curly`、`eqeqeq`、`no-var`、`prefer-const`、`no-param-reassign`、`no-nested-ternary`、导入排序等习惯 | 整套配置（包含大量 CommonJS/ES5 时代的规则） |
-| `typescript-eslint` 的 `strict` / `stylistic` | “语法层能查的错误尽量在 lint 阶段查”的思路 | 当前无法启用，原因见下文 |
-| Google TypeScript Style Guide | 禁止 `any`，边界数据用 `unknown`；优先 `??`、`for...of` | 其命名与注释格式细节 |
-| Alibaba F2E 规范 | 用 lint 严重级别表达强制性：强制项为 error，建议项为 warn | 具体业务规则 |
+| 来源                                                              | 采用                                                                                                                       | 未采用                                       |
+| ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `eslint:recommended`                                              | 核心正确性规则                                                                                                             | —                                            |
+| React `eslint-plugin-react-hooks` 的 `recommended`                | `rules-of-hooks`、`exhaustive-deps`，以及 React Compiler 的 `set-state-in-effect`、`refs`、`purity`、`immutability` 等规则 | —                                            |
+| Next.js `eslint-config-next/core-web-vitals`                      | “React + Hooks 规则默认开启，Web Vitals 相关规则升级为 error”的思路                                                        | Next.js 专用规则                             |
+| Airbnb JavaScript Style Guide / `eslint-config-airbnb-typescript` | `curly`、`eqeqeq`、`no-var`、`prefer-const`、`no-param-reassign`、`no-nested-ternary`、导入排序等习惯                      | 整套配置（包含大量 CommonJS/ES5 时代的规则） |
+| `typescript-eslint` 的 `strict` / `stylistic`                     | “语法层能查的错误尽量在 lint 阶段查”的思路                                                                                 | 当前无法启用，原因见下文                     |
+| Google TypeScript Style Guide                                     | 禁止 `any`，边界数据用 `unknown`；优先 `??`、`for...of`                                                                    | 其命名与注释格式细节                         |
+| Alibaba F2E 规范                                                  | 用 lint 严重级别表达强制性：强制项为 error，建议项为 warn                                                                  | 具体业务规则                                 |
 
 ## 规则分组
 
@@ -73,13 +73,13 @@ ESLint 9 起已把格式规则移出核心，React 官方与 Prettier 官方也�
 
 只有第三个问题成立才允许使用，并且必须进入 [eslint.config.ts](../../eslint.config.ts) 的允许清单。当前清单：
 
-| 文件 | 原因 |
-|---|---|
-| `src/App.tsx` | 异步加载版本字典；写入 `localStorage`；清理一次性交接并同步编辑器会话（vault、文件名） |
-| `src/components/Editor.tsx` | 挂载 / 销毁 / 同步 CodeMirror 实例 |
-| `src/components/OfficialPane.tsx` | 渲染提交后滚动到焦点行 |
-| `src/hooks/useShortcut.ts` | 订阅全局键盘事件 |
-| `src/hooks/useVersionData.ts` | 按版本动态 `import()` 字典与官方 conf |
+| 文件                              | 原因                                                                                   |
+| --------------------------------- | -------------------------------------------------------------------------------------- |
+| `src/App.tsx`                     | 异步加载版本字典；写入 `localStorage`；清理一次性交接并同步编辑器会话（vault、文件名） |
+| `src/components/Editor.tsx`       | 挂载 / 销毁 / 同步 CodeMirror 实例                                                     |
+| `src/components/OfficialPane.tsx` | 渲染提交后滚动到焦点行                                                                 |
+| `src/hooks/useShortcut.ts`        | 订阅全局键盘事件                                                                       |
+| `src/hooks/useVersionData.ts`     | 按版本动态 `import()` 字典与官方 conf                                                  |
 
 新增文件需要改配置并说明原因，评审时重点看“为什么不能用事件处理器或渲染期派生”。已有的反例：搜索面板关闭时重置查询，改为在 `onOpenChange` 里清空，不再用 effect 监听 `open`。
 
@@ -99,7 +99,7 @@ npm run lint          # ESLint，--max-warnings=0
 npm run format:check  # Prettier 检查
 npm run typecheck     # tsc --noEmit
 npm test              # Vitest
-npm run check         # 以上四项依次执行
+npm run check         # 以上四项依次执行 + AGENTS.md 体量预算
 npm run build         # lint + typecheck + vite build
 ```
 
